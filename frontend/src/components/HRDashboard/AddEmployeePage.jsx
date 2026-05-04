@@ -1,0 +1,204 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone } from 'lucide-react';
+import axios from 'axios';
+
+const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        phone: '',
+        role: 'employee',
+        status: 'full time',
+        department: 'development',
+        reportingTo: '',
+        salary: '',
+        photo: ''
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [preview, setPreview] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result);
+                setFormData({ ...formData, photo: reader.result });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, formData);
+            onEmployeeAdded();
+            onBack(); // Go back to list after success
+        } catch (err) {
+            setError(err.response?.data?.msg || 'Failed to add employee');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="max-w-4xl mx-auto"
+        >
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+                <div className="p-10">
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {error && (
+                            <div className="md:col-span-2 p-4 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold rounded-2xl text-center">
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Profile Photo Section */}
+                        <div className="md:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl p-8 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                            <div className="relative group cursor-pointer">
+                                <div className="w-24 h-24 rounded-3xl bg-white shadow-lg flex items-center justify-center overflow-hidden border-4 border-white ring-1 ring-slate-200">
+                                    {preview ? (
+                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="text-slate-300 flex flex-col items-center gap-1">
+                                            <User size={32} />
+                                            <span className="text-[10px] font-bold">UPLOAD</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <label className="absolute inset-0 flex items-center justify-center bg-indigo-600/0 group-hover:bg-indigo-600/80 rounded-3xl transition-all cursor-pointer">
+                                    <span className="text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 uppercase tracking-wider text-center px-2">Change Photo</span>
+                                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                                </label>
+                            </div>
+                            <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Employee Photo</p>
+                        </div>
+
+                        {/* Basic Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2">Basic Information</h3>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Full Name</label>
+                                <div className="relative mt-1 group">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input required type="text" placeholder="John Doe" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email Address</label>
+                                <div className="relative mt-1 group">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input required type="email" placeholder="john@company.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Phone Number</label>
+                                <div className="relative mt-1 group">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input required type="tel" placeholder="+92 3XX XXXXXXX" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Temporary Password</label>
+                                <div className="relative mt-1 group">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input 
+                                        required 
+                                        type={showPassword ? "text" : "password"} 
+                                        placeholder="••••••••" 
+                                        value={formData.password} 
+                                        onChange={e => setFormData({...formData, password: e.target.value})} 
+                                        className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" 
+                                    />
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Annual Salary (₨)</label>
+                                <div className="relative mt-1 group">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₨</div>
+                                    <input required type="number" placeholder="60000" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Employment Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2">Employment Details</h3>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Department</label>
+                                <div className="relative mt-1 group">
+                                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
+                                        <option value="design">Design</option>
+                                        <option value="hr">HR</option>
+                                        <option value="development">Development</option>
+                                        <option value="QA">QA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Reporting To</label>
+                                <div className="relative mt-1 group">
+                                    <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input type="text" placeholder="Manager Name" value={formData.reportingTo} onChange={e => setFormData({...formData, reportingTo: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Employment Status</label>
+                                <div className="relative mt-1 group">
+                                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
+                                        <option value="full time">Full Time</option>
+                                        <option value="probation">Probation</option>
+                                        <option value="internship">Internship</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Role</label>
+                                <div className="relative mt-1 group">
+                                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
+                                        <option value="employee">Employee</option>
+                                        <option value="hr">HR Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="md:col-span-2 pt-6">
+                            <button 
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-base"
+                            >
+                                {loading ? 'Processing...' : <><UserPlus size={20} /> Register New Employee</>}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+export default AddEmployeePage;
