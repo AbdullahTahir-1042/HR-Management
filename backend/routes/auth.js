@@ -3,6 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const LeaveRequest = require('../models/LeaveRequest');
+const Attendance = require('../models/Attendance');
 const { auth, isHR } = require('../middleware/auth');
 
 // @route   POST api/auth/register
@@ -135,6 +137,35 @@ router.get('/user', auth, async (req, res) => {
         res.json(user);
     } catch (err) {
         console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE api/auth/users/:id
+// @desc    Delete user and their related data (HR only)
+// @access  Private (HR)
+router.delete('/users/:id', [auth, isHR], async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Don't allow HR to delete themselves
+        if (req.user.id === req.params.id) {
+            return res.status(400).json({ msg: 'You cannot delete your own account' });
+        }
+
+        // Delete related data
+        await LeaveRequest.deleteMany({ employee: req.params.id });
+        await Attendance.deleteMany({ employee: req.params.id });
+        
+        // Delete the user
+        await User.findByIdAndDelete(req.params.id);
+
+        res.json({ msg: 'User and associated records removed successfully' });
+    } catch (err) {
+        console.error('Delete Error:', err.message);
         res.status(500).send('Server Error');
     }
 });
