@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
 
     try {
         let user = await User.findOne({ email });
-        if (!user) {
+        if (!user || user.isDeleted) {
             return res.status(400).json({ msg: 'Invalid Credentials' });
         }
 
@@ -78,7 +78,7 @@ router.post('/login', async (req, res) => {
 // @access  Private (HR)
 router.get('/users', [auth, isHR], async (req, res) => {
     try {
-        const users = await User.find().select('-password').sort({ createdAt: -1 });
+        const users = await User.find({ isDeleted: { $ne: true } }).select('-password').sort({ createdAt: -1 });
         res.json(users);
     } catch (err) {
         res.status(500).send('Server Error');
@@ -156,14 +156,11 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
         }
 
-        // Delete related data
-        await LeaveRequest.deleteMany({ employee: req.params.id });
-        await Attendance.deleteMany({ employee: req.params.id });
-        
-        // Delete the user
-        await User.findByIdAndDelete(req.params.id);
+        // Soft Delete the user
+        user.isDeleted = true;
+        await user.save();
 
-        res.json({ msg: 'User and associated records removed successfully' });
+        res.json({ msg: 'User soft-deleted successfully' });
     } catch (err) {
         console.error('Delete Error:', err.message);
         res.status(500).send('Server Error');
