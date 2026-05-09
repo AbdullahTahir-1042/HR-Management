@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Mail, Shield, Calendar, UserPlus, Briefcase, Building2, UserCheck } from 'lucide-react';
+import { Users, Mail, Shield, Calendar, UserPlus, Briefcase, Building2, UserCheck, Trash2 } from 'lucide-react';
 
-const HREmployeeList = ({ employees, searchTerm, onAddNew, onSelect }) => {
+const HREmployeeList = ({ employees, searchTerm, onAddNew, onSelect, onDelete }) => {
     
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
@@ -60,6 +60,7 @@ const HREmployeeList = ({ employees, searchTerm, onAddNew, onSelect }) => {
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4">Salary</th>
                                 <th className="px-6 py-4">Joined On</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -117,6 +118,18 @@ const HREmployeeList = ({ employees, searchTerm, onAddNew, onSelect }) => {
                                             <Calendar size={14} className="text-slate-400" />
                                             {formatDate(emp.createdAt)}
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-5 text-right">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDelete(emp._id);
+                                            }}
+                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                            title="Delete Employee"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

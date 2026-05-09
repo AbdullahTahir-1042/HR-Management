@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck, Calendar, DollarSign, User, Phone, Edit3, Wallet, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck, Calendar, DollarSign, User, Phone, Edit3, Wallet, AlertCircle, Trash2 } from 'lucide-react';
 
-const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit }) => {
+const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit, onDelete }) => {
     // Safety check for employee
     if (!employee) return (
         <div className="p-16 text-center text-slate-400">
@@ -98,6 +98,12 @@ const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit }) => {
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50/30 rounded-xl transition-all font-bold text-sm shadow-sm"
                     >
                         <Edit3 size={16}/> Edit Profile
+                    </button>
+                    <button 
+                        onClick={() => onDelete(employee._id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-rose-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm shadow-sm"
+                    >
+                        <Trash2 size={16}/> Delete
                     </button>
                 </div>
             </div>

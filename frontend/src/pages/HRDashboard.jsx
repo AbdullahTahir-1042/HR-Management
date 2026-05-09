@@ -129,6 +129,18 @@ const HRDashboard = () => {
                                         leaves={leaves}
                                         onBack={() => setSelectedEmployee(null)}
                                         onEdit={() => setIsEditingEmployee(true)}
+                                        onDelete={async (id) => {
+                                            if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
+                                                try {
+                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`);
+                                                    setSelectedEmployee(null);
+                                                    fetchAllEmployees();
+                                                } catch (err) {
+                                                    console.error("Error deleting employee:", err);
+                                                    alert(err.response?.data?.msg || "Failed to delete employee");
+                                                }
+                                            }
+                                        }}
                                     />
                                 ) : (
                                     <HREmployeeList 
@@ -136,6 +148,17 @@ const HRDashboard = () => {
                                         searchTerm={searchTerm} 
                                         onAddNew={() => setIsAddingEmployee(true)}
                                         onSelect={setSelectedEmployee}
+                                        onDelete={async (id) => {
+                                            if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
+                                                try {
+                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`);
+                                                    fetchAllEmployees();
+                                                } catch (err) {
+                                                    console.error("Error deleting employee:", err);
+                                                    alert(err.response?.data?.msg || "Failed to delete employee");
+                                                }
+                                            }
+                                        }}
                                     />
                                 )}
                             </>

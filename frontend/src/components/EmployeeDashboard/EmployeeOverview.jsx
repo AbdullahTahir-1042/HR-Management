@@ -82,46 +82,69 @@ const EmployeeOverview = ({ user, attendance, leaves, setActiveTab }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
-                {/* Today Status */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                {/* Today Status Card */}
+                <motion.div 
+                    whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+                    onClick={() => setActiveTab('attendance')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
                             <Clock size={20} />
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${todayAttendance ? (todayAttendance.checkOut ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600') : 'bg-slate-50 text-slate-500'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${todayAttendance ? (todayAttendance.checkOut ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600') : 'bg-slate-50 text-slate-500'}`}>
                             {todayAttendance ? (todayAttendance.checkOut ? 'Completed' : 'On Shift') : 'Absent'}
                         </span>
                     </div>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Today's Status</p>
-                    <p className="text-xl font-bold text-slate-800 mt-0.5">
-                        {todayAttendance ? (todayAttendance.checkIn ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-') : 'Not Checked In'}
-                    </p>
-                </div>
+                    <div className="flex items-end justify-between mt-0.5">
+                        <p className="text-xl font-bold text-slate-800">
+                            {todayAttendance ? (todayAttendance.checkIn ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-') : 'Not Checked In'}
+                        </p>
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                    </div>
+                </motion.div>
 
-                {/* Leaves Month */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                {/* Leaves Month Card */}
+                <motion.div 
+                    whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+                    onClick={() => setActiveTab('leaves')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
+                >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                        <div className="p-2 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-colors">
                             <Calendar size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg">Month</span>
+                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg group-hover:bg-amber-100 transition-colors">Month</span>
                     </div>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Leaves Taken</p>
-                    <p className="text-xl font-bold text-slate-800 mt-0.5">{salaryStats.totalDays} Days</p>
-                </div>
+                    <div className="flex items-end justify-between mt-0.5">
+                        <p className="text-xl font-bold text-slate-800">{salaryStats.totalDays} Days</p>
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
+                    </div>
+                </motion.div>
 
-                {/* Net Salary Small Card */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-colors">
+                {/* Net Salary Card */}
+                <motion.div 
+                    whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+                    onClick={() => setActiveTab('profile')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-emerald-200"
+                >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-100 transition-colors">
                             <TrendingUp size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg uppercase tracking-tight">Est. Payable</span>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-emerald-100 transition-colors">Est. Payable</span>
                     </div>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Current Month Net</p>
-                    <p className="text-xl font-bold text-slate-900 mt-0.5">{formatCurrency(salaryStats.netSalary)}</p>
-                    <p className="text-[9px] text-slate-400 mt-1 font-medium">After {salaryStats.totalDays} days deduction</p>
-                </div>
+                    <div className="flex items-end justify-between mt-0.5">
+                        <div>
+                            <p className="text-xl font-bold text-slate-900">{formatCurrency(salaryStats.netSalary)}</p>
+                            <p className="text-[9px] text-slate-400 font-medium">After {salaryStats.totalDays} days deduction</p>
+                        </div>
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                    </div>
+                </motion.div>
             </div>
         </motion.div>
     );
