@@ -121,7 +121,10 @@ const HRDashboard = () => {
                                     <EditEmployeePage 
                                         employee={selectedEmployee}
                                         onBack={() => setIsEditingEmployee(false)}
-                                        onEmployeeUpdated={fetchAllEmployees}
+                                        onEmployeeUpdated={(updatedEmp) => {
+                                            fetchAllEmployees();
+                                            setSelectedEmployee(updatedEmp);
+                                        }}
                                     />
                                 ) : selectedEmployee ? (
                                     <EmployeeDetailsPage 

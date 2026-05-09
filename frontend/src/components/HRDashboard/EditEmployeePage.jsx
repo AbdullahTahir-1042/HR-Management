@@ -60,8 +60,8 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                     'x-auth-token': token
                 }
             };
-            await axios.put(`${import.meta.env.VITE_API_URL}/auth/users/${employee._id}`, formData, config);
-            onEmployeeUpdated();
+            const res = await axios.put(`${import.meta.env.VITE_API_URL}/auth/users/${employee._id}`, formData, config);
+            onEmployeeUpdated(res.data);
             onBack();
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to update employee');
