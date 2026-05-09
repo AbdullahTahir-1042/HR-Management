@@ -8,10 +8,11 @@ const Attendance = require('../models/Attendance');
 const { auth, isHR } = require('../middleware/auth');
 
 // @route   POST api/auth/register
-// @desc    Register user
-// @access  Public (In a real app, maybe only HR can register employees)
-router.post('/register', async (req, res) => {
-    const { name, email, password, role, status, salary, photo, department, reportingTo, phone } = req.body;
+// @desc    Register user (HR only)
+// @access  Private (HR)
+router.post('/register', [auth, isHR], async (req, res) => {
+    let { name, email, password, role, status, salary, photo, department, reportingTo, phone } = req.body;
+    if (email) email = email.toLowerCase();
 
     try {
         let user = await User.findOne({ email });
@@ -48,7 +49,8 @@ router.post('/register', async (req, res) => {
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    if (email) email = email.toLowerCase();
     console.log('Login attempt:', email);
 
     try {
@@ -89,7 +91,8 @@ router.get('/users', [auth, isHR], async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    const { name, email, role, status, salary, photo, department, reportingTo, phone, password } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password } = req.body;
+    if (email) email = email.toLowerCase();
 
     try {
         // Check if the user is updating themselves or if they are HR
@@ -113,10 +116,10 @@ router.put('/users/:id', auth, async (req, res) => {
 
         // HR-only restricted fields
         if (isHRUser) {
-            if (role) user.role = role;
-            if (status) user.status = status;
+            if (role !== undefined) user.role = role;
+            if (status !== undefined) user.status = status;
             if (salary !== undefined) user.salary = salary;
-            if (department) user.department = department;
+            if (department !== undefined) user.department = department;
             if (reportingTo !== undefined) user.reportingTo = reportingTo;
         }
 
