@@ -170,4 +170,30 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
     }
 });
 
+// @route   PUT api/auth/fcm-token
+// @desc    Save the employee's browser push notification token
+// @access  Private
+router.put('/fcm-token', auth, async (req, res) => {
+    const { token } = req.body;
+    
+    if (!token) {
+        return res.status(400).json({ msg: 'Token is required' });
+    }
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        user.fcmToken = token;
+        await user.save();
+        
+        res.json({ msg: 'Notification token synced successfully' });
+    } catch (err) {
+        console.error('Error saving FCM token:', err);
+        res.status(500).send('Server Error syncing token');
+    }
+});
+
 module.exports = router;

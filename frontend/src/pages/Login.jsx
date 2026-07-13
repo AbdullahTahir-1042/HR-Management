@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import  { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -10,16 +10,22 @@ const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     
-    const { login } = useContext(AuthContext);
+    const { login, user } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    // If already logged in, redirect away from login page immediately
+    useEffect(() => {
+        if (user) {
+            navigate(user.role === 'hr' ? '/hr' : '/employee', { replace: true });
+        }
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
         setLoading(true);
         try {
             const user = await login(formData.email, formData.password);
-            navigate(user.role === 'hr' ? '/hr' : '/employee');
+            navigate(user.role === 'hr' ? '/hr' : '/employee', { replace: true });
         } catch (err) {
             alert(err.response?.data?.msg || 'Error occurred');
         } finally {
@@ -29,7 +35,6 @@ const Login = () => {
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 relative overflow-hidden font-sans">
-            {/* Background Decorative Elements - Increased Opacity */}
             <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-indigo-200 rounded-full blur-3xl opacity-80 animate-pulse" />
             <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-pink-200 rounded-full blur-3xl opacity-80 animate-pulse" />
 
@@ -39,7 +44,6 @@ const Login = () => {
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="relative z-10 w-full max-w-md p-8 mx-4 bg-white/95 backdrop-blur-2xl border border-white/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
             >
-                {/* Header section */}
                 <div className="text-center mb-8">
                     <div className="inline-flex p-3 bg-indigo-600 rounded-2xl text-white mb-4 shadow-lg shadow-indigo-200">
                         <ShieldCheck size={28} />
@@ -90,11 +94,7 @@ const Login = () => {
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
                         disabled={loading}
                     >
-                        {loading ? (
-                            <Loader2 className="animate-spin" size={20} />
-                        ) : (
-                            'Sign In'
-                        )}
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
                     </motion.button>
                 </form>
 

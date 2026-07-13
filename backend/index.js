@@ -25,6 +25,7 @@ app.get('/', (req, res) => res.send('Server is running'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/leaves', require('./routes/leave'));
+app.use('/api/announcements', require('./routes/announcements'));
 
 const PORT = process.env.PORT || 5000;
 
