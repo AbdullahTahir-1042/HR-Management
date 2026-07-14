@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /hr/
+Disallow: /api/
+Disallow: /hr-requests/
+
+Sitemap: https://yourdomain.com/sitemap.xml

@@ -1,0 +1,11 @@
+name = "hr-management"
+main = "backend/worker.js"
+compatibility_date = "2024-04-03"
+
+[assets]
+directory = "./frontend/dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hr-management-db"
+database_id = "ac9bfb48-5056-4fce-ab91-6067036fe47a"
