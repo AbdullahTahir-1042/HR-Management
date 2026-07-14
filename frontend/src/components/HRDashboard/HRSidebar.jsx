@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, Building2, Sparkles, BarChart2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     return (
@@ -19,6 +20,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <LayoutDashboard size={20} />
                     <span className="text-sm">Dashboard</span>
                 </button>
+
                 <button 
                     onClick={() => setActiveTab('employees')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -26,6 +28,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <User size={20} />
                     <span className="text-sm">Employees</span>
                 </button>
+
                 <button 
                     onClick={() => setActiveTab('leaves')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -33,6 +36,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <CalendarCheck size={20} />
                     <span className="text-sm">Leave Requests</span>
                 </button>
+
                 <button 
                     onClick={() => setActiveTab('attendance')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -40,6 +44,33 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <Clock size={20} />
                     <span className="text-sm">Attendance</span>
                 </button>
+
+                {/* 👇 DEPARTMENTS BUTTON */}
+                <button 
+                    onClick={() => setActiveTab('departments')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'departments' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Building2 size={20} />
+                    <span className="text-sm">Departments</span>
+                </button>
+
+                {/* 👇 REPORTS BUTTON */}
+                <button 
+                    onClick={() => setActiveTab('reports')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <BarChart2 size={20} />
+                    <span className="text-sm">User Report</span>
+                </button>
+
+                {/* 👇 ONBOARDING LINK */}
+                <Link 
+                    to="/onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <Sparkles size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
+                </Link>
             </nav>
 
             <div className="p-4 border-t border-slate-100">

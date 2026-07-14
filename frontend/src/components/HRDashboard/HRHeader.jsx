@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList, Building2, BarChart2 } from 'lucide-react';
 
 const HRHeader = ({ 
     activeTab, 
@@ -17,7 +17,17 @@ const HRHeader = ({
                 {activeTab === 'employees' && <Users size={24} className="text-indigo-600" />}
                 {activeTab === 'leaves' && <CalendarCheck size={24} className="text-indigo-600" />}
                 {activeTab === 'attendance' && <ClipboardList size={24} className="text-indigo-600" />}
-                {activeTab === 'dashboard' ? 'Overview' : activeTab === 'employees' ? 'Staff Directory' : activeTab === 'leaves' ? 'Leave Requests' : 'Attendance Master'}
+                {activeTab === 'departments' && <Building2 size={24} className="text-indigo-600" />}
+                {activeTab === 'reports' && <BarChart2 size={24} className="text-indigo-600" />}
+
+                {activeTab === 'dashboard' ? 'Overview' 
+                : activeTab === 'employees' ? 'Staff Directory' 
+                : activeTab === 'leaves' ? 'Leave Requests' 
+                : activeTab === 'attendance' ? 'Attendance Master' 
+                : activeTab === 'departments' ? 'Departments'      
+                : activeTab === 'profile' ? 'My Profile'           
+                : activeTab === 'reports' ? 'User Report Center'
+                : ''}
             </h2>
 
             <div className="flex items-center gap-4">

@@ -14,13 +14,15 @@ import AddEmployeePage from '../components/HRDashboard/AddEmployeePage';
 import EmployeeDetailsPage from '../components/HRDashboard/EmployeeDetailsPage';
 import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import HRDepartments from '../components/HRDashboard/HRDepartments';
+import HRReports from '../components/HRDashboard/HRReports'; // 👈 NEW
 
 const HRDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const [leaves, setLeaves] = useState([]);
     const [attendance, setAttendance] = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'leaves', 'attendance', 'employees'
+    const [activeTab, setActiveTab] = useState('dashboard');
     const [isAddingEmployee, setIsAddingEmployee] = useState(false);
     const [isEditingEmployee, setIsEditingEmployee] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -183,6 +185,13 @@ const HRDashboard = () => {
                                 user={user} 
                                 onBack={() => setActiveTab('dashboard')} 
                             />
+                        )}
+                        {activeTab === 'departments' && (
+                            <HRDepartments />
+                        )}
+                        {/* 👇 NEW REPORTS TAB */}
+                        {activeTab === 'reports' && (
+                            <HRReports employees={employees} />
                         )}
                     </AnimatePresence>
                 </div>
