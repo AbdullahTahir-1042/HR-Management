@@ -21,7 +21,7 @@ const getDb = async (c) => {
         let uri = c.env.MONGODB_URI;
         if (uri.includes('cluster0.vgojld9.mongodb.net')) {
             const authPart = uri.split('@')[0].replace('mongodb+srv://', '');
-            uri = `mongodb://${authPart}@ac-t55ayns-shard-00-00.vgojld9.mongodb.net:27017,ac-t55ayns-shard-00-01.vgojld9.mongodb.net:27017,ac-t55ayns-shard-00-02.vgojld9.mongodb.net:27017/?ssl=true&replicaSet=atlas-c1l74f-shard-0&authSource=admin&retryWrites=false`;
+            uri = `mongodb://${authPart}@ac-t55ayns-shard-00-01.vgojld9.mongodb.net:27017/hr-management?ssl=true&authSource=admin&directConnection=true`;
         }
 
         mongoClient = new MongoClient(uri, {
