@@ -50,6 +50,10 @@ const UserSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
+    },
+    fcmToken: {
+        type: String,
+        default: null
     }
 }, { timestamps: true });
 

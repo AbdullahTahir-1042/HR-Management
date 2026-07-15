@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, Calendar, Bell, User, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     return (
@@ -33,13 +33,37 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <CalendarCheck size={20} />
                     <span className="text-sm">Leave Requests</span>
                 </button>
+
+                <button 
+                    onClick={() => setActiveTab('latecomers')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'latecomers' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Clock size={20} />
+                    <span className="text-sm">Late Comers</span>
+                </button>
+
+
                 <button 
                     onClick={() => setActiveTab('attendance')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
-                    <Clock size={20} />
+                    <Calendar size={20} />
                     <span className="text-sm">Attendance</span>
                 </button>
+                <button 
+                    onClick={() => setActiveTab('announcements')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Bell size={20} />
+                    <span className="text-sm">Announcements</span>
+                </button>
+                <Link 
+                    to="/practice-onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <BookOpen size={20} />
+                    <span className="text-sm">practice-onboarding</span>
+                </Link>
             </nav>
 
             <div className="p-4 border-t border-slate-100">

@@ -1,5 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, Clock, Calendar, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, LogOut, User, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     return (
@@ -33,6 +34,13 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <Calendar size={20} />
                     <span className="text-sm">Request Leave</span>
                 </button>
+                <Link 
+                    to="/practice-onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <BookOpen size={20} />
+                    <span className="text-sm">practice-onboarding</span>
+                </Link>
             </nav>
 
             <div className="p-4 border-t border-slate-100">

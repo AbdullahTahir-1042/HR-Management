@@ -40,3 +40,8 @@ Thumbs.db
 # Misc
 .cache/
 coverage/
+
+
+# Firebase Admin Private Key (CRITICAL: DO NOT COMMIT)
+serviceAccountKey.json
+backend/config/serviceAccountKey.json
