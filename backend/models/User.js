@@ -50,6 +50,10 @@ const UserSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
+    },
+    leaveBalance: {
+        type: Number,
+        default: 40
     }
 }, { timestamps: true });
 

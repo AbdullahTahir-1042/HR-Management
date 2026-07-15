@@ -25,6 +25,10 @@ app.get('/', (req, res) => res.send('Server is running'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/leaves', require('./routes/leave'));
+app.use('/api/holidays', require('./routes/holidays'));
+app.use('/api/hr-requests', require('./routes/hrRequests'));
+app.use('/api/onboarding', require('./routes/onboarding'));
+app.use('/api/practice', require('./routes/practice'));
 
 const PORT = process.env.PORT || 5000;
 

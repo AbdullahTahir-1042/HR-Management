@@ -18,6 +18,11 @@ const LeaveRequestSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    leaveType: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'LeaveType',
+        required: true
+    },
     status: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],

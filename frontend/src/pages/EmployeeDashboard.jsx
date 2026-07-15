@@ -9,6 +9,8 @@ import EmployeeHeader from '../components/EmployeeDashboard/EmployeeHeader';
 import EmployeeOverview from '../components/EmployeeDashboard/EmployeeOverview';
 import EmployeeAttendance from '../components/EmployeeDashboard/EmployeeAttendance';
 import EmployeeLeaves from '../components/EmployeeDashboard/EmployeeLeaves';
+import EmployeeHolidays from '../components/EmployeeDashboard/EmployeeHolidays';
+import EmployeeHRRequests from '../components/EmployeeDashboard/EmployeeHRRequests';
 import UpdateProfilePage from '../components/UpdateProfilePage';
 
 const EmployeeDashboard = () => {
@@ -17,25 +19,61 @@ const EmployeeDashboard = () => {
     const [attendance, setAttendance] = useState(null);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [leaves, setLeaves] = useState([]);
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' });
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'attendance', 'leaves'
-    
+    const [holidays, setHolidays] = useState([]);
+    const [leaveBalances, setLeaveBalances] = useState([]);
+    const [leaveTypes, setLeaveTypes] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // ── UC-09: HR Requests state ───────────────────────────────────────────────
+    const [hrRequests, setHrRequests] = useState([]);
+    const [hrRequestSubmitting, setHrRequestSubmitting] = useState(false);
+
+    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
+    const [activeTab, setActiveTab] = useState('dashboard');
+
     // Filters
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
     const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
 
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            const [profile, todayAtt, history, leavesRes, holidaysRes, hrReqs, balances, types] = await Promise.all([
+                axios.get(`${import.meta.env.VITE_API_URL}/auth/user`),
+                axios.get(`${import.meta.env.VITE_API_URL}/attendance/status`),
+                axios.get(`${import.meta.env.VITE_API_URL}/attendance/my-history`),
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/my-leaves`),
+                axios.get(`${import.meta.env.VITE_API_URL}/holidays`),
+                axios.get(`${import.meta.env.VITE_API_URL}/hr-requests/my-requests`),
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/balances`),
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`)
+            ]);
+            
+            setFullUser(profile.data);
+            updateUser(profile.data);
+            setAttendance(todayAtt.data);
+            setAttendanceHistory(history.data);
+            setLeaves(leavesRes.data);
+            setHolidays(holidaysRes.data);
+            setHrRequests(hrReqs.data);
+            setLeaveBalances(balances.data);
+            setLeaveTypes(types.data);
+        } catch (err) {
+            console.error("Dashboard parallel fetch failed", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        fetchUserProfile();
-        fetchTodayAttendance();
-        fetchMyLeaves();
-        fetchAttendanceHistory();
+        fetchDashboardData();
     }, []);
 
     const fetchUserProfile = async () => {
         try {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/user`);
             setFullUser(res.data);
-            updateUser(res.data); // Update global state too
+            updateUser(res.data);
         } catch (err) {
             console.error("Error fetching profile:", err);
         }
@@ -56,6 +94,59 @@ const EmployeeDashboard = () => {
         setLeaves(res.data);
     };
 
+    const fetchLeaveBalances = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/balances`);
+            setLeaveBalances(res.data);
+        } catch (err) {
+            console.error('Error fetching leave balances:', err);
+        }
+    };
+
+    const fetchLeaveTypes = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`);
+            setLeaveTypes(res.data);
+        } catch (err) {
+            console.error('Error fetching leave types:', err);
+        }
+    };
+
+    // ── UC-07: Fetch all company holidays ─────────────────────────────────────
+    const fetchHolidays = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/holidays`);
+            setHolidays(res.data);
+        } catch (err) {
+            console.error('Error fetching holidays:', err);
+        }
+    };
+
+    // ── UC-09: Fetch employee's own HR requests ────────────────────────────────
+    const fetchHRRequests = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/hr-requests/my-requests`);
+            setHrRequests(res.data);
+        } catch (err) {
+            console.error('Error fetching HR requests:', err);
+        }
+    };
+
+    // ── UC-09: Submit new HR request ──────────────────────────────────────────
+    const handleSubmitHRRequest = async (form) => {
+        setHrRequestSubmitting(true);
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/hr-requests`, form);
+            await fetchHRRequests();
+            setHrRequestSubmitting(false);
+            return true;
+        } catch (err) {
+            alert(err.response?.data?.msg || 'Error submitting request');
+            setHrRequestSubmitting(false);
+            return false;
+        }
+    };
+
     const handleCheckIn = async () => {
         await axios.post(`${import.meta.env.VITE_API_URL}/attendance/check-in`);
         fetchTodayAttendance();
@@ -70,7 +161,11 @@ const EmployeeDashboard = () => {
 
     const handleApplyLeave = async (e) => {
         e.preventDefault();
-        
+
+        if (!leaveForm.leaveTypeId) {
+            return alert("Please select a leave type.");
+        }
+
         const start = new Date(leaveForm.startDate);
         const end = new Date(leaveForm.endDate);
 
@@ -95,20 +190,32 @@ const EmployeeDashboard = () => {
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/leaves/apply`, leaveForm);
             alert('Leave request submitted!');
-            setLeaveForm({ startDate: '', endDate: '', reason: '' });
+            setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
             fetchMyLeaves();
+            fetchLeaveBalances();
         } catch (err) {
             alert(err.response?.data?.msg || 'Error applying for leave');
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Dashboard Data...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex min-h-screen bg-slate-50 font-sans">
-            <EmployeeSidebar 
-                activeTab={activeTab} 
-                setActiveTab={setActiveTab} 
-                user={fullUser || authUser} 
-                logout={logout} 
+            <EmployeeSidebar
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                user={fullUser || authUser}
+                logout={logout}
             />
 
             <main className="flex-1 overflow-y-auto">
@@ -116,40 +223,66 @@ const EmployeeDashboard = () => {
 
                 <div className="p-8 max-w-7xl mx-auto">
                     <AnimatePresence mode="wait">
+
                         {activeTab === 'dashboard' && (
-                            <EmployeeOverview 
-                                user={fullUser || authUser} 
-                                attendance={attendance} 
-                                leaves={leaves} 
-                                setActiveTab={setActiveTab} 
+                            <EmployeeOverview
+                                user={fullUser || authUser}
+                                attendance={attendance}
+                                leaves={leaves}
+                                holidays={holidays}
+                                setActiveTab={setActiveTab}
                             />
                         )}
+
                         {activeTab === 'attendance' && (
-                            <EmployeeAttendance 
-                                attendance={attendance} 
-                                history={attendanceHistory.filter(a => attendanceDateFilter ? a.date === attendanceDateFilter : true)}
+                            <EmployeeAttendance
+                                attendance={attendance}
+                                history={attendanceHistory.filter(a =>
+                                    attendanceDateFilter ? a.date === attendanceDateFilter : true
+                                )}
                                 dateFilter={attendanceDateFilter}
                                 setDateFilter={setAttendanceDateFilter}
-                                handleCheckIn={handleCheckIn} 
-                                handleCheckOut={handleCheckOut} 
+                                handleCheckIn={handleCheckIn}
+                                handleCheckOut={handleCheckOut}
                             />
                         )}
+
                         {activeTab === 'leaves' && (
-                            <EmployeeLeaves 
-                                leaveForm={leaveForm} 
-                                setLeaveForm={setLeaveForm} 
-                                handleApplyLeave={handleApplyLeave} 
-                                leaves={leaves.filter(l => leaveStatusFilter === 'all' ? true : l.status === leaveStatusFilter)}
+                            <EmployeeLeaves
+                                leaveForm={leaveForm}
+                                setLeaveForm={setLeaveForm}
+                                handleApplyLeave={handleApplyLeave}
+                                leaves={leaves.filter(l =>
+                                    leaveStatusFilter === 'all' ? true : l.status === leaveStatusFilter
+                                )}
                                 statusFilter={leaveStatusFilter}
                                 setStatusFilter={setLeaveStatusFilter}
+                                leaveBalances={leaveBalances}
+                                leaveTypes={leaveTypes}
                             />
                         )}
+
+                        {/* ── UC-07: Holiday Calendar ── */}
+                        {activeTab === 'holidays' && (
+                            <EmployeeHolidays holidays={holidays} />
+                        )}
+
+                        {/* ── UC-09: HR Requests ── */}
+                        {activeTab === 'hr-requests' && (
+                            <EmployeeHRRequests
+                                requests={hrRequests}
+                                onSubmit={handleSubmitHRRequest}
+                                submitting={hrRequestSubmitting}
+                            />
+                        )}
+
                         {activeTab === 'profile' && (
-                            <UpdateProfilePage 
-                                user={fullUser || authUser} 
-                                onBack={() => setActiveTab('dashboard')} 
+                            <UpdateProfilePage
+                                user={fullUser || authUser}
+                                onBack={() => setActiveTab('dashboard')}
                             />
                         )}
+
                     </AnimatePresence>
                 </div>
             </main>
