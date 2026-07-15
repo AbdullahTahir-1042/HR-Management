@@ -17,7 +17,8 @@ const EmployeeDashboard = () => {
     const [attendance, setAttendance] = useState(null);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [leaves, setLeaves] = useState([]);
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' });
+    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
+    const [leaveTypes, setLeaveTypes] = useState([]);
     const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'attendance', 'leaves'
     
     // Filters
@@ -29,6 +30,7 @@ const EmployeeDashboard = () => {
         fetchTodayAttendance();
         fetchMyLeaves();
         fetchAttendanceHistory();
+        fetchLeaveTypes();
     }, []);
 
     const fetchUserProfile = async () => {
@@ -54,6 +56,18 @@ const EmployeeDashboard = () => {
     const fetchMyLeaves = async () => {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/my-leaves`);
         setLeaves(res.data);
+    };
+
+    const fetchLeaveTypes = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`);
+            setLeaveTypes(res.data);
+            if (res.data.length > 0) {
+                setLeaveForm(prev => ({ ...prev, leaveTypeId: res.data[0]._id }));
+            }
+        } catch (err) {
+            console.error("Error fetching leave types:", err);
+        }
     };
 
     const handleCheckIn = async () => {
@@ -95,7 +109,7 @@ const EmployeeDashboard = () => {
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/leaves/apply`, leaveForm);
             alert('Leave request submitted!');
-            setLeaveForm({ startDate: '', endDate: '', reason: '' });
+            setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: leaveTypes[0]?._id || '' });
             fetchMyLeaves();
         } catch (err) {
             alert(err.response?.data?.msg || 'Error applying for leave');
@@ -142,6 +156,7 @@ const EmployeeDashboard = () => {
                                 leaves={leaves.filter(l => leaveStatusFilter === 'all' ? true : l.status === leaveStatusFilter)}
                                 statusFilter={leaveStatusFilter}
                                 setStatusFilter={setLeaveStatusFilter}
+                                leaveTypes={leaveTypes}
                             />
                         )}
                         {activeTab === 'profile' && (
