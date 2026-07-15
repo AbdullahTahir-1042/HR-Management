@@ -29,6 +29,7 @@ app.use('/api/holidays', require('./routes/holidays'));
 app.use('/api/hr-requests', require('./routes/hrRequests'));
 app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/practice', require('./routes/practice'));
+app.use('/api/announcements', require('./routes/announcements'));
 
 const PORT = process.env.PORT || 5000;
 

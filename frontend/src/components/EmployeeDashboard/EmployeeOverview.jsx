@@ -1,8 +1,11 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { User, ArrowRight, Clock, Calendar, TrendingUp, PartyPopper } from 'lucide-react';
 
 const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTab }) => {
+import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp } from 'lucide-react';
+
+const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setActiveTab }) => {
     const todayAttendance = attendance;
 
     const salaryStats = useMemo(() => {
@@ -81,12 +84,18 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
                             ? todayAttendance.checkOut
                                 ? "You've completed your shift for today."
                                 : "Don't forget to check out when you leave."
+                        {todayAttendance 
+                            ? (todayAttendance.checkOut 
+                                ? "You've completed your shift for today." 
+                                : "Don't forget to check out when you leave.") 
                             : "Welcome! Start your day by marking your attendance."}
                     </p>
                     <div className="mt-4 flex gap-3">
                         {!todayAttendance ? (
                             <button
                                 onClick={() => setActiveTab('attendance')}
+                            <button 
+                                onClick={() => setActiveTab('attendance')} 
                                 className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
                             >
                                 Check In Now <ArrowRight size={16} />
@@ -94,6 +103,8 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
                         ) : !todayAttendance.checkOut ? (
                             <button
                                 onClick={() => setActiveTab('attendance')}
+                            <button 
+                                onClick={() => setActiveTab('attendance')} 
                                 className="bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
                             >
                                 Check Out <ArrowRight size={16} />
@@ -101,6 +112,8 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
                         ) : (
                             <button
                                 onClick={() => setActiveTab('leaves')}
+                            <button 
+                                onClick={() => setActiveTab('leaves')} 
                                 className="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center gap-2"
                             >
                                 Request Leave <Calendar size={16} />
@@ -115,6 +128,10 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
 
                 {/* Today's Status */}
                 <motion.div
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
+
+                {/* Today Status Card */}
+                <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('attendance')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
@@ -132,6 +149,15 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
                         }`}>
                             {todayAttendance
                                 ? todayAttendance.checkOut ? 'Completed' : 'On Shift'
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
+                            todayAttendance 
+                                ? (todayAttendance.checkOut 
+                                    ? 'bg-emerald-50 text-emerald-600' 
+                                    : 'bg-amber-50 text-amber-600') 
+                                : 'bg-slate-50 text-slate-500'
+                        }`}>
+                            {todayAttendance 
+                                ? (todayAttendance.checkOut ? 'Completed' : 'On Shift') 
                                 : 'Absent'}
                         </span>
                     </div>
@@ -142,6 +168,10 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
                                 ? todayAttendance.checkIn
                                     ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                     : '-'
+                            {todayAttendance 
+                                ? (todayAttendance.checkIn 
+                                    ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                                    : '-') 
                                 : 'Not Checked In'}
                         </p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
@@ -150,6 +180,8 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
 
                 {/* Leaves Taken */}
                 <motion.div
+                {/* Leaves Month Card */}
+                <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('leaves')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
@@ -171,6 +203,8 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
 
                 {/* Net Salary */}
                 <motion.div
+                {/* Net Salary Card */}
+                <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('profile')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-emerald-200"
@@ -192,6 +226,26 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTa
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
                     </div>
                 </motion.div>
+
+            
+                <motion.div 
+                    whileHover={{ y: -4 }}
+                    onClick={() => setActiveTab('announcements')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                >
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <Megaphone size={20} />
+                        </div>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-indigo-100 transition-colors">All</span>
+                    </div>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Announcements</p>
+                    <div className="flex items-end justify-between mt-0.5">
+                        <p className="text-xl font-bold text-slate-900">{announcements.length}</p>
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                    </div>
+                </motion.div>
+
             </div>
 
             {/* ── UC-07: Upcoming Holiday Banner ── */}

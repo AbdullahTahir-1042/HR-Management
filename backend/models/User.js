@@ -54,6 +54,9 @@ const UserSchema = new mongoose.Schema({
     leaveBalance: {
         type: Number,
         default: 40
+    fcmToken: {
+        type: String,
+        default: null
     }
 }, { timestamps: true });
 

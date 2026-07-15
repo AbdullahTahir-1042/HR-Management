@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion } from 'framer-motion';
 import { Clock, LogIn, LogOut, CheckCircle, ClipboardList } from 'lucide-react';
 

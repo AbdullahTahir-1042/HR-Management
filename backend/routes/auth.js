@@ -35,7 +35,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
         await user.save();
 
         const payload = { user: { id: user.id } };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+        // FIX: Changed from '1h' to '7d'
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
             res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
         });
@@ -65,7 +66,8 @@ router.post('/login', async (req, res) => {
         }
 
         const payload = { user: { id: user.id } };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+        // FIX: Changed from '1h' to '7d'
+        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
             res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
         });
@@ -167,6 +169,32 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
     } catch (err) {
         console.error('Delete Error:', err.message);
         res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/auth/fcm-token
+// @desc    Save the employee's browser push notification token
+// @access  Private
+router.put('/fcm-token', auth, async (req, res) => {
+    const { token } = req.body;
+    
+    if (!token) {
+        return res.status(400).json({ msg: 'Token is required' });
+    }
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        user.fcmToken = token;
+        await user.save();
+        
+        res.json({ msg: 'Notification token synced successfully' });
+    } catch (err) {
+        console.error('Error saving FCM token:', err);
+        res.status(500).send('Server Error syncing token');
     }
 });
 
