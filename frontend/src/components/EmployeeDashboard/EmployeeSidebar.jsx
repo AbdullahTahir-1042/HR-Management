@@ -1,4 +1,5 @@
 import React from 'react';
+import { LayoutDashboard, Clock, Calendar, LogOut, User, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Clock, Calendar, LogOut, User, PartyPopper, MessageSquare, GraduationCap } from 'lucide-react';
 import { LayoutDashboard, Clock, Calendar, LogOut, User, BookOpen } from 'lucide-react';
@@ -38,6 +39,13 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Request Leave</span>
                 </button>
 
+                {/* 👇 NEW ONBOARDING LINK */}
+                <Link 
+                    to="/onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <Sparkles size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
                 {/* ── UC-07: Holiday Calendar ── */}
                 <button
                     onClick={() => setActiveTab('holidays')}

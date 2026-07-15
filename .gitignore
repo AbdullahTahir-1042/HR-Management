@@ -41,6 +41,8 @@ Thumbs.db
 .cache/
 coverage/
 
+package-lock.json
+yarn.lock
 
 # Firebase Admin Private Key (CRITICAL: DO NOT COMMIT)
 serviceAccountKey.json

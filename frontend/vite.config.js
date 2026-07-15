@@ -18,6 +18,14 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('lucide-react')) {
+              return 'lucide-icons';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            // Group other vendor dependencies together
+            return 'vendor';
             if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('react')) {
               return 'vendor-react';
             }

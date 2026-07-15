@@ -32,6 +32,25 @@ export const AuthProvider = ({ children }) => {
         verifyToken();
     }, [token]);
 
+    // 👇 Global Interceptor to handle expired/invalid JWT tokens (HTTP 401)
+    useEffect(() => {
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && error.response.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setToken(null);
+                    setUser(null);
+                }
+                return Promise.reject(error);
+            }
+        );
+        return () => {
+            axios.interceptors.response.eject(interceptor);
+        };
+    }, []);
+
     const login = async (email, password) => {
         console.log('Logging in to:', `${import.meta.env.VITE_API_URL}/auth/login`);
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { email, password });

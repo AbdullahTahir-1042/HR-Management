@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, Building2, Sparkles, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, CalendarDays, ClipboardList, GraduationCap, CalendarRange } from 'lucide-react';
 import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, Calendar, Bell, User, BookOpen } from 'lucide-react';
@@ -24,6 +25,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Dashboard</span>
                 </button>
 
+                <button 
                 <button
                     onClick={() => setActiveTab('employees')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -32,6 +34,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Employees</span>
                 </button>
 
+                <button 
                 <button
                     onClick={() => setActiveTab('leaves')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -66,6 +69,31 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Attendance</span>
                 </button>
 
+                {/* 👇 DEPARTMENTS BUTTON */}
+                <button 
+                    onClick={() => setActiveTab('departments')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'departments' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Building2 size={20} />
+                    <span className="text-sm">Departments</span>
+                </button>
+
+                {/* 👇 REPORTS BUTTON */}
+                <button 
+                    onClick={() => setActiveTab('reports')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <BarChart2 size={20} />
+                    <span className="text-sm">User Report</span>
+                </button>
+
+                {/* 👇 ONBOARDING LINK */}
+                <Link 
+                    to="/onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <Sparkles size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
                 <button
                     onClick={() => setActiveTab('holidays')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}

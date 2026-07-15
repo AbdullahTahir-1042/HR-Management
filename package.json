@@ -1,4 +1,6 @@
 {
+  "devDependencies": {
+    "wrangler": "^4.110.0"
   "dependencies": {
     "firebase": "^12.16.0"
   }

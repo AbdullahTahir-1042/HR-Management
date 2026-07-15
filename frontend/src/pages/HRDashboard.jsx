@@ -17,6 +17,8 @@ import AddEmployeePage from '../components/HRDashboard/AddEmployeePage';
 import EmployeeDetailsPage from '../components/HRDashboard/EmployeeDetailsPage';
 import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import HRDepartments from '../components/HRDashboard/HRDepartments';
+import HRReports from '../components/HRDashboard/HRReports'; // 👈 NEW
 import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
 import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
 import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
@@ -370,6 +372,13 @@ const HRDashboard = () => {
                                 user={user}
                                 onBack={() => setActiveTab('dashboard')}
                             />
+                        )}
+                        {activeTab === 'departments' && (
+                            <HRDepartments />
+                        )}
+                        {/* 👇 NEW REPORTS TAB */}
+                        {activeTab === 'reports' && (
+                            <HRReports employees={employees} />
                         )}
 
             <HRSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} logout={logout} />

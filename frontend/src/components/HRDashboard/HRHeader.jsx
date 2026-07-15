@@ -1,4 +1,5 @@
 import React from 'react';
+import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList, Building2, BarChart2 } from 'lucide-react';
 import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList, CalendarDays } from 'lucide-react';
 
 const HRHeader = ({ 
@@ -13,6 +14,21 @@ const HRHeader = ({
     return (
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 sticky top-0 z-40 flex justify-between items-center">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                {activeTab === 'dashboard' && <LayoutDashboard size={24} className="text-indigo-600" />}
+                {activeTab === 'employees' && <Users size={24} className="text-indigo-600" />}
+                {activeTab === 'leaves' && <CalendarCheck size={24} className="text-indigo-600" />}
+                {activeTab === 'attendance' && <ClipboardList size={24} className="text-indigo-600" />}
+                {activeTab === 'departments' && <Building2 size={24} className="text-indigo-600" />}
+                {activeTab === 'reports' && <BarChart2 size={24} className="text-indigo-600" />}
+
+                {activeTab === 'dashboard' ? 'Overview' 
+                : activeTab === 'employees' ? 'Staff Directory' 
+                : activeTab === 'leaves' ? 'Leave Requests' 
+                : activeTab === 'attendance' ? 'Attendance Master' 
+                : activeTab === 'departments' ? 'Departments'      
+                : activeTab === 'profile' ? 'My Profile'           
+                : activeTab === 'reports' ? 'User Report Center'
+                : ''}
                 {activeTab === 'dashboard'  && <LayoutDashboard size={24} className="text-indigo-600" />}
                 {activeTab === 'employees'  && <Users           size={24} className="text-indigo-600" />}
                 {activeTab === 'leaves'     && <CalendarCheck   size={24} className="text-indigo-600" />}
