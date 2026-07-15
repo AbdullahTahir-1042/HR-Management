@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck, Calendar, DollarSign, User, Phone, Edit3, Wallet, AlertCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck, Calendar, DollarSign, User, Phone, Edit3, Wallet, AlertCircle, Trash2, ClipboardList } from 'lucide-react';
 
-const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit, onDelete }) => {
+const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
     // Safety check for employee
     if (!employee) return (
         <div className="p-16 text-center text-slate-400">
@@ -16,6 +16,15 @@ const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit, onDelete }
             const date = new Date(dateStr);
             return date.toLocaleDateString('en-PK', { day: '2-digit', month: 'long', year: 'numeric' });
         } catch (e) { return '-'; }
+    };
+
+    const calculateDays = (start, end) => {
+        if (!start || !end) return 0;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        const diffTime = Math.abs(endDate - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        return diffDays;
     };
 
     const formatSalary = (amount) => {
@@ -71,6 +80,53 @@ const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit, onDelete }
             hasSalary: baseSalary > 0
         };
     }, [employee._id, employee.salary, leaves]);
+
+    // Calculate leave balances per type
+    const leaveBalances = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const safeLeaves = Array.isArray(leaves) ? leaves : [];
+        const safeTypes = Array.isArray(leaveTypes) ? leaveTypes : [];
+
+        // Filter approved leaves for this employee in the current calendar year
+        const employeeApprovedLeaves = safeLeaves.filter(l => {
+            if (!l.startDate || !l.employee) return false;
+            const leaveEmpId = (typeof l.employee === 'object' && l.employee !== null) ? (l.employee._id || l.employee.id) : l.employee;
+            const isEmployee = String(leaveEmpId) === String(employee._id);
+            const leaveDate = new Date(l.startDate);
+            const isThisYear = leaveDate.getFullYear() === currentYear;
+            return isEmployee && l.status === 'approved' && isThisYear;
+        });
+
+        // Sum days per leaveType
+        const usedMap = {};
+        employeeApprovedLeaves.forEach(l => {
+            const days = calculateDays(l.startDate, l.endDate);
+            if (l.leaveType) {
+                const typeIdStr = l.leaveType._id ? l.leaveType._id.toString() : l.leaveType.toString();
+                usedMap[typeIdStr] = (usedMap[typeIdStr] || 0) + days;
+            }
+        });
+
+        return safeTypes.map(t => {
+            const used = usedMap[t._id.toString()] || 0;
+            return {
+                leaveType: t,
+                allocated: t.quota,
+                used,
+                remaining: Math.max(0, t.quota - used)
+            };
+        });
+    }, [employee._id, leaves, leaveTypes]);
+
+    // All leaves of this employee for history
+    const employeeLeaves = useMemo(() => {
+        const safeLeaves = Array.isArray(leaves) ? leaves : [];
+        return safeLeaves.filter(l => {
+            if (!l.employee) return false;
+            const leaveEmpId = (typeof l.employee === 'object' && l.employee !== null) ? (l.employee._id || l.employee.id) : l.employee;
+            return String(leaveEmpId) === String(employee._id);
+        });
+    }, [employee._id, leaves]);
 
     const stats = [
         { label: 'Department', value: employee.department || 'Development', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -241,6 +297,85 @@ const EmployeeDetailsPage = ({ employee, leaves = [], onBack, onEdit, onDelete }
                                 <InfoItem icon={Calendar} label="Joining Date" value={formatDate(employee.createdAt)} />
                                 <InfoItem icon={DollarSign} label="Monthly Salary" value={formatSalary(employee.salary)} />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Leave Balances Summary */}
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="p-8">
+                            <h3 className="text-sm font-bold text-indigo-600 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-4">
+                                <Calendar size={18} /> Leave Balance Summary
+                            </h3>
+                            {leaveBalances.length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-4">No active leave type configurations found.</p>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {leaveBalances.map(b => (
+                                        <div key={b.leaveType._id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between hover:border-indigo-100 hover:shadow-sm transition-all duration-200">
+                                            <div>
+                                                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                                                    {b.leaveType.name}
+                                                </span>
+                                                <p className="text-2xl font-black text-slate-800 mt-3">{b.remaining} Days</p>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                                <span>Used: {b.used}d</span>
+                                                <span>Allocated: {b.allocated}d</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Leave History */}
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="p-8">
+                            <h3 className="text-sm font-bold text-indigo-600 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-4">
+                                <ClipboardList size={18} /> Leave Request History
+                            </h3>
+                            {employeeLeaves.length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-6">No leave requests found for this employee.</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs">
+                                        <thead>
+                                            <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold tracking-wider">
+                                                <th className="py-2.5">Type</th>
+                                                <th className="py-2.5">Duration</th>
+                                                <th className="py-2.5 text-center">Days</th>
+                                                <th className="py-2.5">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {employeeLeaves.slice(0, 5).map(l => (
+                                                <tr key={l._id} className="hover:bg-slate-50/50 transition-colors">
+                                                    <td className="py-3 pr-2">
+                                                        <span className="font-bold text-slate-800 bg-indigo-50/30 border border-indigo-100/50 px-2 py-0.5 rounded text-[10px]">
+                                                            {l.leaveType?.name || 'Annual Leave'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3 text-slate-600 font-medium">{formatDate(l.startDate)} - {formatDate(l.endDate)}</td>
+                                                    <td className="py-3 text-center">
+                                                        <span className="bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-600">
+                                                            {calculateDays(l.startDate, l.endDate)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${
+                                                            l.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                                            l.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                                                        }`}>
+                                                            {l.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

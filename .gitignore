@@ -43,3 +43,7 @@ coverage/
 
 package-lock.json
 yarn.lock
+
+# Firebase Admin Private Key (CRITICAL: DO NOT COMMIT)
+serviceAccountKey.json
+backend/config/serviceAccountKey.json

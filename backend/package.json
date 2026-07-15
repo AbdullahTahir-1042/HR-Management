@@ -19,6 +19,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
+    "hono": "^4.12.30",
+    "firebase-admin": "^14.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.1",
     "nodemon": "^3.1.14"

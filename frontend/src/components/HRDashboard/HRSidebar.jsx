@@ -1,8 +1,12 @@
 import React from 'react';
 import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, Building2, Sparkles, BarChart2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, CalendarDays, ClipboardList, GraduationCap, CalendarRange } from 'lucide-react';
+import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, Calendar, Bell, User, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
+    const navigate = useNavigate();
     return (
         <aside className="w-64 bg-white border-r border-slate-200 flex flex-col sticky top-0 h-screen z-50">
             <div className="p-6 flex items-center gap-3 border-b border-slate-100">
@@ -13,7 +17,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
             </div>
 
             <nav className="flex-1 p-4 space-y-1 mt-4">
-                <button 
+                <button
                     onClick={() => setActiveTab('dashboard')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
@@ -22,6 +26,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 </button>
 
                 <button 
+                <button
                     onClick={() => setActiveTab('employees')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
@@ -30,6 +35,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 </button>
 
                 <button 
+                <button
                     onClick={() => setActiveTab('leaves')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
@@ -37,11 +43,29 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Leave Requests</span>
                 </button>
 
+                <button
+                    onClick={() => setActiveTab('leave-types')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leave-types' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <CalendarRange size={20} />
+                    <span className="text-sm">Leave Types</span>
+                </button>
+
+                <button
+                <button 
+                    onClick={() => setActiveTab('latecomers')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'latecomers' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Clock size={20} />
+                    <span className="text-sm">Late Comers</span>
+                </button>
+
+
                 <button 
                     onClick={() => setActiveTab('attendance')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
-                    <Clock size={20} />
+                    <Calendar size={20} />
                     <span className="text-sm">Attendance</span>
                 </button>
 
@@ -70,11 +94,49 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 >
                     <Sparkles size={20} />
                     <span className="text-sm">Practice Onboarding</span>
+                <button
+                    onClick={() => setActiveTab('holidays')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <CalendarDays size={20} />
+                    <span className="text-sm">Holidays</span>
+                </button>
+
+                {/* ── UC-09: HR Requests ── */}
+                <button
+                    onClick={() => setActiveTab('hr-requests')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <ClipboardList size={20} />
+                    <span className="text-sm">HR Requests</span>
+                </button>
+
+                {/* ── Practice Onboarding ── */}
+                <button
+                    onClick={() => navigate('/practice-onboarding')}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <GraduationCap size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('announcements')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Bell size={20} />
+                    <span className="text-sm">Announcements</span>
+                </button>
+                <Link 
+                    to="/practice-onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <BookOpen size={20} />
+                    <span className="text-sm">practice-onboarding</span>
                 </Link>
             </nav>
 
             <div className="p-4 border-t border-slate-100">
-                <div 
+                <div
                     onClick={() => setActiveTab('profile')}
                     className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"
                 >
