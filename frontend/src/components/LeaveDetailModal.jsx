@@ -102,8 +102,16 @@ const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Status</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leave Type</p>
                                     <div className="flex items-center gap-2">
+                                        <span className="font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg text-xs">
+                                            {leave.leaveType?.name || 'Annual Leave'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="space-y-1 text-right">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Status</p>
+                                    <div className="flex items-center gap-2 justify-end">
                                         {leave.status === 'approved' && <CheckCircle size={16} className="text-emerald-500" />}
                                         {leave.status === 'pending' && <Clock size={16} className="text-amber-500" />}
                                         {leave.status === 'rejected' && <AlertCircle size={16} className="text-rose-500" />}

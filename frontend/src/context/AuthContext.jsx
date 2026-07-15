@@ -9,15 +9,27 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (token) {
-            axios.defaults.headers.common['x-auth-token'] = token;
-            // In a real app, you'd verify the token with the backend here
-            const storedUser = JSON.parse(localStorage.getItem('user'));
-            if (storedUser) setUser(storedUser);
-        } else {
-            delete axios.defaults.headers.common['x-auth-token'];
-        }
-        setLoading(false);
+        const verifyToken = async () => {
+            if (token) {
+                axios.defaults.headers.common['x-auth-token'] = token;
+                try {
+                    const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/user`);
+                    setUser(res.data);
+                    localStorage.setItem('user', JSON.stringify(res.data));
+                } catch (err) {
+                    console.error("Token verification failed", err);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setToken(null);
+                    setUser(null);
+                }
+            } else {
+                delete axios.defaults.headers.common['x-auth-token'];
+                setUser(null);
+            }
+            setLoading(false);
+        };
+        verifyToken();
     }, [token]);
 
     const login = async (email, password) => {
@@ -42,6 +54,23 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(newUser));
         setUser(newUser);
     };
+
+    // Auto signout on 401 Token Expiration/Invalidation
+    useEffect(() => {
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && error.response.status === 401) {
+                    logout();
+                    window.location.href = '/login';
+                }
+                return Promise.reject(error);
+            }
+        );
+        return () => {
+            axios.interceptors.response.eject(interceptor);
+        };
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
