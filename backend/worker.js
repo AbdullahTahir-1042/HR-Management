@@ -15,7 +15,7 @@ const authMiddleware = async (c, next) => {
         return c.json({ msg: 'No token, authorization denied' }, 401);
     }
     try {
-        const decoded = await verify(token, c.env.JWT_SECRET || 'your_super_secret_jwt_key_123');
+        const decoded = await verify(token, c.env.JWT_SECRET, 'HS256');
         c.set('user', decoded.user);
         await next();
     } catch (err) {
@@ -91,7 +91,7 @@ app.post('/auth/login', async (c) => {
         user: { id: user.id, name: user.name, email: user.email, role: user.role },
         exp: Math.floor(Date.now() / 1000) + 60 * 60 // 1 hour
     };
-    const token = await sign(payload, c.env.JWT_SECRET || 'your_super_secret_jwt_key_123');
+    const token = await sign(payload, c.env.JWT_SECRET, 'HS256');
     return c.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 

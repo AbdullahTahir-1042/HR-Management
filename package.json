@@ -1,0 +1,16 @@
+{
+  "name": "hr-management",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HR Management System - Cloudflare Workers + D1 + React",
+  "scripts": {
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "db:init": "wrangler d1 execute hr-management-db --remote --file=./schema.sql"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "bcryptjs": "^2.4.3"
+  }
+}
