@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Send, ClipboardList } from 'lucide-react';
 import LeaveDetailModal from '../LeaveDetailModal';
 
-const EmployeeLeaves = ({ leaveForm, setLeaveForm, handleApplyLeave, leaves, statusFilter, setStatusFilter }) => {
+const EmployeeLeaves = ({ leaveForm, setLeaveForm, handleApplyLeave, leaves, statusFilter, setStatusFilter, leaveTypes = [] }) => {
     const [selectedLeave, setSelectedLeave] = useState(null);
 
     const formatDate = (dateStr) => {
@@ -51,6 +51,20 @@ const EmployeeLeaves = ({ leaveForm, setLeaveForm, handleApplyLeave, leaves, sta
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">End Date</label>
                                     <input className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm" type="date" value={leaveForm.endDate} onChange={e => setLeaveForm({...leaveForm, endDate: e.target.value})} required />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Leave Type</label>
+                                    <select
+                                        className="w-full mt-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                                        value={leaveForm.leaveTypeId}
+                                        onChange={e => setLeaveForm({...leaveForm, leaveTypeId: e.target.value})}
+                                        required
+                                    >
+                                        <option value="">Select leave type...</option>
+                                        {leaveTypes.map(lt => (
+                                            <option key={lt._id} value={lt._id}>{lt.name} ({lt.quota} days/yr)</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Reason</label>

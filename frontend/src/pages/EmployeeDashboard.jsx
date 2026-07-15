@@ -9,6 +9,9 @@ import EmployeeHeader from '../components/EmployeeDashboard/EmployeeHeader';
 import EmployeeOverview from '../components/EmployeeDashboard/EmployeeOverview';
 import EmployeeAttendance from '../components/EmployeeDashboard/EmployeeAttendance';
 import EmployeeLeaves from '../components/EmployeeDashboard/EmployeeLeaves';
+import EmployeeHolidays from '../components/EmployeeDashboard/EmployeeHolidays';
+import EmployeeHRRequests from '../components/EmployeeDashboard/EmployeeHRRequests';
+import EmployeePracticeOnboarding from '../components/EmployeeDashboard/EmployeePracticeOnboarding';
 import UpdateProfilePage from '../components/UpdateProfilePage';
 
 const EmployeeDashboard = () => {
@@ -17,8 +20,12 @@ const EmployeeDashboard = () => {
     const [attendance, setAttendance] = useState(null);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [leaves, setLeaves] = useState([]);
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' });
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'attendance', 'leaves'
+    const [holidays, setHolidays] = useState([]);
+    const [hrRequests, setHrRequests] = useState([]);
+    const [hrSubmitting, setHrSubmitting] = useState(false);
+    const [leaveTypes, setLeaveTypes] = useState([]);
+    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'attendance', 'leaves', 'holidays', 'hr-requests', 'onboarding'
     
     // Filters
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
@@ -29,6 +36,9 @@ const EmployeeDashboard = () => {
         fetchTodayAttendance();
         fetchMyLeaves();
         fetchAttendanceHistory();
+        fetchHolidays();
+        fetchMyHRRequests();
+        fetchLeaveTypes();
     }, []);
 
     const fetchUserProfile = async () => {
@@ -56,6 +66,50 @@ const EmployeeDashboard = () => {
         setLeaves(res.data);
     };
 
+    const fetchHolidays = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/holidays`);
+            setHolidays(res.data);
+        } catch (err) {
+            console.error('Error fetching holidays:', err);
+        }
+    };
+
+    const fetchMyHRRequests = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/hr-requests/my-requests`);
+            setHrRequests(res.data);
+        } catch (err) {
+            console.error('Error fetching HR requests:', err);
+        }
+    };
+
+    const fetchLeaveTypes = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`);
+            setLeaveTypes(res.data);
+        } catch (err) {
+            console.error('Error fetching leave types:', err);
+        }
+    };
+
+    const handleHRRequestSubmit = async (form) => {
+        setHrSubmitting(true);
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/hr-requests`, {
+                subject: form.type,
+                description: form.description,
+            });
+            await fetchMyHRRequests();
+            return true;
+        } catch (err) {
+            alert(err.response?.data?.msg || 'Failed to submit request.');
+            return false;
+        } finally {
+            setHrSubmitting(false);
+        }
+    };
+
     const handleCheckIn = async () => {
         await axios.post(`${import.meta.env.VITE_API_URL}/attendance/check-in`);
         fetchTodayAttendance();
@@ -78,12 +132,16 @@ const EmployeeDashboard = () => {
             return alert("Start date cannot be after the end date.");
         }
 
+        if (!leaveForm.leaveTypeId) {
+            return alert("Please select a leave type.");
+        }
+
         const diffTime = Math.abs(end - start);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
         const today = new Date();
-        const noticeTime = Math.abs(start - today);
-        const noticeDays = Math.ceil(noticeTime / (1000 * 60 * 60 * 24));
+        today.setHours(0, 0, 0, 0);
+        const noticeDays = Math.ceil((start - today) / (1000 * 60 * 60 * 24));
 
         if (diffDays === 1 && noticeDays < 4) {
             return alert("For a 1-day leave, you must apply at least 4 days in advance.");
@@ -95,7 +153,7 @@ const EmployeeDashboard = () => {
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/leaves/apply`, leaveForm);
             alert('Leave request submitted!');
-            setLeaveForm({ startDate: '', endDate: '', reason: '' });
+            setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
             fetchMyLeaves();
         } catch (err) {
             alert(err.response?.data?.msg || 'Error applying for leave');
@@ -142,7 +200,21 @@ const EmployeeDashboard = () => {
                                 leaves={leaves.filter(l => leaveStatusFilter === 'all' ? true : l.status === leaveStatusFilter)}
                                 statusFilter={leaveStatusFilter}
                                 setStatusFilter={setLeaveStatusFilter}
+                                leaveTypes={leaveTypes}
                             />
+                        )}
+                        {activeTab === 'holidays' && (
+                            <EmployeeHolidays holidays={holidays} />
+                        )}
+                        {activeTab === 'hr-requests' && (
+                            <EmployeeHRRequests
+                                requests={hrRequests}
+                                onSubmit={handleHRRequestSubmit}
+                                submitting={hrSubmitting}
+                            />
+                        )}
+                        {activeTab === 'onboarding' && (
+                            <EmployeePracticeOnboarding />
                         )}
                         {activeTab === 'profile' && (
                             <UpdateProfilePage 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Clock, Calendar, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, LogOut, User, Sun, ClipboardList, BookOpen } from 'lucide-react';
 
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     return (
@@ -32,6 +32,27 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 >
                     <Calendar size={20} />
                     <span className="text-sm">Request Leave</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('holidays')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Sun size={20} />
+                    <span className="text-sm">Holidays</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('hr-requests')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <ClipboardList size={20} />
+                    <span className="text-sm">HR Requests</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('onboarding')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'onboarding' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <BookOpen size={20} />
+                    <span className="text-sm">Onboarding</span>
                 </button>
             </nav>
 

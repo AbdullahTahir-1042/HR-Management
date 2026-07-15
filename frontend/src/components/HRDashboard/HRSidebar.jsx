@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, Sun, ClipboardList, Tag, BookOpen, Wand2 } from 'lucide-react';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     return (
@@ -39,6 +39,41 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 >
                     <Clock size={20} />
                     <span className="text-sm">Attendance</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('holidays')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Sun size={20} />
+                    <span className="text-sm">Holidays</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('hr-requests')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <ClipboardList size={20} />
+                    <span className="text-sm">HR Requests</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('leave-types')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leave-types' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Tag size={20} />
+                    <span className="text-sm">Leave Types</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('onboarding')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'onboarding' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <BookOpen size={20} />
+                    <span className="text-sm">Onboarding</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('practice-wizard')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'practice-wizard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Wand2 size={20} />
+                    <span className="text-sm">Practice Setup</span>
                 </button>
             </nav>
 

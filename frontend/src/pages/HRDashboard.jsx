@@ -14,13 +14,21 @@ import AddEmployeePage from '../components/HRDashboard/AddEmployeePage';
 import EmployeeDetailsPage from '../components/HRDashboard/EmployeeDetailsPage';
 import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
+import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
+import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
+import HRPracticeOnboarding from '../components/HRDashboard/HRPracticeOnboarding';
+import PracticeOnboardingWizard from '../components/PracticeOnboardingWizard';
 
 const HRDashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const [leaves, setLeaves] = useState([]);
     const [attendance, setAttendance] = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'leaves', 'attendance', 'employees'
+    const [holidays, setHolidays] = useState([]);
+    const [hrRequests, setHrRequests] = useState([]);
+    const [leaveTypes, setLeaveTypes] = useState([]);
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'leaves', 'attendance', 'employees', 'holidays', 'hr-requests', 'leave-types', 'onboarding', 'practice-wizard'
     const [isAddingEmployee, setIsAddingEmployee] = useState(false);
     const [isEditingEmployee, setIsEditingEmployee] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -34,6 +42,9 @@ const HRDashboard = () => {
         fetchAllLeaves();
         fetchAllAttendance();
         fetchAllEmployees();
+        fetchHolidays();
+        fetchHRRequests();
+        fetchLeaveTypes();
     }, []);
 
     // Reset view states when tab changes
@@ -59,6 +70,42 @@ const HRDashboard = () => {
             setEmployees(res.data);
         } catch (err) {
             console.error("Error fetching employees:", err);
+        }
+    };
+
+    const fetchHolidays = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/holidays`);
+            setHolidays(res.data);
+        } catch (err) {
+            console.error('Error fetching holidays:', err);
+        }
+    };
+
+    const fetchHRRequests = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/hr-requests`);
+            setHrRequests(res.data);
+        } catch (err) {
+            console.error('Error fetching HR requests:', err);
+        }
+    };
+
+    const handleHRRequestUpdate = async (id, { status, hrNote }) => {
+        try {
+            await axios.put(`${import.meta.env.VITE_API_URL}/hr-requests/${id}`, { status, hrNote });
+            fetchHRRequests();
+        } catch (err) {
+            console.error('Error updating HR request:', err);
+        }
+    };
+
+    const fetchLeaveTypes = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`);
+            setLeaveTypes(res.data);
+        } catch (err) {
+            console.error('Error fetching leave types:', err);
         }
     };
 
@@ -177,6 +224,30 @@ const HRDashboard = () => {
                                 filteredAttendance={filteredAttendance} 
                                 searchTerm={searchTerm} 
                             />
+                        )}
+                        {activeTab === 'holidays' && (
+                            <HRHolidayManagement
+                                holidays={holidays}
+                                fetchHolidays={fetchHolidays}
+                            />
+                        )}
+                        {activeTab === 'hr-requests' && (
+                            <HRRequestsManagement
+                                requests={hrRequests}
+                                onUpdate={handleHRRequestUpdate}
+                            />
+                        )}
+                        {activeTab === 'leave-types' && (
+                            <HRLeaveTypeManagement
+                                leaveTypes={leaveTypes}
+                                fetchLeaveTypes={fetchLeaveTypes}
+                            />
+                        )}
+                        {activeTab === 'onboarding' && (
+                            <HRPracticeOnboarding />
+                        )}
+                        {activeTab === 'practice-wizard' && (
+                            <PracticeOnboardingWizard />
                         )}
                         {activeTab === 'profile' && (
                             <UpdateProfilePage 
