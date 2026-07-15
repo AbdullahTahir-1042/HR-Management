@@ -17,6 +17,17 @@ app.onError((err, c) => {
 // MongoDB client connection pool cache
 let mongoClient = null;
 const getDb = async (c) => {
+    if (mongoClient) {
+        try {
+            await mongoClient.db('hr-management').command({ ping: 1 });
+        } catch (e) {
+            try {
+                await mongoClient.close();
+            } catch (err) {}
+            mongoClient = null;
+        }
+    }
+
     if (!mongoClient) {
         let uri = c.env.MONGODB_URI;
         if (uri.includes('cluster0.vgojld9.mongodb.net')) {
