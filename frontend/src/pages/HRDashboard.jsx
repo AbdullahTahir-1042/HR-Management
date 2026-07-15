@@ -42,11 +42,25 @@ const HRDashboard = () => {
     // Helper to get token for headers
     const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('x-auth-token') || null;
 
+    const fetchDashboardData = async () => {
+        try {
+            const [leavesRes, attendanceRes, employeesRes, announcementsRes] = await Promise.all([
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/all`, { headers: { 'x-auth-token': getToken() } }),
+                axios.get(`${import.meta.env.VITE_API_URL}/attendance/all`, { headers: { 'x-auth-token': getToken() } }),
+                axios.get(`${import.meta.env.VITE_API_URL}/auth/users`, { headers: { 'x-auth-token': getToken() } }),
+                axios.get(`${import.meta.env.VITE_API_URL}/announcements`, { headers: { 'x-auth-token': getToken() } })
+            ]);
+            setLeaves(leavesRes.data);
+            setAttendance(attendanceRes.data);
+            setEmployees(employeesRes.data);
+            setAnnouncements(announcementsRes.data);
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+        }
+    };
+
     useEffect(() => {
-        fetchAllLeaves();
-        fetchAllAttendance();
-        fetchAllEmployees();
-        fetchAllAnnouncements();
+        fetchDashboardData();
     }, []);
 
     // --- FIREBASE NOTIFICATION SETUP ---
@@ -68,12 +82,14 @@ const HRDashboard = () => {
         };
         setupHRNotifications();
 
-        onMessageListener()
-            .then((payload) => {
-                alert(`📢 ${payload.notification.title}\n\n${payload.notification.body}`);
-                fetchAllAnnouncements();
-            })
-            .catch((err) => console.error('HR Foreground notification error:', err));
+        const unsubscribe = onMessageListener((payload) => {
+            console.log("HR Foreground message received:", payload);
+            fetchAllAnnouncements(); 
+        });
+
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
     }, []);
 
     useEffect(() => {

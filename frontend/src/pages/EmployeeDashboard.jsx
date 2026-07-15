@@ -4,8 +4,6 @@ import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 
 // --- NEW FIREBASE IMPORTS ---
-// Adjust the path to '../firebase' if your file is in the src/ root, 
-// or wherever you placed firebase.js relative to this page.
 import { requestForToken, onMessageListener } from '../firebase'; 
 
 import EmployeeSidebar from '../components/EmployeeDashboard/EmployeeSidebar';
@@ -29,22 +27,36 @@ const EmployeeDashboard = () => {
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
     const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
 
+    const fetchDashboardData = async () => {
+        try {
+            const [profileRes, attendanceRes, historyRes, leavesRes, announcementsRes] = await Promise.all([
+                axios.get(`${import.meta.env.VITE_API_URL}/auth/user`),
+                axios.get(`${import.meta.env.VITE_API_URL}/attendance/status`),
+                axios.get(`${import.meta.env.VITE_API_URL}/attendance/my-history`),
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/my-leaves`),
+                axios.get(`${import.meta.env.VITE_API_URL}/announcements`)
+            ]);
+            setFullUser(profileRes.data);
+            updateUser(profileRes.data);
+            setAttendance(attendanceRes.data);
+            setAttendanceHistory(historyRes.data);
+            setLeaves(leavesRes.data);
+            setAnnouncements(announcementsRes.data);
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+        }
+    };
+
     useEffect(() => {
-        fetchUserProfile();
-        fetchTodayAttendance();
-        fetchMyLeaves();
-        fetchAttendanceHistory();
-        fetchAllAnnouncements();
+        fetchDashboardData();
     }, []);
 
-    // --- NEW FIREBASE NOTIFICATION SETUP ---
+    // --- FIREBASE NOTIFICATION SETUP ---
     useEffect(() => {
         const setupNotifications = async () => {
             try {
-                // 1. Ask browser for permission and get the token
                 const token = await requestForToken();
                 if (token) {
-                    // 2. Send the token to the new backend route
                     await axios.put(`${import.meta.env.VITE_API_URL}/auth/fcm-token`, { token });
                     console.log('FCM Token synced to server successfully.');
                 }
@@ -55,15 +67,15 @@ const EmployeeDashboard = () => {
 
         setupNotifications();
 
-        // 3. Listen for live messages while the employee is using the app
-        onMessageListener()
-            .then((payload) => {
-                // You can replace this alert with a toast notification library later if you want
-                alert(`📢 ${payload.notification.title}\n\n${payload.notification.body}`);
-            })
-            .catch((err) => console.error('Foreground notification error:', err));
+        const unsubscribe = onMessageListener((payload) => {
+            console.log("Foreground message received:", payload);
+            fetchAllAnnouncements(); 
+        });
+        
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
     }, []);
-    // ---------------------------------------
 
     const fetchUserProfile = async () => {
         try {

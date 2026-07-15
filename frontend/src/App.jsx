@@ -4,6 +4,7 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import Login from './pages/Login';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import HRDashboard from './pages/HRDashboard';
+import PracticeOnboarding from './pages/PracticeOnboarding';
 
 const ProtectedRoute = ({ children, role }) => {
     const { user, loading } = useContext(AuthContext);
@@ -38,6 +39,7 @@ function App() {
                         } 
                     />
                     <Route path="/" element={<Navigate to="/login" />} />
+                    <Route path="/practice-onboarding" element={<PracticeOnboarding />} />
                 </Routes>
             </Router>
         </AuthProvider>

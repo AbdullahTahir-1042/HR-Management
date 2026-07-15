@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Megaphone, Calendar, User, Plus, Trash2, X, Loader2, ArrowLeft, Pencil, Check } from 'lucide-react';
+import { Megaphone, Calendar, User, Plus, Trash2, X, Loader2, ArrowLeft, Pencil, Check, CheckCheck, Eye } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 
 const AnnouncementPage = () => {
@@ -16,8 +16,8 @@ const AnnouncementPage = () => {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [selected, setSelected] = useState(null);
+    const [employees, setEmployees] = useState([]);
 
-    // Edit state
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState('');
     const [editMessage, setEditMessage] = useState('');
@@ -35,6 +35,7 @@ const AnnouncementPage = () => {
 
     useEffect(() => {
         fetchAnnouncements();
+        fetchEmployees();
     }, []);
 
     const fetchAnnouncements = async () => {
@@ -47,6 +48,24 @@ const AnnouncementPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchEmployees = async () => {
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/users`, authHeaders());
+            setEmployees(res.data);
+        } catch (err) {
+            console.error('Error fetching employees:', err);
+        }
+    };
+
+    const getReadByNames = (readByIds = []) => {
+        return readByIds
+            .map(id => {
+                const emp = employees.find(e => e._id === id);
+                return emp?.name || null;
+            })
+            .filter(Boolean);
     };
 
     const formatDate = (dateStr) => {
@@ -128,6 +147,10 @@ const AnnouncementPage = () => {
     };
 
     if (selected) {
+        const readByNames = getReadByNames(selected.readBy);
+        const readCount = selected.readBy?.length || 0;
+        const totalEmployees = employees.filter(e => e.role !== 'hr').length;
+
         return (
             <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -148,7 +171,7 @@ const AnnouncementPage = () => {
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
                                 <Megaphone size={20} />
-                            </span >
+                            </span>
                             {isEditing ? (
                                 <input
                                     value={editTitle}
@@ -239,6 +262,69 @@ const AnnouncementPage = () => {
                         </p>
                     )}
                 </div>
+
+                {isHR && !isEditing && (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                <Eye size={15} className="text-indigo-500" />
+                                Read Receipts
+                            </h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                readCount === totalEmployees && totalEmployees > 0
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                                    : 'bg-slate-100 text-slate-500'
+                            }`}>
+                                {readCount} / {totalEmployees} read
+                            </span>
+                        </div>
+
+                        {totalEmployees > 0 && (
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${(readCount / totalEmployees) * 100}%` }}
+                                />
+                            </div>
+                        )}
+
+                        {readByNames.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {readByNames.map((name, idx) => (
+                                    <span
+                                        key={idx}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-100"
+                                    >
+                                        <CheckCheck size={12} />
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-slate-400 font-medium">No one has read this announcement yet.</p>
+                        )}
+
+                        {totalEmployees > readCount && (
+                            <div className="pt-2 border-t border-slate-100">
+                                <p className="text-xs text-slate-400 font-medium mb-2">Haven't read yet:</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {employees
+                                        .filter(e => e.role !== 'hr' && !(selected.readBy || []).includes(e._id))
+                                        .map(emp => (
+                                            <span
+                                                key={emp._id}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-xs font-semibold border border-slate-200"
+                                            >
+                                                <User size={12} />
+                                                {emp.name}
+                                            </span>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </motion.div>
         );
     }
@@ -341,51 +427,63 @@ const AnnouncementPage = () => {
                             <p className="font-medium">No announcements yet.</p>
                         </div>
                     ) : (
-                        announcements.map(entry => (
-                            <div
-                                key={entry._id}
-                                onClick={() => setSelected(entry)}
-                                className="px-6 py-5 hover:bg-indigo-50/50 transition-colors group cursor-pointer"
-                            >
-                                <div className="flex justify-between items-start gap-4">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1.5">
-                                            <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0 group-hover:bg-indigo-100 transition-colors">
-                                                <Megaphone size={15} />
-                                            </span>
-                                            <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors">
-                                                {entry.title}
-                                            </h4>
+                        announcements.map(entry => {
+                            const readCount = entry.readBy?.length || 0;
+                            const totalEmps = employees.filter(e => e.role !== 'hr').length;
+                            return (
+                                <div
+                                    key={entry._id}
+                                    onClick={() => setSelected(entry)}
+                                    className="px-6 py-5 hover:bg-indigo-50/50 transition-colors group cursor-pointer"
+                                >
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0 group-hover:bg-indigo-100 transition-colors">
+                                                    <Megaphone size={15} />
+                                                </span>
+                                                <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors">
+                                                    {entry.title}
+                                                </h4>
+                                            </div>
+                                            <p className="text-sm text-slate-500 leading-relaxed pl-10 truncate">
+                                                {entry.message}
+                                            </p>
+                                            <div className="flex items-center gap-4 mt-3 pl-10">
+                                                <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                                    <User size={12} />
+                                                    {entry.createdBy?.name || 'HR'}
+                                                </span>
+                                                <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                                    <Calendar size={12} />
+                                                    {formatDate(entry.createdAt)}
+                                                </span>
+                                                <span className={`flex items-center gap-1.5 text-xs font-semibold ${
+                                                    readCount === totalEmps && totalEmps > 0
+                                                        ? 'text-emerald-500'
+                                                        : 'text-slate-400'
+                                                }`}>
+                                                    <Eye size={12} />
+                                                    {readCount}/{totalEmps} read
+                                                </span>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-slate-500 leading-relaxed pl-10 truncate">
-                                            {entry.message}
-                                        </p>
-                                        <div className="flex items-center gap-4 mt-3 pl-10">
-                                            <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                                                <User size={12} />
-                                                {entry.createdBy?.name || 'HR'}
-                                            </span>
-                                            <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                                                <Calendar size={12} />
-                                                {formatDate(entry.createdAt)}
-                                            </span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {isHR && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(entry._id); }}
+                                                    className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            )}
+                                            <span className="opacity-0 group-hover:opacity-100 text-indigo-400 transition-opacity">→</span>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        {isHR && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry._id); }}
-                                                className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
-                                        )}
-                                        <span className="opacity-0 group-hover:opacity-100 text-indigo-400 transition-opacity">→</span>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </motion.div>

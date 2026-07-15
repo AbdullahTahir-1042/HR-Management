@@ -38,12 +38,17 @@ router.post('/', auth, isHR, async (req, res) => {
         try {
             // Find all users who have an FCM token saved
             const users = await User.find({ fcmToken: { $exists: true, $ne: null } });
-            const tokens = users.map(user => user.fcmToken);
+            
+            // Map out the tokens
+            const rawTokens = users.map(user => user.fcmToken);
+            
+            // CRITICAL FIX: Filter out duplicates to stop double-notifications
+            const uniqueTokens = [...new Set(rawTokens)];
 
-            if (tokens.length > 0) {
+            if (uniqueTokens.length > 0) {
                 // We provide both notification and data fields for reliable background delivery
                 const messagePayload = {
-                    tokens: tokens,
+                    tokens: uniqueTokens, // Use the filtered array here!
                     notification: {
                         title: `HR Announcement: ${title.trim()}`,
                         body: message.trim(),
@@ -57,6 +62,7 @@ router.post('/', auth, isHR, async (req, res) => {
                 // Using sendEachForMulticast for modern Firebase compatibility
                 const response = await messaging.sendEachForMulticast(messagePayload);
                 console.log(`${response.successCount} live notifications delivered.`);
+                
                 if (response.failureCount > 0) {
                     console.error(`${response.failureCount} notifications failed.`);
                 }

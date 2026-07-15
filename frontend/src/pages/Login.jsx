@@ -1,9 +1,8 @@
 import  { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff, UserPlus, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Mail, Lock, EyeOff, Eye,  Loader2, ShieldCheck } from 'lucide-react';
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
