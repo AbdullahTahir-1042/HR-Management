@@ -686,18 +686,16 @@ app.put('/hr-requests/:id', authMiddleware, isHRMiddleware, async (c) => {
     return c.json({ msg: 'Request updated' });
 });
 
-// SPA Fallback: Catch all other routes and serve index.html
-app.get('*', async (c) => {
-    // If it's an API request that wasn't matched above, return standard 404
-    if (c.req.path.startsWith('/api/')) {
-        return c.json({ msg: 'API endpoint not found' }, 404);
-    }
-    
-    // For all other requests (like /login, /dashboard), serve the frontend index.html
-    // This allows React Router to handle the URL on the client side
+const root = new Hono();
+
+// Mount the API routes
+root.route('/', app);
+
+// SPA Fallback: Catch all other non-API routes and serve index.html
+root.get('*', async (c) => {
     const url = new URL(c.req.url);
     url.pathname = '/';
-    return c.env.ASSETS.fetch(new Request(url, c.req));
+    return c.env.ASSETS.fetch(new Request(url, c.req.raw));
 });
 
-export default app;
+export default root;
