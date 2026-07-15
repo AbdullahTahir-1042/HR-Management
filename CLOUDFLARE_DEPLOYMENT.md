@@ -1,12 +1,12 @@
-# Cloudflare Deployment & Architecture Guide
+# Cloudflare + MongoDB Atlas Deployment & Architecture Guide
 
-This document outlines the architecture, configuration, database schema, and commands for running and deploying the HR Management system on Cloudflare.
+This document outlines the architecture, configuration, database design, and commands for running and deploying the HR Management system on Cloudflare Workers and MongoDB Atlas.
 
 ---
 
 ## 1. Architecture Overview
 
-The application is deployed on Cloudflare using a modern, serverless architecture that bundles both the frontend and backend under a single Cloudflare Worker.
+The application is deployed on Cloudflare using a modern, serverless architecture that bundles the frontend assets and backend API into a single Worker. The backend connects directly to MongoDB Atlas.
 
 ```
                   ┌──────────────────────────────┐
@@ -16,51 +16,51 @@ The application is deployed on Cloudflare using a modern, serverless architectur
                   ┌──────────────▼───────────────┐
                   │      Cloudflare Worker       │
                   │       (hr-management)        │
-                  └──────────────┬───────────────┘
-                                 │
-         ┌───────────────────────┴───────────────────────┐
-         │                                               │
-┌────────▼───────────────────────┐             ┌────────▼───────────────────────┐
+                  └──────────────┬──────┬────────┘
+                                 │      │
+         ┌───────────────────────┘      └────────────────────────┐
+         │                                                       │
+┌────────▼───────────────────────┐             ┌─────────────────▼──────────────┐
 │     Cloudflare Assets          │             │         Hono Worker            │
 │  (React Frontend from /dist)   │             │   (Backend API /api/*)         │
-└────────────────────────────────┘             └────────┬───────────────────────┘
-                                                        │
-                                               ┌────────▼───────────────────────┐
-                                               │      Cloudflare D1 SQL         │
-                                               │     (hr-management-db)         │
-                                               └────────────────────────────────┘
+└────────────────────────────────┘             └─────────────────┬──────────────┘
+                                                                 │
+                                                       ┌─────────▼──────────────┐
+                                                       │    MongoDB Atlas       │
+                                                       │  (NoSQL Database)      │
+                                                       └────────────────────────┘
 ```
 
 *   **Frontend (React + Vite 6)**: Compiled into static assets (`frontend/dist`) and served by Cloudflare's global edge network (Worker Assets).
 *   **Backend (Hono Router)**: Running inside the Worker (`backend/worker.js`), handling all requests under the `/api/*` path.
-*   **Database (Cloudflare D1)**: A serverless SQL database storing users, departments, attendance logs, leaves, and requests.
+*   **Database (MongoDB Atlas)**: Storing users, departments, attendance logs, leaves, and requests.
 
 ---
 
 ## 2. Configuration (`wrangler.toml`)
 
-The [wrangler.toml](file:///c:/Users/ABC/OneDrive/Desktop/hrmanagement/HR-Management/wrangler.toml) file configures the Worker, asset serving, and database binding:
+The [wrangler.toml](file:///c:/Users/ABC/OneDrive/Desktop/hrmanagement/HR-Management/wrangler.toml) file configures the Worker and asset serving:
 
 *   **`main`**: Points to the entry point `backend/worker.js`.
+*   **`compatibility_flags`**: Includes `"nodejs_compat"` to enable standard Node.js APIs (such as sockets and crypto) required by the MongoDB client driver.
 *   **`[assets]`**:
     *   `directory`: Serves files from `frontend/dist`.
     *   `not_found_handling = "single-page-application"`: Fallbacks to `index.html` for client-side React Router navigation.
-    *   `run_worker_first = ["/api/*"]`: Optimizes performance by executing the Hono Worker only for API calls, leaving static asset requests to Cloudflare's asset pipeline.
-*   **`[[d1_databases]]`**: Binds the Cloudflare D1 SQL database to `c.env.DB`.
+    *   `run_worker_first = ["/api/*"]`: Runs the Hono Worker only for API calls, letting static asset requests bypass the worker for maximum performance.
 
 ---
 
-## 3. Database Schema (`schema.sql`)
+## 3. Database Collections
 
-The database consists of 11 relational SQL tables:
+The database consists of the following collections:
 1.  **`users`**: Stored user profiles, hashed passwords, roles (`hr` or `employee`), and department assignments.
 2.  **`departments`**: Stores department name, descriptions, and soft-delete states.
 3.  **`leave_types`**: Leave categories (e.g., Annual, Sick, Casual) and their quotas.
-4.  **`leave_requests`**: Applied leave details, date ranges, and statuses.
+4.  **`leave_requests`**: Applied leave requests, date ranges, and statuses.
 5.  **`attendance`**: Daily check-in/check-out timestamps.
 6.  **`holidays`**: Public/optional/restricted holidays.
 7.  **`onboarding_tasks`**: List of tasks for onboarding new practices.
-8.  **`onboarding_task_completions`**: Junction table mapping tasks to user completions.
+8.  **`onboarding_task_completions`**: Completed onboarding tasks mapped to user IDs.
 9.  **`hr_requests`**: Employee requests (Attendance correction, Salary slip, WFH, etc.) with HR remarks.
 10. **`practice_infos`**: Configuration of the medical practice.
 11. **`practice_providers`**: Providers registered under the practice.
@@ -74,21 +74,21 @@ Ensure you are logged into Cloudflare via Wrangler:
 npx wrangler whoami
 ```
 
-### Initialize the Database (Remote)
-Run this command to create and initialize the tables on your Cloudflare D1 database:
+### Set Environment Secrets (Required)
+You must set your MongoDB Atlas connection string securely as a Worker secret:
 ```bash
-npm run db:init
+npx wrangler secret put MONGODB_URI
 ```
-*(Executes: `wrangler d1 execute hr-management-db --remote --file=./schema.sql`)*
+*Provide your connection string in the format:*
+`mongodb+srv://<username>:<password>@cluster0.xxxxxx.mongodb.net/?appName=Cluster0`
 
-### Set Environment Secrets
 Upload your JWT signing key securely to Cloudflare:
 ```bash
-echo "your_super_secret_jwt_key" | npx wrangler secret put JWT_SECRET
+npx wrangler secret put JWT_SECRET
 ```
 
 ### Run Local Development
-Test the application locally (Worker + D1 + local asset simulator):
+Test the application locally:
 ```bash
 npm run dev
 ```
@@ -105,7 +105,7 @@ npm run deploy
 ## 5. Troubleshooting & FAQ
 
 #### How do I seed initial data?
-The Hono backend (`backend/worker.js`) has an automatic seeder. Upon the first API call, if the tables are empty, it automatically seeds:
+The Hono backend (`backend/worker.js`) has an automatic seeder. Upon the first API call, if the collections are empty, it automatically seeds:
 - An HR Admin account: **`admin@hr.com`** (Password: **`admin123`**).
 - Default leave types (Annual Leave, Sick Leave, Casual Leave).
 - Default departments (`development`, `design`, `hr`, `QA`).
