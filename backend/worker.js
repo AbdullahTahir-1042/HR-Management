@@ -17,17 +17,6 @@ app.onError((err, c) => {
 // MongoDB client connection pool cache
 let mongoClient = null;
 const getDb = async (c) => {
-    if (mongoClient) {
-        try {
-            await mongoClient.db('hr-management').command({ ping: 1 });
-        } catch (e) {
-            try {
-                await mongoClient.close();
-            } catch (err) {}
-            mongoClient = null;
-        }
-    }
-
     if (!mongoClient) {
         let uri = c.env.MONGODB_URI;
         if (uri.includes('cluster0.vgojld9.mongodb.net')) {
@@ -38,10 +27,9 @@ const getDb = async (c) => {
         mongoClient = new MongoClient(uri, {
             maxPoolSize: 1,
             minPoolSize: 0,
-            heartbeatFrequencyMS: 3600000,
-            serverSelectionTimeoutMS: 5000,
-            connectTimeoutMS: 5000,
-            socketTimeoutMS: 30000
+            serverSelectionTimeoutMS: 3000,
+            connectTimeoutMS: 3000,
+            socketTimeoutMS: 15000
         });
         await mongoClient.connect();
     }
@@ -118,11 +106,20 @@ const seedDBIfEmpty = async (db) => {
     }
 };
 
-// Hook to seed on requests
+// Hook to seed on requests and cleanup connection
 app.use('*', async (c, next) => {
-    const db = await getDb(c);
-    await seedDBIfEmpty(db);
-    await next();
+    try {
+        const db = await getDb(c);
+        await seedDBIfEmpty(db);
+        await next();
+    } finally {
+        if (mongoClient) {
+            try {
+                await mongoClient.close();
+            } catch (e) {}
+            mongoClient = null;
+        }
+    }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
