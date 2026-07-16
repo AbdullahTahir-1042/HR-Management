@@ -1,6 +1,19 @@
 import React from 'react';
-import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList, Building2, BarChart2 } from 'lucide-react';
-import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList, CalendarDays } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    CalendarCheck, 
+    Clock, 
+    Search, 
+    Calendar, 
+    Users, 
+    ClipboardList, 
+    Building2, 
+    BarChart2, 
+    CalendarDays,
+    CalendarRange,
+    Bell,
+    User
+} from 'lucide-react';
 
 const HRHeader = ({ 
     activeTab, 
@@ -11,36 +24,28 @@ const HRHeader = ({
     searchTerm, 
     setSearchTerm 
 }) => {
+    const tabMeta = {
+        'dashboard': { icon: <LayoutDashboard size={24} className="text-indigo-600" />, title: 'Overview' },
+        'employees': { icon: <Users size={24} className="text-indigo-600" />, title: 'Staff Directory' },
+        'leaves': { icon: <CalendarCheck size={24} className="text-indigo-600" />, title: 'Leave Requests' },
+        'leave-types': { icon: <CalendarRange size={24} className="text-indigo-600" />, title: 'Leave Types' },
+        'latecomers': { icon: <Clock size={24} className="text-indigo-600" />, title: 'Late Comers' },
+        'attendance': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'Attendance Master' },
+        'departments': { icon: <Building2 size={24} className="text-indigo-600" />, title: 'Departments' },
+        'reports': { icon: <BarChart2 size={24} className="text-indigo-600" />, title: 'User Report Center' },
+        'holidays': { icon: <CalendarDays size={24} className="text-indigo-600" />, title: 'Holiday Calendar' },
+        'hr-requests': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'HR Requests' },
+        'announcements': { icon: <Bell size={24} className="text-indigo-600" />, title: 'Announcements' },
+        'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' }
+    };
+
+    const currentMeta = tabMeta[activeTab] || { icon: null, title: '' };
+
     return (
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 sticky top-0 z-40 flex justify-between items-center">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                {activeTab === 'dashboard' && <LayoutDashboard size={24} className="text-indigo-600" />}
-                {activeTab === 'employees' && <Users size={24} className="text-indigo-600" />}
-                {activeTab === 'leaves' && <CalendarCheck size={24} className="text-indigo-600" />}
-                {activeTab === 'attendance' && <ClipboardList size={24} className="text-indigo-600" />}
-                {activeTab === 'departments' && <Building2 size={24} className="text-indigo-600" />}
-                {activeTab === 'reports' && <BarChart2 size={24} className="text-indigo-600" />}
-
-                {activeTab === 'dashboard' ? 'Overview' 
-                : activeTab === 'employees' ? 'Staff Directory' 
-                : activeTab === 'leaves' ? 'Leave Requests' 
-                : activeTab === 'attendance' ? 'Attendance Master' 
-                : activeTab === 'departments' ? 'Departments'      
-                : activeTab === 'profile' ? 'My Profile'           
-                : activeTab === 'reports' ? 'User Report Center'
-                : ''}
-                {activeTab === 'dashboard'  && <LayoutDashboard size={24} className="text-indigo-600" />}
-                {activeTab === 'employees'  && <Users           size={24} className="text-indigo-600" />}
-                {activeTab === 'leaves'     && <CalendarCheck   size={24} className="text-indigo-600" />}
-                {activeTab === 'attendance' && <ClipboardList   size={24} className="text-indigo-600" />}
-                {/* ✅ NEW */}
-                {activeTab === 'holidays'   && <CalendarDays    size={24} className="text-indigo-600" />}
-
-                {activeTab === 'dashboard'  ? 'Overview'         :
-                 activeTab === 'employees'  ? 'Staff Directory'  :
-                 activeTab === 'leaves'     ? 'Leave Requests'   :
-                 activeTab === 'attendance' ? 'Attendance Master':
-                 activeTab === 'holidays'   ? 'Holiday Calendar' : ''}
+                {currentMeta.icon}
+                <span>{currentMeta.title}</span>
             </h2>
 
             <div className="flex items-center gap-4">

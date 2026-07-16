@@ -1,10 +1,12 @@
-import { LayoutDashboard, Clock, Calendar, Bell, User } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare } from 'lucide-react';
 
 const EmployeeHeader = ({ activeTab }) => {
     const config = {
         dashboard:     { icon: <LayoutDashboard size={24} className="text-indigo-600" />, label: 'Overview' },
         attendance:    { icon: <Clock size={24} className="text-indigo-600" />,           label: 'Mark Attendance' },
         leaves:        { icon: <Calendar size={24} className="text-indigo-600" />,        label: 'Request Leave' },
+        holidays:      { icon: <PartyPopper size={24} className="text-indigo-600" />,      label: 'Holiday Calendar' },
+        'hr-requests': { icon: <MessageSquare size={24} className="text-indigo-600" />,    label: 'HR Requests' },
         announcements: { icon: <Bell size={24} className="text-indigo-600" />,            label: 'Announcements' },
         profile:       { icon: <User size={24} className="text-indigo-600" />,            label: 'My Profile' },
     };

@@ -15,9 +15,22 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         salary: '',
         photo: ''
     });
+    const [departmentsList, setDepartmentsList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(null);
+
+    useEffect(() => {
+        const fetchDepts = async () => {
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/departments/all`);
+                setDepartmentsList(res.data);
+            } catch (err) {
+                console.error("Failed to load departments:", err);
+            }
+        };
+        fetchDepts();
+    }, []);
 
     useEffect(() => {
         if (employee) {
@@ -148,10 +161,19 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <div className="relative mt-1">
                                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
-                                            <option value="design">Design</option>
-                                            <option value="hr">HR</option>
-                                            <option value="development">Development</option>
-                                            <option value="QA">QA</option>
+                                            {departmentsList.map(dept => (
+                                                <option key={dept._id} value={dept.name}>
+                                                    {dept.name}
+                                                </option>
+                                            ))}
+                                            {departmentsList.length === 0 && (
+                                                <>
+                                                    <option value="design">Design</option>
+                                                    <option value="hr">HR</option>
+                                                    <option value="development">Development</option>
+                                                    <option value="QA">QA</option>
+                                                </>
+                                            )}
                                         </select>
                                     </div>
                                 </div>

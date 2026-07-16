@@ -36,18 +36,13 @@ const EmployeeDashboard = () => {
 
     // Filters
     const [announcements, setAnnouncements] = useState([]);
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' });
-    const [activeTab, setActiveTab] = useState('dashboard');
-
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
     const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
 
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [profile, todayAtt, history, leavesRes, holidaysRes, hrReqs, balances, types] = await Promise.all([
-        try {
-            const [profileRes, attendanceRes, historyRes, leavesRes, announcementsRes] = await Promise.all([
+            const [profile, todayAtt, history, leavesRes, holidaysRes, hrReqs, balances, types, announcementsRes] = await Promise.all([
                 axios.get(`${import.meta.env.VITE_API_URL}/auth/user`),
                 axios.get(`${import.meta.env.VITE_API_URL}/attendance/status`),
                 axios.get(`${import.meta.env.VITE_API_URL}/attendance/my-history`),
@@ -55,7 +50,8 @@ const EmployeeDashboard = () => {
                 axios.get(`${import.meta.env.VITE_API_URL}/holidays`),
                 axios.get(`${import.meta.env.VITE_API_URL}/hr-requests/my-requests`),
                 axios.get(`${import.meta.env.VITE_API_URL}/leaves/balances`),
-                axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`)
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`),
+                axios.get(`${import.meta.env.VITE_API_URL}/announcements`)
             ]);
             
             setFullUser(profile.data);
@@ -67,20 +63,11 @@ const EmployeeDashboard = () => {
             setHrRequests(hrReqs.data);
             setLeaveBalances(balances.data);
             setLeaveTypes(types.data);
+            setAnnouncements(announcementsRes.data);
         } catch (err) {
             console.error("Dashboard parallel fetch failed", err);
         } finally {
             setLoading(false);
-                axios.get(`${import.meta.env.VITE_API_URL}/announcements`)
-            ]);
-            setFullUser(profileRes.data);
-            updateUser(profileRes.data);
-            setAttendance(attendanceRes.data);
-            setAttendanceHistory(historyRes.data);
-            setLeaves(leavesRes.data);
-            setAnnouncements(announcementsRes.data);
-        } catch (err) {
-            console.error('Error fetching dashboard data:', err);
         }
     };
 
@@ -271,7 +258,7 @@ const EmployeeDashboard = () => {
     }
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans">
+        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
             <EmployeeSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}

@@ -1,9 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, Clock, Calendar, LogOut, User, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, LogOut, User, PartyPopper, MessageSquare, GraduationCap } from 'lucide-react';
-import { LayoutDashboard, Clock, Calendar, LogOut, User, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { LayoutDashboard, Clock, Calendar, LogOut, User, Sparkles, PartyPopper, MessageSquare, GraduationCap, BookOpen, Bell } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     const navigate = useNavigate();
@@ -16,7 +13,7 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 <span className="font-bold text-lg text-slate-800 tracking-tight">Employee Portal</span>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 mt-4">
+            <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto">
                 <button
                     onClick={() => setActiveTab('dashboard')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -39,13 +36,6 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Request Leave</span>
                 </button>
 
-                {/* 👇 NEW ONBOARDING LINK */}
-                <Link 
-                    to="/onboarding"
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                >
-                    <Sparkles size={20} />
-                    <span className="text-sm">Practice Onboarding</span>
                 {/* ── UC-07: Holiday Calendar ── */}
                 <button
                     onClick={() => setActiveTab('holidays')}
@@ -64,7 +54,24 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">HR Requests</span>
                 </button>
 
-                {/* ── Practice Onboarding ── */}
+                <button
+                    onClick={() => setActiveTab('announcements')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <Bell size={20} />
+                    <span className="text-sm">Announcements</span>
+                </button>
+
+                {/* 👇 PRACTICE ONBOARDING (LINK 1) */}
+                <Link 
+                    to="/practice-onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <Sparkles size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
+                </Link>
+
+                {/* 👇 PRACTICE ONBOARDING (BUTTON 2) */}
                 <button
                     onClick={() => navigate('/practice-onboarding')}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
@@ -72,6 +79,8 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <GraduationCap size={20} />
                     <span className="text-sm">Practice Onboarding</span>
                 </button>
+
+                {/* 👇 PRACTICE ONBOARDING (LINK 3) */}
                 <Link 
                     to="/practice-onboarding"
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"

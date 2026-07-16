@@ -1,11 +1,8 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { User, ArrowRight, Clock, Calendar, TrendingUp, PartyPopper } from 'lucide-react';
+import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper } from 'lucide-react';
 
-const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTab }) => {
-import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp } from 'lucide-react';
-
-const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setActiveTab }) => {
+const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab }) => {
     const todayAttendance = attendance;
 
     const salaryStats = useMemo(() => {
@@ -80,10 +77,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                 <div className="relative z-10">
                     <h1 className="text-2xl font-bold mb-1">Hello, {user?.name}! 👋</h1>
                     <p className="text-indigo-100 text-sm max-w-md">
-                        {todayAttendance
-                            ? todayAttendance.checkOut
-                                ? "You've completed your shift for today."
-                                : "Don't forget to check out when you leave."
                         {todayAttendance 
                             ? (todayAttendance.checkOut 
                                 ? "You've completed your shift for today." 
@@ -92,8 +85,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                     </p>
                     <div className="mt-4 flex gap-3">
                         {!todayAttendance ? (
-                            <button
-                                onClick={() => setActiveTab('attendance')}
                             <button 
                                 onClick={() => setActiveTab('attendance')} 
                                 className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
@@ -101,8 +92,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                                 Check In Now <ArrowRight size={16} />
                             </button>
                         ) : !todayAttendance.checkOut ? (
-                            <button
-                                onClick={() => setActiveTab('attendance')}
                             <button 
                                 onClick={() => setActiveTab('attendance')} 
                                 className="bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
@@ -110,8 +99,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                                 Check Out <ArrowRight size={16} />
                             </button>
                         ) : (
-                            <button
-                                onClick={() => setActiveTab('leaves')}
                             <button 
                                 onClick={() => setActiveTab('leaves')} 
                                 className="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center gap-2"
@@ -124,11 +111,7 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
             </div>
 
             {/* ── Stat Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl">
-
-                {/* Today's Status */}
-                <motion.div
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl">
 
                 {/* Today Status Card */}
                 <motion.div 
@@ -140,15 +123,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                         <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
                             <Clock size={20} />
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
-                            todayAttendance
-                                ? todayAttendance.checkOut
-                                    ? 'bg-emerald-50 text-emerald-600'
-                                    : 'bg-amber-50 text-amber-600'
-                                : 'bg-slate-50 text-slate-500'
-                        }`}>
-                            {todayAttendance
-                                ? todayAttendance.checkOut ? 'Completed' : 'On Shift'
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
                             todayAttendance 
                                 ? (todayAttendance.checkOut 
@@ -164,10 +138,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Today's Status</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <p className="text-xl font-bold text-slate-800">
-                            {todayAttendance
-                                ? todayAttendance.checkIn
-                                    ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                    : '-'
                             {todayAttendance 
                                 ? (todayAttendance.checkIn 
                                     ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
@@ -178,8 +148,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                     </div>
                 </motion.div>
 
-                {/* Leaves Taken */}
-                <motion.div
                 {/* Leaves Month Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
@@ -201,8 +169,6 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                     </div>
                 </motion.div>
 
-                {/* Net Salary */}
-                <motion.div
                 {/* Net Salary Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
@@ -227,7 +193,7 @@ const EmployeeOverview = ({ user, attendance, leaves, announcements = [], setAct
                     </div>
                 </motion.div>
 
-            
+                {/* Announcements Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('announcements')}

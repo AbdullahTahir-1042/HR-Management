@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone } from 'lucide-react';
 import axios from 'axios';
@@ -16,10 +16,26 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         salary: '',
         photo: ''
     });
+    const [departmentsList, setDepartmentsList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        const fetchDepts = async () => {
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/departments/all`);
+                setDepartmentsList(res.data);
+                if (res.data && res.data.length > 0) {
+                    setFormData(prev => ({ ...prev, department: res.data[0].name }));
+                }
+            } catch (err) {
+                console.error("Failed to load departments:", err);
+            }
+        };
+        fetchDepts();
+    }, []);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
@@ -39,7 +55,13 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         setError('');
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, formData);
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: {
+                    'x-auth-token': token
+                }
+            };
+            await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, formData, config);
             onEmployeeAdded();
             onBack(); // Go back to list after success
         } catch (err) {
@@ -148,10 +170,19 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                 <div className="relative mt-1 group">
                                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                     <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
-                                        <option value="design">Design</option>
-                                        <option value="hr">HR</option>
-                                        <option value="development">Development</option>
-                                        <option value="QA">QA</option>
+                                        {departmentsList.map(dept => (
+                                            <option key={dept._id} value={dept.name}>
+                                                {dept.name}
+                                            </option>
+                                        ))}
+                                        {departmentsList.length === 0 && (
+                                            <>
+                                                <option value="design">Design</option>
+                                                <option value="hr">HR</option>
+                                                <option value="development">Development</option>
+                                                <option value="QA">QA</option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
                             </div>

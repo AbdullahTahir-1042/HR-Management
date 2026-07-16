@@ -1,10 +1,7 @@
 import { motion } from 'framer-motion';
-import { ShieldCheck, ArrowRight, Calendar, Users, TrendingUp, CalendarDays } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell } from 'lucide-react';
 
-const HROverview = ({ user, leaves, attendance, employees = [], holidays = [], setActiveTab }) => {
-import { ShieldCheck, ArrowRight, Clock, Calendar, Users, TrendingUp,Bell } from 'lucide-react';
-
-const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], setActiveTab }) => {
+const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], setActiveTab }) => {
     return (
         <motion.div 
             key="dashboard"
@@ -162,7 +159,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Announcements</p>
                     <div className="flex items-end justify-between mt-0.5">
-                        <p className="text-xl font-bold text-slate-800">{}</p>
+                        <p className="text-xl font-bold text-slate-800">{announcements.length}</p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
                     </div>
                 </motion.div>

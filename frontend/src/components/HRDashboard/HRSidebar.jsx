@@ -1,9 +1,23 @@
 import React from 'react';
-import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, Building2, Sparkles, BarChart2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, User, CalendarDays, ClipboardList, GraduationCap, CalendarRange } from 'lucide-react';
-import { ShieldCheck, CalendarCheck, Clock, LogOut, LayoutDashboard, Calendar, Bell, User, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { 
+    ShieldCheck, 
+    CalendarCheck, 
+    Clock, 
+    LogOut, 
+    LayoutDashboard, 
+    User, 
+    Building2, 
+    Sparkles, 
+    BarChart2,
+    CalendarDays,
+    ClipboardList,
+    GraduationCap,
+    CalendarRange,
+    Calendar,
+    Bell,
+    BookOpen
+} from 'lucide-react';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
     const navigate = useNavigate();
@@ -16,7 +30,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 <span className="font-bold text-lg text-slate-800 tracking-tight">HR Admin</span>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 mt-4">
+            <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto">
                 <button
                     onClick={() => setActiveTab('dashboard')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -25,7 +39,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Dashboard</span>
                 </button>
 
-                <button 
                 <button
                     onClick={() => setActiveTab('employees')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -34,7 +47,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Employees</span>
                 </button>
 
-                <button 
                 <button
                     onClick={() => setActiveTab('leaves')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -51,7 +63,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">Leave Types</span>
                 </button>
 
-                <button
                 <button 
                     onClick={() => setActiveTab('latecomers')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'latecomers' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -59,7 +70,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <Clock size={20} />
                     <span className="text-sm">Late Comers</span>
                 </button>
-
 
                 <button 
                     onClick={() => setActiveTab('attendance')}
@@ -87,13 +97,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">User Report</span>
                 </button>
 
-                {/* 👇 ONBOARDING LINK */}
-                <Link 
-                    to="/onboarding"
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                >
-                    <Sparkles size={20} />
-                    <span className="text-sm">Practice Onboarding</span>
                 <button
                     onClick={() => setActiveTab('holidays')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -111,14 +114,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <span className="text-sm">HR Requests</span>
                 </button>
 
-                {/* ── Practice Onboarding ── */}
-                <button
-                    onClick={() => navigate('/practice-onboarding')}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                >
-                    <GraduationCap size={20} />
-                    <span className="text-sm">Practice Onboarding</span>
-                </button>
                 <button 
                     onClick={() => setActiveTab('announcements')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
@@ -126,6 +121,26 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <Bell size={20} />
                     <span className="text-sm">Announcements</span>
                 </button>
+
+                {/* 👇 PRACTICE ONBOARDING (LINK 1) */}
+                <Link 
+                    to="/practice-onboarding"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <Sparkles size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
+                </Link>
+
+                {/* 👇 PRACTICE ONBOARDING (BUTTON 2) */}
+                <button
+                    onClick={() => navigate('/practice-onboarding')}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                >
+                    <GraduationCap size={20} />
+                    <span className="text-sm">Practice Onboarding</span>
+                </button>
+
+                {/* 👇 PRACTICE ONBOARDING (LINK 3) */}
                 <Link 
                     to="/practice-onboarding"
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"

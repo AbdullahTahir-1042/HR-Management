@@ -36,7 +36,6 @@ const UserSchema = new mongoose.Schema({
     },
     department: {
         type: String,
-        enum: ['design', 'hr', 'development', 'QA'],
         default: 'development'
     },
     reportingTo: {
@@ -54,6 +53,7 @@ const UserSchema = new mongoose.Schema({
     leaveBalance: {
         type: Number,
         default: 40
+    },
     fcmToken: {
         type: String,
         default: null

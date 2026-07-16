@@ -52,25 +52,19 @@ const HRDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
 
-    const fetchDashboardData = async () => {
-        setLoading(true);
-        try {
-            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/leaves/all`),
-                axios.get(`${import.meta.env.VITE_API_URL}/attendance/all`),
-                axios.get(`${import.meta.env.VITE_API_URL}/auth/users`),
-                axios.get(`${import.meta.env.VITE_API_URL}/holidays`),
-                axios.get(`${import.meta.env.VITE_API_URL}/hr-requests`),
-                axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`)
     // Helper to get token for headers
     const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('x-auth-token') || null;
 
     const fetchDashboardData = async () => {
+        setLoading(true);
         try {
-            const [leavesRes, attendanceRes, employeesRes, announcementsRes] = await Promise.all([
+            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes, announcementsRes] = await Promise.all([
                 axios.get(`${import.meta.env.VITE_API_URL}/leaves/all`, { headers: { 'x-auth-token': getToken() } }),
                 axios.get(`${import.meta.env.VITE_API_URL}/attendance/all`, { headers: { 'x-auth-token': getToken() } }),
                 axios.get(`${import.meta.env.VITE_API_URL}/auth/users`, { headers: { 'x-auth-token': getToken() } }),
+                axios.get(`${import.meta.env.VITE_API_URL}/holidays`, { headers: { 'x-auth-token': getToken() } }),
+                axios.get(`${import.meta.env.VITE_API_URL}/hr-requests`, { headers: { 'x-auth-token': getToken() } }),
+                axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`, { headers: { 'x-auth-token': getToken() } }),
                 axios.get(`${import.meta.env.VITE_API_URL}/announcements`, { headers: { 'x-auth-token': getToken() } })
             ]);
             setLeaves(leavesRes.data);
@@ -79,13 +73,11 @@ const HRDashboard = () => {
             setHolidays(holidaysRes.data);
             setHrRequests(hrRequestsRes.data);
             setLeaveTypes(leaveTypesRes.data);
-        } catch (err) {
-            console.error("HR Dashboard parallel fetch failed", err);
-        } finally {
-            setLoading(false);
             setAnnouncements(announcementsRes.data);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -183,6 +175,8 @@ const HRDashboard = () => {
         } catch (err) {
             console.error('Error updating HR request:', err);
             alert('Failed to update request.');
+        }
+    };
     const fetchAllAnnouncements = async () => {
         try {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/announcements`, { headers: { 'x-auth-token': getToken() } });
@@ -223,7 +217,6 @@ const HRDashboard = () => {
         const matchesSearch =
             a.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.employee?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesSearch = a.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || a.employee?.email?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDate = attendanceDateFilter ? a.date === attendanceDateFilter : true;
         return matchesSearch && matchesDate;
     });
@@ -240,7 +233,7 @@ const HRDashboard = () => {
     }
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans">
+        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
             <HRSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -269,6 +262,8 @@ const HRDashboard = () => {
                                 attendance={attendance}
                                 employees={employees}
                                 holidays={holidays}
+                                latecomers={latecomers}
+                                announcements={announcements}
                                 setActiveTab={setActiveTab}
                             />
                         )}
@@ -299,7 +294,7 @@ const HRDashboard = () => {
                                         onDelete={async (id) => {
                                             if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
                                                 try {
-                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`);
+                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`, { headers: { 'x-auth-token': getToken() } });
                                                     setSelectedEmployee(null);
                                                     fetchAllEmployees();
                                                 } catch (err) {
@@ -318,7 +313,7 @@ const HRDashboard = () => {
                                         onDelete={async (id) => {
                                             if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
                                                 try {
-                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`);
+                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`, { headers: { 'x-auth-token': getToken() } });
                                                     fetchAllEmployees();
                                                 } catch (err) {
                                                     console.error("Error deleting employee:", err);
@@ -359,7 +354,6 @@ const HRDashboard = () => {
                             />
                         )}
 
-                        {/* ── UC-09: HR Requests Management ── */}
                         {activeTab === 'hr-requests' && (
                             <HRRequestsManagement
                                 requests={hrRequests}
@@ -373,30 +367,27 @@ const HRDashboard = () => {
                                 onBack={() => setActiveTab('dashboard')}
                             />
                         )}
+
                         {activeTab === 'departments' && (
                             <HRDepartments />
                         )}
-                        {/* 👇 NEW REPORTS TAB */}
+
                         {activeTab === 'reports' && (
                             <HRReports employees={employees} />
                         )}
 
-            <HRSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} logout={logout} />
-            <main className="flex-1 overflow-y-auto">
-                <HRHeader activeTab={activeTab} leaveFilter={leaveFilter} setLeaveFilter={setLeaveFilter} attendanceDateFilter={attendanceDateFilter} setAttendanceDateFilter={setAttendanceDateFilter} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-                <div className="p-8 max-w-7xl mx-auto">
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'dashboard' && <HROverview user={user} leaves={leaves} attendance={attendance} latecomers={latecomers} employees={employees} announcements={announcements} setActiveTab={setActiveTab} />}
-                        {activeTab === 'employees' && (
-                            <>
-                                {isAddingEmployee ? <AddEmployeePage onBack={() => setIsAddingEmployee(false)} onEmployeeAdded={fetchAllEmployees} /> : isEditingEmployee ? <EditEmployeePage employee={selectedEmployee} onBack={() => setIsEditingEmployee(false)} onEmployeeUpdated={(updatedEmp) => { fetchAllEmployees(); setSelectedEmployee(updatedEmp); }} /> : selectedEmployee ? <EmployeeDetailsPage employee={selectedEmployee} leaves={leaves} onBack={() => setSelectedEmployee(null)} onEdit={() => setIsEditingEmployee(true)} onDelete={async (id) => { if (window.confirm('Are you sure?')) { try { await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`, { headers: { 'x-auth-token': getToken() } }); setSelectedEmployee(null); fetchAllEmployees(); } catch (err) { alert(err.response?.data?.msg || "Failed to delete"); } } }} /> : <HREmployeeList employees={employees} searchTerm={searchTerm} onAddNew={() => setIsAddingEmployee(true)} onSelect={setSelectedEmployee} onDelete={async (id) => { if (window.confirm('Are you sure?')) { try { await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`, { headers: { 'x-auth-token': getToken() } }); fetchAllEmployees(); } catch (err) { alert(err.response?.data?.msg || "Failed"); } } }} />}
-                            </>
+                        {activeTab === 'latecomers' && (
+                            <LatecomersPage
+                                latecomers={filteredLatecomers}
+                                dateFilter={latecomerDateFilter}
+                                setDateFilter={setLatecomerDateFilter}
+                            />
                         )}
-                        {activeTab === 'leaves' && <HRLeaveManagement filteredLeaves={filteredLeaves} handleStatusUpdate={handleStatusUpdate} />}
-                        {activeTab === 'attendance' && <HRAttendanceTracking filteredAttendance={filteredAttendance} searchTerm={searchTerm} />}
-                        {activeTab === 'profile' && <UpdateProfilePage user={user} onBack={() => setActiveTab('dashboard')} />}
-                        {activeTab === 'latecomers' && <LatecomersPage latecomers={filteredLatecomers} dateFilter={latecomerDateFilter} setDateFilter={setLatecomerDateFilter} />}
-                        {activeTab === 'announcements' && <AnnouncementPage />}
+
+                        {activeTab === 'announcements' && (
+                            <AnnouncementPage />
+                        )}
+
                     </AnimatePresence>
                 </div>
             </main>
