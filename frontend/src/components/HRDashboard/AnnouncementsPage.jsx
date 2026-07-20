@@ -1,22 +1,22 @@
 import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Calendar, User, Plus, Trash2, X, Loader2, ArrowLeft, Pencil, Check, CheckCheck, Eye } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 
-const AnnouncementPage = () => {
+const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnnouncements }) => {
     const { user } = useContext(AuthContext);
     const isHR = user?.role === 'hr';
 
-    const [announcements, setAnnouncements] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [announcements, setAnnouncements] = useState(initialAnnouncements || []);
+    const [employees, setEmployees] = useState(initialEmployees || []);
+    const [loading, setLoading] = useState(!initialAnnouncements);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [selected, setSelected] = useState(null);
-    const [employees, setEmployees] = useState([]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState('');
@@ -24,25 +24,30 @@ const AnnouncementPage = () => {
     const [editSubmitting, setEditSubmitting] = useState(false);
     const [editError, setEditError] = useState('');
 
-    const getToken = () =>
-        localStorage.getItem('token') ||
-        localStorage.getItem('authToken') ||
-        localStorage.getItem('x-auth-token') ||
-        localStorage.getItem('accessToken') ||
-        null;
-
-    const authHeaders = () => ({ headers: { 'x-auth-token': getToken() } });
+    useEffect(() => {
+        if (initialAnnouncements) {
+            setAnnouncements(initialAnnouncements);
+        }
+        if (initialEmployees) {
+            setEmployees(initialEmployees);
+        }
+    }, [initialAnnouncements, initialEmployees]);
 
     useEffect(() => {
-        fetchAnnouncements();
-        fetchEmployees();
+        if (!initialAnnouncements) {
+            fetchAnnouncements();
+        }
+        if (!initialEmployees) {
+            fetchEmployees();
+        }
     }, []);
 
     const fetchAnnouncements = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/announcements`, authHeaders());
+            const res = await apiClient.get('/announcements');
             setAnnouncements(res.data);
+            if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {
             console.error('Error fetching announcements:', err);
         } finally {
@@ -52,7 +57,7 @@ const AnnouncementPage = () => {
 
     const fetchEmployees = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/users`, authHeaders());
+            const res = await apiClient.get('/auth/users');
             setEmployees(res.data);
         } catch (err) {
             console.error('Error fetching employees:', err);
@@ -87,7 +92,7 @@ const AnnouncementPage = () => {
         try {
             setSubmitting(true);
             setError('');
-            await axios.post(`${import.meta.env.VITE_API_URL}/announcements`, { title, message }, authHeaders());
+            await apiClient.post('/announcements', { title, message });
             setTitle('');
             setMessage('');
             setShowForm(false);
@@ -104,9 +109,10 @@ const AnnouncementPage = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this announcement?')) return;
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/announcements/${id}`, authHeaders());
+            await apiClient.delete(`/announcements/${id}`);
             setAnnouncements(prev => prev.filter(a => a._id !== id));
             if (selected?._id === id) setSelected(null);
+            if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {
             alert(err.response?.data?.msg || 'Failed to delete announcement');
         }
@@ -129,15 +135,15 @@ const AnnouncementPage = () => {
         try {
             setEditSubmitting(true);
             setEditError('');
-            const res = await axios.put(
-                `${import.meta.env.VITE_API_URL}/announcements/${selected._id}`,
-                { title: editTitle.trim(), message: editMessage.trim() },
-                authHeaders()
+            const res = await apiClient.put(
+                `/announcements/${selected._id}`,
+                { title: editTitle.trim(), message: editMessage.trim() }
             );
             const updated = res.data;
             setAnnouncements(prev => prev.map(a => a._id === updated._id ? updated : a));
             setSelected(updated);
             setIsEditing(false);
+            if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {
             const backendMsg = err.response?.data?.msg;
             setEditError(backendMsg || 'Failed to update announcement');

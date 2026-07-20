@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -331,11 +331,7 @@ const PracticeOnboarding = () => {
   useEffect(() => {
     const fetchPractice = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/practice/current`, {
-          headers: { 'x-auth-token': token }
-        });
+        const res = await apiClient.get('/practice/current');
         if (res.data) {
           const p = res.data;
           setPracticeInfo({
@@ -378,41 +374,31 @@ const PracticeOnboarding = () => {
           if (p.billingConfig) {
             setBillingConfig(p.billingConfig);
           }
-          if (p.currentStep) {
-            setCurrentStep(p.currentStep);
-          }
         }
       } catch (err) {
-        console.log("No existing practice setup found or error loading, starting fresh.", err);
+        console.error("Error loading practice onboarding data:", err);
       }
     };
+
     fetchPractice();
   }, []);
 
-  // Save onboarding details to database
-  const savePractice = async (step, isComplete = false) => {
+  // Save Progress to DB
+  const saveProgressToDB = async (nextStep = currentStep, isComplete = false) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert("You must be logged in to save onboarding details.");
-        return false;
-      }
-      
       const payload = {
-        ...practiceInfo,
-        logo: logoPreview || '',
+        practiceInfo,
+        logo: logoPreview,
         providers,
         users,
         openingHours,
         scheduleConfig,
         billingConfig,
-        currentStep: step,
+        currentStep: nextStep,
         isCompleted: isComplete
       };
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/practice/save`, payload, {
-        headers: { 'x-auth-token': token }
-      });
+      await apiClient.post('/practice/save', payload);
       return true;
     } catch (err) {
       console.error("Error saving onboarding details:", err);

@@ -31,12 +31,23 @@ const UserSchema = new mongoose.Schema({
         default: 0
     },
     photo: {
-        type: String, // URL or base64
+        type: String,
         default: ''
     },
     department: {
         type: String,
         default: 'development'
+    },
+    // Reference to the Department document this user belongs to
+    departmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Department',
+        default: null
+    },
+    // True if this employee is the designated Team Lead of their department
+    isTeamLead: {
+        type: Boolean,
+        default: false
     },
     reportingTo: {
         type: String,
@@ -61,7 +72,7 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hash password before saving
-UserSchema.pre('save', async function() {
+UserSchema.pre('save', async function () {
     if (!this.isModified('password')) {
         return;
     }

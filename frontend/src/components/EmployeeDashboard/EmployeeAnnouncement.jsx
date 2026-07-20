@@ -1,36 +1,36 @@
 import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Calendar, User, Trash2, Loader2, ArrowLeft, CheckCheck, Circle } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 
-const AnnouncementPage = () => {
+const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
     const { user } = useContext(AuthContext);
     const isHR = user?.role === 'hr';
 
-    const [announcements, setAnnouncements] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [announcements, setAnnouncements] = useState(initialAnnouncements || []);
+    const [loading, setLoading] = useState(!initialAnnouncements);
     const [selected, setSelected] = useState(null);
     const [filter, setFilter] = useState('all');
 
-    const getToken = () =>
-        localStorage.getItem('token') ||
-        localStorage.getItem('authToken') ||
-        localStorage.getItem('x-auth-token') ||
-        localStorage.getItem('accessToken') ||
-        null;
-
-    const authHeaders = () => ({ headers: { 'x-auth-token': getToken() } });
+    useEffect(() => {
+        if (initialAnnouncements) {
+            setAnnouncements(initialAnnouncements);
+        }
+    }, [initialAnnouncements]);
 
     useEffect(() => {
-        fetchAnnouncements();
+        if (!initialAnnouncements) {
+            fetchAnnouncements();
+        }
     }, []);
 
     const fetchAnnouncements = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/announcements`, authHeaders());
+            const res = await apiClient.get('/announcements');
             setAnnouncements(res.data);
+            if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {
             console.error('Error fetching announcements:', err);
         } finally {
@@ -45,11 +45,7 @@ const AnnouncementPage = () => {
     const markAsRead = async (announcement) => {
         if (isRead(announcement)) return;
         try {
-            await axios.put(
-                `${import.meta.env.VITE_API_URL}/announcements/${announcement._id}/read`,
-                {},
-                authHeaders()
-            );
+            await apiClient.put(`/announcements/${announcement._id}/read`);
             setAnnouncements(prev =>
                 prev.map(a =>
                     a._id === announcement._id
@@ -63,6 +59,7 @@ const AnnouncementPage = () => {
                     readBy: [...(prev.readBy || []), user?.id]
                 }));
             }
+            if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {
             console.error('Error marking announcement as read:', err);
         }

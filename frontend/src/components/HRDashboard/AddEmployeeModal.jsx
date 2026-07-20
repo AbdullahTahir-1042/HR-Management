@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Mail, Lock, User, Shield } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 
 const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
     const [formData, setFormData] = useState({
@@ -21,7 +21,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
         setError('');
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, formData);
+            await apiClient.post('/auth/register', formData);
             onEmployeeAdded();
             setFormData({ name: '', email: '', password: '', role: 'employee' });
             onClose();

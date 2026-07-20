@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff } from 'lucide-react';
@@ -23,7 +23,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/user`);
+                const res = await apiClient.get('/auth/user');
                 setFormData(prev => ({ ...prev, ...res.data }));
             } catch (err) {
                 console.error("Error fetching user data", err);
@@ -49,7 +49,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
         try {
             // Use the generic user update route
             const userId = user.id || user._id;
-            const res = await axios.put(`${import.meta.env.VITE_API_URL}/auth/users/${userId}`, formData);
+            const res = await apiClient.put(`/auth/users/${userId}`, formData);
             alert('Profile updated successfully!');
             updateUser(res.data); // Update global auth state
             if (onUpdate) onUpdate(res.data);

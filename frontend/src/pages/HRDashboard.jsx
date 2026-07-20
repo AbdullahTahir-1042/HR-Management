@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 
@@ -19,6 +19,7 @@ import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
 import HRDepartments from '../components/HRDashboard/HRDepartments';
 import HRReports from '../components/HRDashboard/HRReports'; // 👈 NEW
+import HRMistakeReports from '../components/HRDashboard/HRMistakeReports';
 import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
 import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
 import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
@@ -36,6 +37,7 @@ const HRDashboard = () => {
     const [employees, setEmployees] = useState([]);
     const [holidays, setHolidays] = useState([]);
     const [leaveTypes, setLeaveTypes] = useState([]);
+    const [mistakeReports, setMistakeReports] = useState([]);
 
     // ── UC-09: HR Requests state ───────────────────────────────────────────────
     const [hrRequests, setHrRequests] = useState([]);
@@ -52,20 +54,18 @@ const HRDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
 
-    // Helper to get token for headers
-    const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('x-auth-token') || null;
-
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes, announcementsRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/leaves/all`, { headers: { 'x-auth-token': getToken() } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/attendance/all`, { headers: { 'x-auth-token': getToken() } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/auth/users`, { headers: { 'x-auth-token': getToken() } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/holidays`, { headers: { 'x-auth-token': getToken() } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/hr-requests`, { headers: { 'x-auth-token': getToken() } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`, { headers: { 'x-auth-token': getToken() } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/announcements`, { headers: { 'x-auth-token': getToken() } })
+            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes, announcementsRes, mistakeReportsRes] = await Promise.all([
+                apiClient.get('/leaves/all'),
+                apiClient.get('/attendance/all'),
+                apiClient.get('/auth/users'),
+                apiClient.get('/holidays'),
+                apiClient.get('/hr-requests'),
+                apiClient.get('/leaves/types'),
+                apiClient.get('/announcements'),
+                apiClient.get('/mistake-reports')
             ]);
             setLeaves(leavesRes.data);
             setAttendance(attendanceRes.data);
@@ -74,6 +74,7 @@ const HRDashboard = () => {
             setHrRequests(hrRequestsRes.data);
             setLeaveTypes(leaveTypesRes.data);
             setAnnouncements(announcementsRes.data);
+            setMistakeReports(mistakeReportsRes.data);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
         } finally {
@@ -91,11 +92,7 @@ const HRDashboard = () => {
             try {
                 const token = await requestForToken();
                 if (token) {
-                    await axios.put(
-                        `${import.meta.env.VITE_API_URL}/auth/fcm-token`, 
-                        { token },
-                        { headers: { 'x-auth-token': getToken() } }
-                    );
+                    await apiClient.put('/auth/fcm-token', { token });
                     console.log('HR FCM Token synced successfully.');
                 }
             } catch (error) {
@@ -121,18 +118,18 @@ const HRDashboard = () => {
     }, [activeTab]);
 
     const fetchAllLeaves = async () => {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/all`, { headers: { 'x-auth-token': getToken() } });
+        const res = await apiClient.get('/leaves/all');
         setLeaves(res.data);
     };
 
     const fetchAllAttendance = async () => {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/attendance/all`, { headers: { 'x-auth-token': getToken() } });
+        const res = await apiClient.get('/attendance/all');
         setAttendance(res.data);
     };
 
     const fetchAllEmployees = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/users`, { headers: { 'x-auth-token': getToken() } });
+            const res = await apiClient.get('/auth/users');
             setEmployees(res.data);
         } catch (err) {
             console.error("Error fetching employees:", err);
@@ -141,7 +138,7 @@ const HRDashboard = () => {
 
     const fetchHolidays = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/holidays`);
+            const res = await apiClient.get('/holidays');
             setHolidays(res.data);
         } catch (err) {
             console.error('Error fetching holidays:', err);
@@ -151,7 +148,7 @@ const HRDashboard = () => {
     // ── UC-09: Fetch all HR requests ───────────────────────────────────────────
     const fetchHRRequests = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/hr-requests`);
+            const res = await apiClient.get('/hr-requests');
             setHrRequests(res.data);
         } catch (err) {
             console.error('Error fetching HR requests:', err);
@@ -160,7 +157,7 @@ const HRDashboard = () => {
 
     const fetchLeaveTypes = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/leaves/types`);
+            const res = await apiClient.get('/leaves/types');
             setLeaveTypes(res.data);
         } catch (err) {
             console.error('Error fetching leave types:', err);
@@ -170,7 +167,7 @@ const HRDashboard = () => {
     // ── UC-09: Update HR request status & note ─────────────────────────────────
     const handleUpdateHRRequest = async (id, { status, hrNote }) => {
         try {
-            await axios.put(`${import.meta.env.VITE_API_URL}/hr-requests/${id}`, { status, hrNote });
+            await apiClient.put(`/hr-requests/${id}`, { status, hrNote });
             fetchHRRequests();
         } catch (err) {
             console.error('Error updating HR request:', err);
@@ -179,7 +176,7 @@ const HRDashboard = () => {
     };
     const fetchAllAnnouncements = async () => {
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/announcements`, { headers: { 'x-auth-token': getToken() } });
+            const res = await apiClient.get('/announcements');
             setAnnouncements(res.data);
         } catch (err) {
             console.error("Error fetching announcements:", err);
@@ -187,7 +184,7 @@ const HRDashboard = () => {
     };
 
     const handleStatusUpdate = async (id, status) => {
-        await axios.put(`${import.meta.env.VITE_API_URL}/leaves/${id}/status`, { status }, { headers: { 'x-auth-token': getToken() } });
+        await apiClient.put(`/leaves/${id}/status`, { status });
         fetchAllLeaves();
     };
 
@@ -264,6 +261,7 @@ const HRDashboard = () => {
                                 holidays={holidays}
                                 latecomers={latecomers}
                                 announcements={announcements}
+                                mistakeReports={mistakeReports}
                                 setActiveTab={setActiveTab}
                             />
                         )}
@@ -294,7 +292,7 @@ const HRDashboard = () => {
                                         onDelete={async (id) => {
                                             if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
                                                 try {
-                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`, { headers: { 'x-auth-token': getToken() } });
+                                                    await apiClient.delete(`/auth/users/${id}`);
                                                     setSelectedEmployee(null);
                                                     fetchAllEmployees();
                                                 } catch (err) {
@@ -313,7 +311,7 @@ const HRDashboard = () => {
                                         onDelete={async (id) => {
                                             if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
                                                 try {
-                                                    await axios.delete(`${import.meta.env.VITE_API_URL}/auth/users/${id}`, { headers: { 'x-auth-token': getToken() } });
+                                                    await apiClient.delete(`/auth/users/${id}`);
                                                     fetchAllEmployees();
                                                 } catch (err) {
                                                     console.error("Error deleting employee:", err);
@@ -376,6 +374,10 @@ const HRDashboard = () => {
                             <HRReports employees={employees} />
                         )}
 
+                        {activeTab === 'mistake-reports' && (
+                            <HRMistakeReports />
+                        )}
+
                         {activeTab === 'latecomers' && (
                             <LatecomersPage
                                 latecomers={filteredLatecomers}
@@ -385,7 +387,11 @@ const HRDashboard = () => {
                         )}
 
                         {activeTab === 'announcements' && (
-                            <AnnouncementPage />
+                            <AnnouncementPage
+                                initialAnnouncements={announcements}
+                                initialEmployees={employees}
+                                onRefreshAnnouncements={fetchAllAnnouncements}
+                            />
                         )}
 
                     </AnimatePresence>

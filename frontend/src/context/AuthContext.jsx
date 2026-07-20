@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../api/axiosClient';
 
 export const AuthContext = createContext();
 
@@ -11,9 +11,8 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const verifyToken = async () => {
             if (token) {
-                axios.defaults.headers.common['x-auth-token'] = token;
                 try {
-                    const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/user`);
+                    const res = await apiClient.get('/auth/user');
                     setUser(res.data);
                     localStorage.setItem('user', JSON.stringify(res.data));
                 } catch (err) {
@@ -24,7 +23,6 @@ export const AuthProvider = ({ children }) => {
                     setUser(null);
                 }
             } else {
-                delete axios.defaults.headers.common['x-auth-token'];
                 setUser(null);
             }
             setLoading(false);
@@ -32,9 +30,9 @@ export const AuthProvider = ({ children }) => {
         verifyToken();
     }, [token]);
 
-    // 👇 Global Interceptor to handle expired/invalid JWT tokens (HTTP 401)
+    // Global Interceptor to handle expired/invalid JWT tokens (HTTP 401)
     useEffect(() => {
-        const interceptor = axios.interceptors.response.use(
+        const interceptor = apiClient.interceptors.response.use(
             (response) => response,
             (error) => {
                 if (error.response && error.response.status === 401) {
@@ -42,18 +40,20 @@ export const AuthProvider = ({ children }) => {
                     localStorage.removeItem('user');
                     setToken(null);
                     setUser(null);
+                    if (window.location.pathname !== '/login') {
+                        window.location.href = '/login';
+                    }
                 }
                 return Promise.reject(error);
             }
         );
         return () => {
-            axios.interceptors.response.eject(interceptor);
+            apiClient.interceptors.response.eject(interceptor);
         };
     }, []);
 
     const login = async (email, password) => {
-        console.log('Logging in to:', `${import.meta.env.VITE_API_URL}/auth/login`);
-        const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { email, password });
+        const res = await apiClient.post('/auth/login', { email, password });
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
         setToken(res.data.token);
@@ -73,23 +73,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(newUser));
         setUser(newUser);
     };
-
-    // Auto signout on 401 Token Expiration/Invalidation
-    useEffect(() => {
-        const interceptor = axios.interceptors.response.use(
-            (response) => response,
-            (error) => {
-                if (error.response && error.response.status === 401) {
-                    logout();
-                    window.location.href = '/login';
-                }
-                return Promise.reject(error);
-            }
-        );
-        return () => {
-            axios.interceptors.response.eject(interceptor);
-        };
-    }, []);
 
     return (
         <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>

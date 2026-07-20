@@ -8,7 +8,6 @@ dotenv.config();
 
 const app = express();
 
-// Init Middleware
 app.use(helmet());
 
 const allowedOrigins = [
@@ -19,12 +18,10 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like server-to-server or postman)
         if (!origin) return callback(null, true);
-        // Allow whitelisted production origins and any local dev environments dynamically
         if (
-            allowedOrigins.includes(origin) || 
-            origin.startsWith('http://localhost:') || 
+            allowedOrigins.includes(origin) ||
+            origin.startsWith('http://localhost:') ||
             origin.startsWith('http://127.0.0.1:')
         ) {
             return callback(null, true);
@@ -41,10 +38,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Connect Database
 connectDB();
 
-// Define Routes
 app.get('/', (req, res) => res.send('Server is running'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/attendance', require('./routes/attendance'));
@@ -54,9 +49,8 @@ app.use('/api/practice', require('./routes/practice'));
 app.use('/api/holidays', require('./routes/holidays'));
 app.use('/api/hr-requests', require('./routes/hrRequests'));
 app.use('/api/onboarding', require('./routes/onboarding'));
-app.use('/api/practice', require('./routes/practice'));
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/mistake-reports', require('./routes/mistakeReports')); // ✅ NEW
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

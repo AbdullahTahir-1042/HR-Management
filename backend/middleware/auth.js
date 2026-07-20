@@ -24,7 +24,6 @@ const isHR = async (req, res, next) => {
             return res.status(401).json({ msg: 'No user on request — check auth middleware ran first' });
         }
         const user = await User.findById(req.user.id);
-        console.log('isHR check — user:', user?.email, '| role:', user?.role);
         if (!user || user.role !== 'hr') {
             return res.status(403).json({ msg: `Access denied. HR only. (your role: ${user?.role || 'none'})` });
         }
@@ -35,4 +34,21 @@ const isHR = async (req, res, next) => {
     }
 };
 
-module.exports = { auth, isHR };
+// Team Lead middleware — checks isTeamLead flag on User (HR can also pass)
+const isTeamLead = async (req, res, next) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: 'No user on request — check auth middleware ran first' });
+        }
+        const user = await User.findById(req.user.id);
+        if (!user || (!user.isTeamLead && user.role !== 'hr')) {
+            return res.status(403).json({ msg: 'Access denied. Team Lead only.' });
+        }
+        next();
+    } catch (err) {
+        console.error('isTeamLead Middleware Error:', err);
+        res.status(500).json({ msg: 'Server error checking permissions' });
+    }
+};
+
+module.exports = { auth, isHR, isTeamLead };

@@ -2,14 +2,12 @@ import React, { useContext, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 
-// Route-based Code Splitting / Lazy Loading
 const Login = lazy(() => import('./pages/Login'));
 const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'));
 const HRDashboard = lazy(() => import('./pages/HRDashboard'));
 const PracticeOnboarding = lazy(() => import('./pages/PracticeOnboarding'));
 const PracticeOnboardingWizard = lazy(() => import('./components/PracticeOnboardingWizard'));
 
-// Fallback loader
 const PageLoader = () => (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-3">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -19,13 +17,15 @@ const PageLoader = () => (
 
 const ProtectedRoute = ({ children, role }) => {
     const { user, loading } = useContext(AuthContext);
-
     if (loading) return <PageLoader />;
     if (!user) return <Navigate to="/login" />;
-    if (role && user.role !== role) {
-        return <Navigate to={user.role === 'hr' ? '/hr' : '/employee'} />;
+    if (role) {
+        const allowedRoles = Array.isArray(role) ? role : [role];
+        if (!allowedRoles.includes(user.role)) {
+            if (user.role === 'hr') return <Navigate to="/hr" />;
+            return <Navigate to="/employee" />;
+        }
     }
-
     return children;
 };
 
@@ -36,38 +36,26 @@ function App() {
                 <Suspense fallback={<PageLoader />}>
                     <Routes>
                         <Route path="/login" element={<Login />} />
-                        <Route 
-                            path="/employee" 
-                            element={
-                                <ProtectedRoute role="employee">
-                                    <EmployeeDashboard />
-                                </ProtectedRoute>
-                            } 
-                        />
-                        <Route 
-                            path="/hr" 
-                            element={
-                                <ProtectedRoute role="hr">
-                                    <HRDashboard />
-                                </ProtectedRoute>
-                            } 
-                        />
-                        <Route 
-                            path="/onboarding" 
-                            element={
-                                <ProtectedRoute>
-                                    <PracticeOnboarding />
-                                </ProtectedRoute>
-                            } 
-                        />
-                        <Route 
-                            path="/practice-onboarding" 
-                            element={
-                                <ProtectedRoute>
-                                    <PracticeOnboardingWizard />
-                                </ProtectedRoute>
-                            } 
-                        />
+                        <Route path="/employee" element={
+                            <ProtectedRoute role="employee">
+                                <EmployeeDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/hr" element={
+                            <ProtectedRoute role="hr">
+                                <HRDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/onboarding" element={
+                            <ProtectedRoute>
+                                <PracticeOnboarding />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/practice-onboarding" element={
+                            <ProtectedRoute>
+                                <PracticeOnboardingWizard />
+                            </ProtectedRoute>
+                        } />
                         <Route path="/" element={<Navigate to="/login" />} />
                         <Route path="*" element={<Navigate to="/login" />} />
                     </Routes>
