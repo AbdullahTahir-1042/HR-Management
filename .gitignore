@@ -41,6 +41,9 @@ Thumbs.db
 .cache/
 coverage/
 
+# Cloudflare Wrangler local dev state
+.wrangler/
+
 package-lock.json
 yarn.lock
 

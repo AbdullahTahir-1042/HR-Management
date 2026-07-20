@@ -17,6 +17,7 @@ import AddEmployeePage from '../components/HRDashboard/AddEmployeePage';
 import EmployeeDetailsPage from '../components/HRDashboard/EmployeeDetailsPage';
 import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import MessagesPage from '../components/MessagesPage';
 import HRDepartments from '../components/HRDashboard/HRDepartments';
 import HRReports from '../components/HRDashboard/HRReports'; // 👈 NEW
 import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
@@ -45,6 +46,7 @@ const HRDashboard = () => {
     const [isEditingEmployee, setIsEditingEmployee] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     // Filters
     const [latecomerDateFilter, setLatecomerDateFilter] = useState('');
@@ -83,6 +85,22 @@ const HRDashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
+    }, []);
+
+    // Lightweight poll just for the sidebar's unread-messages badge —
+    // independent of fetchDashboardData so it stays fresh while a tab is open.
+    useEffect(() => {
+        const fetchUnreadMessages = async () => {
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/conversations`, { headers: { 'x-auth-token': getToken() } });
+                setUnreadMessages(res.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+            } catch (err) {
+                console.error('Error fetching unread messages count:', err);
+            }
+        };
+        fetchUnreadMessages();
+        const interval = setInterval(fetchUnreadMessages, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     // --- FIREBASE NOTIFICATION SETUP ---
@@ -235,6 +253,7 @@ const HRDashboard = () => {
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
             <HRSidebar
+                unreadMessages={unreadMessages}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 user={user}
@@ -359,6 +378,10 @@ const HRDashboard = () => {
                                 requests={hrRequests}
                                 onUpdate={handleUpdateHRRequest}
                             />
+                        )}
+
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
                         )}
 
                         {activeTab === 'profile' && (

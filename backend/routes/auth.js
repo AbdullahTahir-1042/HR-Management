@@ -89,6 +89,20 @@ router.get('/users', [auth, isHR], async (req, res) => {
     }
 });
 
+// @route   GET api/auth/colleagues
+// @desc    Get a lightweight directory of everyone in the company (for messaging, etc.)
+// @access  Private
+router.get('/colleagues', auth, async (req, res) => {
+    try {
+        const users = await User.find({ isDeleted: { $ne: true }, _id: { $ne: req.user.id } })
+            .select('name email photo role department')
+            .sort({ name: 1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   PUT api/auth/users/:id
 // @desc    Update user details (Self or HR)
 // @access  Private

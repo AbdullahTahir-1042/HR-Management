@@ -1,8 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Clock, Calendar, LogOut, User, Sparkles, PartyPopper, MessageSquare, GraduationCap, BookOpen, Bell } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, LogOut, User, Sparkles, PartyPopper, MessageSquare, GraduationCap, BookOpen, Bell, MessageCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
-const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
+const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, unreadMessages = 0 }) => {
     const navigate = useNavigate();
     return (
         <aside className="w-64 bg-white border-r border-slate-200 flex flex-col sticky top-0 h-screen z-50">
@@ -21,6 +21,19 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                     <LayoutDashboard size={20} />
                     <span className="text-sm">Dashboard</span>
                 </button>
+                <button
+                    onClick={() => setActiveTab('messages')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'messages' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <MessageCircle size={20} />
+                    <span className="text-sm flex-1 text-left">Messages</span>
+                    {unreadMessages > 0 && (
+                        <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full">
+                            {unreadMessages > 99 ? '99+' : unreadMessages}
+                        </span>
+                    )}
+                </button>
+
                 <button
                     onClick={() => setActiveTab('attendance')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}

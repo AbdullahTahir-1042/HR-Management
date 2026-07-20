@@ -15,6 +15,7 @@ import EmployeeHolidays from '../components/EmployeeDashboard/EmployeeHolidays';
 import EmployeeHRRequests from '../components/EmployeeDashboard/EmployeeHRRequests';
 import EmployeeAnnouncement from '../components/EmployeeDashboard/EmployeeAnnouncement';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import MessagesPage from '../components/MessagesPage';
 
 const EmployeeDashboard = () => {
     const { user: authUser, logout, updateUser } = useContext(AuthContext);
@@ -38,6 +39,7 @@ const EmployeeDashboard = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
     const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -73,6 +75,22 @@ const EmployeeDashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
+    }, []);
+
+    // Lightweight poll just for the sidebar's unread-messages badge —
+    // independent of fetchDashboardData so it stays fresh while a tab is open.
+    useEffect(() => {
+        const fetchUnreadMessages = async () => {
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/conversations`);
+                setUnreadMessages(res.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+            } catch (err) {
+                console.error('Error fetching unread messages count:', err);
+            }
+        };
+        fetchUnreadMessages();
+        const interval = setInterval(fetchUnreadMessages, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     // --- FIREBASE NOTIFICATION SETUP ---
@@ -260,6 +278,7 @@ const EmployeeDashboard = () => {
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
             <EmployeeSidebar
+                unreadMessages={unreadMessages}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 user={fullUser || authUser}
@@ -323,6 +342,10 @@ const EmployeeDashboard = () => {
                                 onSubmit={handleSubmitHRRequest}
                                 submitting={hrRequestSubmitting}
                             />
+                        )}
+
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
                         )}
 
                         {activeTab === 'profile' && (

@@ -16,10 +16,11 @@ import {
     CalendarRange,
     Calendar,
     Bell,
-    BookOpen
+    BookOpen,
+    MessageCircle
 } from 'lucide-react';
 
-const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
+const HRSidebar = ({ activeTab, setActiveTab, user, logout, unreadMessages = 0 }) => {
     const navigate = useNavigate();
     return (
         <aside className="w-64 bg-white border-r border-slate-200 flex flex-col sticky top-0 h-screen z-50">
@@ -37,6 +38,19 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 >
                     <LayoutDashboard size={20} />
                     <span className="text-sm">Dashboard</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('messages')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'messages' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                >
+                    <MessageCircle size={20} />
+                    <span className="text-sm flex-1 text-left">Messages</span>
+                    {unreadMessages > 0 && (
+                        <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full">
+                            {unreadMessages > 99 ? '99+' : unreadMessages}
+                        </span>
+                    )}
                 </button>
 
                 <button
