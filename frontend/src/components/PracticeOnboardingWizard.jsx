@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
@@ -55,9 +55,7 @@ const PracticeOnboardingWizard = () => {
     useEffect(() => {
         const loadPracticeInfo = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const config = { headers: { 'x-auth-token': token } };
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/practice`, config);
+                const res = await apiClient.get('/practice');
                 if (res.data && res.data._id) {
                     setFormData(res.data);
                     if (res.data.currentStep) {
@@ -245,9 +243,7 @@ const PracticeOnboardingWizard = () => {
                 ...formData,
                 currentStep: stepToSave
             };
-            const token = localStorage.getItem('token');
-            const config = { headers: { 'x-auth-token': token } };
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/practice`, body, config);
+            const res = await apiClient.post('/practice', body);
             setFormData(res.data);
             setSuccessMessage("Practice settings saved successfully!");
             setTimeout(() => setSuccessMessage(''), 3000);

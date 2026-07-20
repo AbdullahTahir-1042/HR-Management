@@ -16,7 +16,8 @@ import {
     CalendarRange,
     Calendar,
     Bell,
-    BookOpen
+    BookOpen,
+    AlertTriangle
 } from 'lucide-react';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
@@ -30,124 +31,150 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
                 <span className="font-bold text-lg text-slate-800 tracking-tight">HR Admin</span>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto">
-                <button
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <LayoutDashboard size={20} />
-                    <span className="text-sm">Dashboard</span>
-                </button>
+            <nav className="flex-1 p-4 space-y-3 mt-2 overflow-y-auto">
+                {/* ── SECTION: OVERVIEW ── */}
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Overview</p>
+                    <button
+                        onClick={() => setActiveTab('dashboard')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                    >
+                        <LayoutDashboard size={18} />
+                        <span>Dashboard</span>
+                    </button>
+                </div>
 
-                <button
-                    onClick={() => setActiveTab('employees')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <User size={20} />
-                    <span className="text-sm">Employees</span>
-                </button>
+                {/* ── SECTION: MANAGEMENT ── */}
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Organization</p>
+                    <div className="space-y-0.5">
+                        <button
+                            onClick={() => setActiveTab('employees')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <User size={18} />
+                            <span>Employees</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('departments')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'departments' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <Building2 size={18} />
+                            <span>Departments</span>
+                        </button>
+                    </div>
+                </div>
 
-                <button
-                    onClick={() => setActiveTab('leaves')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <CalendarCheck size={20} />
-                    <span className="text-sm">Leave Requests</span>
-                </button>
+                {/* ── SECTION: TIME & ATTENDANCE ── */}
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Time & Attendance</p>
+                    <div className="space-y-0.5">
+                        <button 
+                            onClick={() => setActiveTab('attendance')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <Calendar size={18} />
+                            <span>Attendance Logs</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('latecomers')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'latecomers' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <Clock size={18} />
+                            <span>Late Comers</span>
+                        </button>
+                    </div>
+                </div>
 
-                <button
-                    onClick={() => setActiveTab('leave-types')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'leave-types' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <CalendarRange size={20} />
-                    <span className="text-sm">Leave Types</span>
-                </button>
+                {/* ── SECTION: REQUESTS & LEAVES ── */}
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Requests & Leaves</p>
+                    <div className="space-y-0.5">
+                        <button
+                            onClick={() => setActiveTab('leaves')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <CalendarCheck size={18} />
+                            <span>Leave Requests</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('leave-types')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'leave-types' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <CalendarRange size={18} />
+                            <span>Leave Types</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('hr-requests')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <ClipboardList size={18} />
+                            <span>HR Requests</span>
+                        </button>
+                    </div>
+                </div>
 
-                <button 
-                    onClick={() => setActiveTab('latecomers')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'latecomers' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <Clock size={20} />
-                    <span className="text-sm">Late Comers</span>
-                </button>
-
-                <button 
-                    onClick={() => setActiveTab('attendance')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <Calendar size={20} />
-                    <span className="text-sm">Attendance</span>
-                </button>
-
-                {/* 👇 DEPARTMENTS BUTTON */}
-                <button 
-                    onClick={() => setActiveTab('departments')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'departments' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <Building2 size={20} />
-                    <span className="text-sm">Departments</span>
-                </button>
-
-                {/* 👇 REPORTS BUTTON */}
-                <button 
-                    onClick={() => setActiveTab('reports')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <BarChart2 size={20} />
-                    <span className="text-sm">User Report</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab('holidays')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <CalendarDays size={20} />
-                    <span className="text-sm">Holidays</span>
-                </button>
-
-                {/* ── UC-09: HR Requests ── */}
-                <button
-                    onClick={() => setActiveTab('hr-requests')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <ClipboardList size={20} />
-                    <span className="text-sm">HR Requests</span>
-                </button>
-
-                <button 
-                    onClick={() => setActiveTab('announcements')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <Bell size={20} />
-                    <span className="text-sm">Announcements</span>
-                </button>
+                {/* ── SECTION: SYSTEM & REPORTS ── */}
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">System & Reports</p>
+                    <div className="space-y-0.5">
+                        <button 
+                            onClick={() => setActiveTab('reports')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <BarChart2 size={18} />
+                            <span>User Reports</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('mistake-reports')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'mistake-reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <AlertTriangle size={18} />
+                            <span>Mistake Reports</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('holidays')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <CalendarDays size={18} />
+                            <span>Holidays</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('announcements')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <Bell size={18} />
+                            <span>Announcements</span>
+                        </button>
+                    </div>
+                </div>
 
                 {/* 👇 PRACTICE ONBOARDING (LINK 1) */}
-                <Link 
+                {/* <Link 
                     to="/practice-onboarding"
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                 >
                     <Sparkles size={20} />
                     <span className="text-sm">Practice Onboarding</span>
-                </Link>
+                </Link> */}
 
                 {/* 👇 PRACTICE ONBOARDING (BUTTON 2) */}
-                <button
+                {/* <button
                     onClick={() => navigate('/practice-onboarding')}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                 >
                     <GraduationCap size={20} />
                     <span className="text-sm">Practice Onboarding</span>
-                </button>
+                </button> */}
 
                 {/* 👇 PRACTICE ONBOARDING (LINK 3) */}
-                <Link 
+                {/* <Link 
                     to="/practice-onboarding"
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                 >
                     <BookOpen size={20} />
                     <span className="text-sm">practice-onboarding</span>
-                </Link>
+                </Link> */}
             </nav>
 
             <div className="p-4 border-t border-slate-100">

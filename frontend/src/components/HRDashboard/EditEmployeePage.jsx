@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2, UserCheck, Image as ImageIcon, Phone } from 'lucide-react';
-import axios from 'axios';
+import { ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2, UserCheck, Image as ImageIcon, Phone, Crown, AlertCircle } from 'lucide-react';
+import apiClient from '../../api/axiosClient';
 
 const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     const [formData, setFormData] = useState({
@@ -13,7 +13,8 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         department: 'development',
         reportingTo: '',
         salary: '',
-        photo: ''
+        photo: '',
+        isTeamLead: false
     });
     const [departmentsList, setDepartmentsList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     useEffect(() => {
         const fetchDepts = async () => {
             try {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/departments/all`);
+                const res = await apiClient.get('/departments');
                 setDepartmentsList(res.data);
             } catch (err) {
                 console.error("Failed to load departments:", err);
@@ -43,11 +44,27 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                 department: employee.department || 'development',
                 reportingTo: employee.reportingTo || '',
                 salary: employee.salary || '',
-                photo: employee.photo || ''
+                photo: employee.photo || '',
+                isTeamLead: employee.isTeamLead || false
             });
             setPreview(employee.photo || null);
         }
     }, [employee]);
+
+    // Reset isTeamLead to false if the selected department already has a different Team Lead
+    useEffect(() => {
+        const selectedDeptObj = departmentsList.find(
+            dept => dept.name.toLowerCase() === formData.department.toLowerCase()
+        );
+        const hasExistingLead = selectedDeptObj && selectedDeptObj.teamLead && (
+            typeof selectedDeptObj.teamLead === 'object'
+                ? selectedDeptObj.teamLead._id !== (employee?._id || '')
+                : selectedDeptObj.teamLead !== (employee?._id || '')
+        );
+        if (hasExistingLead && formData.isTeamLead) {
+            setFormData(prev => ({ ...prev, isTeamLead: false }));
+        }
+    }, [formData.department, departmentsList, employee]);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
@@ -67,13 +84,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'x-auth-token': token
-                }
-            };
-            const res = await axios.put(`${import.meta.env.VITE_API_URL}/auth/users/${employee._id}`, formData, config);
+            const res = await apiClient.put(`/auth/users/${employee._id}`, formData);
             onEmployeeUpdated(res.data);
             onBack();
         } catch (err) {
@@ -177,6 +188,68 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         </select>
                                     </div>
                                 </div>
+                                {/* Assign as Team Lead Toggle */}
+                                {formData.role === 'employee' && (() => {
+                                    const selectedDeptObj = departmentsList.find(
+                                        dept => dept.name.toLowerCase() === formData.department.toLowerCase()
+                                    );
+                                    const hasExistingLead = selectedDeptObj && selectedDeptObj.teamLead && (
+                                        typeof selectedDeptObj.teamLead === 'object'
+                                            ? selectedDeptObj.teamLead._id !== (employee?._id || '')
+                                            : selectedDeptObj.teamLead !== (employee?._id || '')
+                                    );
+                                    const existingLeadName = hasExistingLead ? (selectedDeptObj.teamLead.name || 'Another employee') : '';
+
+                                    return (
+                                        <div className="space-y-2">
+                                            <div
+                                                onClick={() => {
+                                                    if (!hasExistingLead) {
+                                                        setFormData({...formData, isTeamLead: !formData.isTeamLead});
+                                                    }
+                                                }}
+                                                className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                                                    hasExistingLead
+                                                        ? 'border-slate-200 bg-slate-100/50 cursor-not-allowed opacity-60'
+                                                        : formData.isTeamLead
+                                                            ? 'border-amber-300 bg-amber-50 cursor-pointer'
+                                                            : 'border-slate-200 bg-slate-50 hover:border-slate-300 cursor-pointer'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-xl transition-colors ${
+                                                        formData.isTeamLead ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'
+                                                    }`}>
+                                                        <Crown size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <p className={`text-sm font-bold ${formData.isTeamLead ? 'text-amber-700' : 'text-slate-600'}`}>
+                                                            Assign as Team Lead
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400">
+                                                            This employee will lead the selected department
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className={`w-11 h-6 rounded-full p-0.5 transition-colors ${
+                                                    formData.isTeamLead ? 'bg-amber-500' : 'bg-slate-300'
+                                                }`}>
+                                                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+                                                        formData.isTeamLead ? 'translate-x-5' : 'translate-x-0'
+                                                    }`} />
+                                                </div>
+                                            </div>
+                                            {hasExistingLead && (
+                                                <div className="flex items-center gap-2 text-amber-600 bg-amber-50/50 border border-amber-100 rounded-xl p-3 text-[11px] font-semibold">
+                                                    <AlertCircle size={14} className="shrink-0" />
+                                                    <span>
+                                                        {existingLeadName} is already assigned as the Team Lead of this department.
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Reporting To</label>
                                     <div className="relative mt-1">

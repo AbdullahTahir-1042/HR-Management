@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Edit2, CheckCircle2, XCircle, Search, ExternalLink, Users, ListTodo, Award, Check } from 'lucide-react';
 
@@ -31,8 +31,8 @@ const HRPracticeOnboarding = () => {
         setLoading(true);
         try {
             const [tasksRes, employeesRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/onboarding/tasks`),
-                axios.get(`${import.meta.env.VITE_API_URL}/auth/users`)
+                apiClient.get('/onboarding/tasks'),
+                apiClient.get('/auth/users')
             ]);
             setTasks(tasksRes.data);
             setEmployees(employeesRes.data);
@@ -49,11 +49,11 @@ const HRPracticeOnboarding = () => {
 
         try {
             if (editingTask) {
-                const res = await axios.put(`${import.meta.env.VITE_API_URL}/onboarding/tasks/${editingTask._id}`, taskForm);
+                const res = await apiClient.put(`/onboarding/tasks/${editingTask._id}`, taskForm);
                 setTasks(tasks.map(t => t._id === editingTask._id ? res.data : t));
                 alert("Task updated successfully!");
             } else {
-                const res = await axios.post(`${import.meta.env.VITE_API_URL}/onboarding/tasks`, taskForm);
+                const res = await apiClient.post('/onboarding/tasks', taskForm);
                 setTasks([...tasks, res.data]);
                 alert("Task created successfully!");
             }
@@ -69,7 +69,7 @@ const HRPracticeOnboarding = () => {
         if (!window.confirm("Are you sure you want to delete this onboarding task?")) return;
 
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/onboarding/tasks/${taskId}`);
+            await apiClient.delete(`/onboarding/tasks/${taskId}`);
             setTasks(tasks.filter(t => t._id !== taskId));
             alert("Task deleted.");
             fetchData(); // Refresh progress

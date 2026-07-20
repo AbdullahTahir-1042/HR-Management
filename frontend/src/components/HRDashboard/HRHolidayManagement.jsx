@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Plus, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 
 // ─── Add / Edit Modal ────────────────────────────────────────────────────────
 const HolidayModal = ({ holiday, onClose, onSaved }) => {
@@ -37,9 +37,9 @@ const HolidayModal = ({ holiday, onClose, onSaved }) => {
         setLoading(true);
         try {
             if (isEdit) {
-                await axios.put(`${import.meta.env.VITE_API_URL}/holidays/${holiday._id}`, form);
+                await apiClient.put(`/holidays/${holiday._id}`, form);
             } else {
-                await axios.post(`${import.meta.env.VITE_API_URL}/holidays`, form);
+                await apiClient.post('/holidays', form);
             }
             onSaved();
         } catch (err) {
@@ -248,7 +248,7 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
         if (!window.confirm('Are you sure you want to delete this holiday?')) return;
         try {
             setDeletingId(id);
-            await axios.delete(`${import.meta.env.VITE_API_URL}/holidays/${id}`);
+            await apiClient.delete(`/holidays/${id}`);
             fetchHolidays();
         } catch (err) {
             alert(err.response?.data?.msg || 'Failed to delete holiday.');

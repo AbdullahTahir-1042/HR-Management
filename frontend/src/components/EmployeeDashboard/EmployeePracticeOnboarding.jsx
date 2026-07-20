@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../../context/AuthContext';
 import { CheckCircle2, Circle, ExternalLink, HelpCircle, Award, Compass, RefreshCw, Layers } from 'lucide-react';
@@ -17,7 +17,7 @@ const EmployeePracticeOnboarding = () => {
     const fetchTasks = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/onboarding/tasks`);
+            const res = await apiClient.get('/onboarding/tasks');
             setTasks(res.data);
         } catch (err) {
             console.error("Error fetching onboarding tasks:", err);
@@ -46,7 +46,7 @@ const EmployeePracticeOnboarding = () => {
             );
 
             // Make API call
-            await axios.post(`${import.meta.env.VITE_API_URL}/onboarding/tasks/${taskId}/toggle`);
+            await apiClient.post(`/onboarding/tasks/${taskId}/toggle`);
         } catch (err) {
             console.error("Error toggling task completion:", err);
             alert("Failed to update status. Please try again.");

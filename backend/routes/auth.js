@@ -5,13 +5,14 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const LeaveRequest = require('../models/LeaveRequest');
 const Attendance = require('../models/Attendance');
+const Department = require('../models/Department');
 const { auth, isHR } = require('../middleware/auth');
 
 // @route   POST api/auth/register
 // @desc    Register user (HR only)
 // @access  Private (HR)
 router.post('/register', [auth, isHR], async (req, res) => {
-    let { name, email, password, role, status, salary, photo, department, reportingTo, phone } = req.body;
+    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
@@ -20,25 +21,59 @@ router.post('/register', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
-        user = new User({ 
-            name, 
-            email, 
-            password, 
+        let departmentId = null;
+        if (department) {
+            const dept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
+            if (dept) {
+                departmentId = dept._id;
+            }
+        }
+
+        user = new User({
+            name,
+            email,
+            password,
             role: role || 'employee',
             status,
             salary,
             photo,
             department,
+            departmentId,
             reportingTo,
-            phone
+            phone,
+            isTeamLead: !!isTeamLead
         });
         await user.save();
 
+        if (departmentId) {
+            await Department.findByIdAndUpdate(departmentId, {
+                $addToSet: { employees: user._id }
+            });
+
+            // If marked as team lead, update department and remove flag from previous lead
+            if (isTeamLead) {
+                const dept = await Department.findById(departmentId);
+                if (dept.teamLead && dept.teamLead.toString() !== user._id.toString()) {
+                    await User.findByIdAndUpdate(dept.teamLead, { isTeamLead: false });
+                }
+                dept.teamLead = user._id;
+                await dept.save();
+            }
+        }
+
         const payload = { user: { id: user.id } };
-        // FIX: Changed from '1h' to '7d'
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+            res.json({ 
+                token, 
+                user: { 
+                    id: user.id, 
+                    name: user.name, 
+                    email: user.email, 
+                    role: user.role,
+                    isTeamLead: user.isTeamLead
+                } 
+            });
         });
     } catch (err) {
         console.error(err.message);
@@ -66,10 +101,18 @@ router.post('/login', async (req, res) => {
         }
 
         const payload = { user: { id: user.id } };
-        // FIX: Changed from '1h' to '7d'
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+            res.json({
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    teamName: user.teamName || ''
+                }
+            });
         });
     } catch (err) {
         console.error(err.message);
@@ -93,11 +136,10 @@ router.get('/users', [auth, isHR], async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    let { name, email, role, status, salary, photo, department, reportingTo, phone, password } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
-        // Check if the user is updating themselves or if they are HR
         const currentUser = await User.findById(req.user.id);
         const isSelf = req.user.id === req.params.id;
         const isHRUser = currentUser.role === 'hr';
@@ -109,20 +151,65 @@ router.put('/users/:id', auth, async (req, res) => {
         let user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
-        // Update fields (Role, Salary, Department, Status only by HR)
         if (name) user.name = name;
         if (email) user.email = email;
         if (photo !== undefined) user.photo = photo;
         if (phone !== undefined) user.phone = phone;
-        if (password) user.password = password; // Pre-save middleware will hash this
+        if (password) user.password = password;
 
-        // HR-only restricted fields
         if (isHRUser) {
             if (role !== undefined) user.role = role;
             if (status !== undefined) user.status = status;
             if (salary !== undefined) user.salary = salary;
-            if (department !== undefined) user.department = department;
+            if (department !== undefined) {
+                const oldDeptId = user.departmentId;
+                const newDept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
+                
+                user.department = department;
+                user.departmentId = newDept ? newDept._id : null;
+
+                // Sync department membership changes
+                if (oldDeptId && oldDeptId.toString() !== (newDept ? newDept._id.toString() : '')) {
+                    await Department.findByIdAndUpdate(oldDeptId, { $pull: { employees: user._id } });
+                    // Clear previous team lead reference
+                    await Department.findOneAndUpdate(
+                        { _id: oldDeptId, teamLead: user._id },
+                        { $set: { teamLead: null } }
+                    );
+                    // Clear user's isTeamLead flag on department change unless explicitly set in body
+                    if (isTeamLead === undefined) {
+                        user.isTeamLead = false;
+                    }
+                }
+                if (newDept) {
+                    await Department.findByIdAndUpdate(newDept._id, { $addToSet: { employees: user._id } });
+                }
+            }
             if (reportingTo !== undefined) user.reportingTo = reportingTo;
+
+            // Handle isTeamLead toggle
+            if (isTeamLead !== undefined) {
+                const wasTeamLead = user.isTeamLead;
+                user.isTeamLead = !!isTeamLead;
+
+                const userDeptId = user.departmentId;
+                if (userDeptId) {
+                    if (isTeamLead && !wasTeamLead) {
+                        // Becoming team lead — remove flag from previous lead
+                        const dept = await Department.findById(userDeptId);
+                        if (dept) {
+                            if (dept.teamLead && dept.teamLead.toString() !== user._id.toString()) {
+                                await User.findByIdAndUpdate(dept.teamLead, { isTeamLead: false });
+                            }
+                            dept.teamLead = user._id;
+                            await dept.save();
+                        }
+                    } else if (!isTeamLead && wasTeamLead) {
+                        // Removing team lead — clear department's teamLead ref
+                        await Department.findByIdAndUpdate(userDeptId, { teamLead: null });
+                    }
+                }
+            }
         }
 
         await user.save();
@@ -156,12 +243,10 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        // Don't allow HR to delete themselves
         if (req.user.id === req.params.id) {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
         }
 
-        // Soft Delete the user
         user.isDeleted = true;
         await user.save();
 
@@ -177,7 +262,7 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
 // @access  Private
 router.put('/fcm-token', auth, async (req, res) => {
     const { token } = req.body;
-    
+
     if (!token) {
         return res.status(400).json({ msg: 'Token is required' });
     }
@@ -190,7 +275,7 @@ router.put('/fcm-token', auth, async (req, res) => {
 
         user.fcmToken = token;
         await user.save();
-        
+
         res.json({ msg: 'Notification token synced successfully' });
     } catch (err) {
         console.error('Error saving FCM token:', err);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarRange, Plus, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 
 // ─── Add / Edit Modal ────────────────────────────────────────────────────────
 const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
@@ -37,9 +37,9 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
             };
 
             if (isEdit) {
-                await axios.put(`${import.meta.env.VITE_API_URL}/leaves/types/${leaveType._id}`, payload);
+                await apiClient.put(`/leaves/types/${leaveType._id}`, payload);
             } else {
-                await axios.post(`${import.meta.env.VITE_API_URL}/leaves/types`, payload);
+                await apiClient.post('/leaves/types', payload);
             }
             onSaved();
         } catch (err) {
@@ -175,7 +175,7 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
         if (!window.confirm('Are you sure you want to delete this leave type? This action cannot be undone.')) return;
         try {
             setDeletingId(id);
-            await axios.delete(`${import.meta.env.VITE_API_URL}/leaves/types/${id}`);
+            await apiClient.delete(`/leaves/types/${id}`);
             fetchLeaveTypes();
         } catch (err) {
             alert(err.response?.data?.msg || 'Failed to delete leave type.');

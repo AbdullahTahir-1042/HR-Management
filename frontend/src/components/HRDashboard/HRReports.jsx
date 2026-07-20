@@ -5,7 +5,7 @@ import {
     DollarSign, ClipboardList, Download, CheckCircle, XCircle, 
     AlertTriangle, Building2, UserCheck, Search, Briefcase, FileText
 } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 
 const HRReports = ({ employees }) => {
     // ── Report Type Tab ─────────────────────────────────────
@@ -44,8 +44,8 @@ const HRReports = ({ employees }) => {
 
             // Fetch both attendance and leaves to support overlapping reports like payroll
             const [attendanceRes, leavesRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/attendance/report`, { params: { ...params, type: 'attendance' } }),
-                axios.get(`${import.meta.env.VITE_API_URL}/attendance/report`, { params: { ...params, type: 'leave' } })
+                apiClient.get('/attendance/report', { params: { ...params, type: 'attendance' } }),
+                apiClient.get('/attendance/report', { params: { ...params, type: 'leave' } })
             ]);
 
             setRecords(attendanceRes.data);
