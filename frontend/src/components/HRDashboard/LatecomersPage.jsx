@@ -20,6 +20,15 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
         });
     };
 
+    const formatLateDuration = (totalMinutes) => {
+        if (!totalMinutes || totalMinutes <= 0) return '0m';
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+        if (hours > 0) return `${hours}h`;
+        return `${minutes}m`;
+    };
+
     const filtered = dateFilter
         ? latecomers.filter(l => l.date === dateFilter)
         : latecomers;
@@ -77,7 +86,7 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                                     <th className="px-6 py-4">Date</th>
                                     <th className="px-6 py-4">Check-in</th>
                                     <th className="px-6 py-4">Check-out</th>
-                                    <th className="px-6 py-4">Minutes Late</th>
+                                    <th className="px-6 py-4">Duration Late</th>
                                     <th className="px-6 py-4">Status</th>
                                 </tr>
                             </thead>
@@ -122,7 +131,7 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                                         <td className="px-6 py-5">
                                             <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 flex items-center gap-1.5 w-fit">
                                                 <AlertCircle size={12} />
-                                                {entry.minutesLate} min
+                                                {formatLateDuration(entry.minutesLate)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">

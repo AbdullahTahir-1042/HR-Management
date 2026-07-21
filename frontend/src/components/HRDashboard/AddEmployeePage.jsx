@@ -1,7 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle } from 'lucide-react';
+import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+
+// ── Validation helpers ────────────────────────────────────────────────────────
+const validators = {
+    name: (val) => {
+        if (!val.trim()) return 'Full name is required';
+        if (val.trim().length < 3) return 'Name must be at least 3 characters';
+        if (!/^[a-zA-Z\s.'\-]+$/.test(val.trim())) return 'Name can only contain letters, spaces, and hyphens';
+        return '';
+    },
+    email: (val) => {
+        if (!val.trim()) return 'Email address is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) return 'Please enter a valid email address';
+        return '';
+    },
+    phone: (val) => {
+        if (!val.trim()) return 'Phone number is required';
+        const digits = val.replace(/\D/g, '');
+        if (digits.length < 10) return 'Phone number must have at least 10 digits';
+        if (digits.length > 15) return 'Phone number is too long';
+        return '';
+    },
+    password: (val) => {
+        if (!val) return 'Password is required';
+        if (val.length < 6) return 'Password must be at least 6 characters';
+        if (!/[a-zA-Z]/.test(val)) return 'Password must contain at least one letter';
+        if (!/[0-9]/.test(val)) return 'Password must contain at least one number';
+        return '';
+    },
+    salary: (val) => {
+        if (!val && val !== 0) return 'Salary is required';
+        if (isNaN(val) || Number(val) <= 0) return 'Salary must be a positive number';
+        return '';
+    }
+};
+
+// ── Inline Field Error Component ──────────────────────────────────────────────
+const FieldError = ({ message }) => {
+    if (!message) return null;
+    return (
+        <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="text-rose-500 text-[11px] font-semibold mt-1.5 ml-1 flex items-center gap-1"
+        >
+            <AlertCircle size={12} className="shrink-0" />
+            {message}
+        </motion.p>
+    );
+};
+
+// ── Compute input border class ────────────────────────────────────────────────
+const getInputBorderClass = (fieldName, touched, errors, baseClass) => {
+    if (!touched[fieldName]) return baseClass;
+    if (errors[fieldName]) return baseClass.replace('border-slate-200', 'border-rose-300').replace('focus:border-indigo-500', 'focus:border-rose-500').replace('focus:ring-indigo-500/10', 'focus:ring-rose-500/10');
+    return baseClass.replace('border-slate-200', 'border-emerald-300').replace('focus:border-indigo-500', 'focus:border-emerald-500').replace('focus:ring-indigo-500/10', 'focus:ring-emerald-500/10');
+};
 
 const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
     const [formData, setFormData] = useState({
@@ -22,6 +79,11 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
+
+    // ── Validation State ──────────────────────────────────────────────────────
+    const [touched, setTouched] = useState({});
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [submitShake, setSubmitShake] = useState(false);
 
     useEffect(() => {
         const fetchDepts = async () => {
@@ -49,6 +111,49 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         }
     }, [formData.department, departmentsList]);
 
+    // ── Validate a single field ───────────────────────────────────────────────
+    const validateField = useCallback((fieldName, value) => {
+        const validator = validators[fieldName];
+        if (!validator) return '';
+        return validator(value);
+    }, []);
+
+    // ── Handle field blur (trigger validation) ────────────────────────────────
+    const handleBlur = (fieldName) => {
+        setTouched(prev => ({ ...prev, [fieldName]: true }));
+        const err = validateField(fieldName, formData[fieldName]);
+        setFieldErrors(prev => ({ ...prev, [fieldName]: err }));
+    };
+
+    // ── Handle field change (clear error if fixing) ───────────────────────────
+    const handleChange = (fieldName, value) => {
+        setFormData(prev => ({ ...prev, [fieldName]: value }));
+        // If already touched, re-validate on change for instant feedback
+        if (touched[fieldName]) {
+            const err = validateField(fieldName, value);
+            setFieldErrors(prev => ({ ...prev, [fieldName]: err }));
+        }
+    };
+
+    // ── Validate all fields before submit ─────────────────────────────────────
+    const validateAll = () => {
+        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary'];
+        const newErrors = {};
+        const newTouched = {};
+        let hasError = false;
+
+        fieldsToValidate.forEach(field => {
+            newTouched[field] = true;
+            const err = validateField(field, formData[field]);
+            newErrors[field] = err;
+            if (err) hasError = true;
+        });
+
+        setTouched(prev => ({ ...prev, ...newTouched }));
+        setFieldErrors(prev => ({ ...prev, ...newErrors }));
+        return !hasError;
+    };
+
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -63,6 +168,13 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateAll()) {
+            setSubmitShake(true);
+            setTimeout(() => setSubmitShake(false), 600);
+            return;
+        }
+
         setLoading(true);
         setError('');
 
@@ -76,6 +188,9 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
             setLoading(false);
         }
     };
+
+    const BASE_INPUT = "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm";
+    const BASE_INPUT_PASS = "w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm";
 
     return (
         <motion.div 
@@ -117,38 +232,73 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                         {/* Basic Info */}
                         <div className="space-y-4">
                             <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2">Basic Information</h3>
+                            
+                            {/* Full Name */}
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Full Name</label>
                                 <div className="relative mt-1 group">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input required type="text" placeholder="John Doe" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="John Doe" 
+                                        value={formData.name} 
+                                        onChange={e => handleChange('name', e.target.value)} 
+                                        onBlur={() => handleBlur('name')}
+                                        className={getInputBorderClass('name', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.name && !fieldErrors.name && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.name ? fieldErrors.name : ''} />
                             </div>
+
+                            {/* Email */}
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email Address</label>
                                 <div className="relative mt-1 group">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input required type="email" placeholder="john@company.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                    <input 
+                                        type="email" 
+                                        placeholder="john@company.com" 
+                                        value={formData.email} 
+                                        onChange={e => handleChange('email', e.target.value)} 
+                                        onBlur={() => handleBlur('email')}
+                                        className={getInputBorderClass('email', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.email && !fieldErrors.email && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.email ? fieldErrors.email : ''} />
                             </div>
+
+                            {/* Phone */}
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Phone Number</label>
                                 <div className="relative mt-1 group">
                                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input required type="tel" placeholder="+92 3XX XXXXXXX" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                    <input 
+                                        type="tel" 
+                                        placeholder="+92 3XX XXXXXXX" 
+                                        value={formData.phone} 
+                                        onChange={e => handleChange('phone', e.target.value)} 
+                                        onBlur={() => handleBlur('phone')}
+                                        className={getInputBorderClass('phone', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.phone && !fieldErrors.phone && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.phone ? fieldErrors.phone : ''} />
                             </div>
+
+                            {/* Password */}
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Temporary Password</label>
                                 <div className="relative mt-1 group">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                     <input 
-                                        required 
                                         type={showPassword ? "text" : "password"} 
                                         placeholder="••••••••" 
                                         value={formData.password} 
-                                        onChange={e => setFormData({...formData, password: e.target.value})} 
-                                        className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" 
+                                        onChange={e => handleChange('password', e.target.value)} 
+                                        onBlur={() => handleBlur('password')}
+                                        className={getInputBorderClass('password', touched, fieldErrors, BASE_INPUT_PASS)} 
                                     />
                                     <button 
                                         type="button"
@@ -158,13 +308,31 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
+                                <FieldError message={touched.password ? fieldErrors.password : ''} />
+                                {/* Password strength hint */}
+                                {touched.password && !fieldErrors.password && (
+                                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-[11px] font-semibold mt-1.5 ml-1 flex items-center gap-1">
+                                        <CheckCircle2 size={12} /> Strong password
+                                    </motion.p>
+                                )}
                             </div>
+
+                            {/* Salary */}
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Annual Salary (₨)</label>
                                 <div className="relative mt-1 group">
                                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₨</div>
-                                    <input required type="number" placeholder="60000" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                    <input 
+                                        type="number" 
+                                        placeholder="60000" 
+                                        value={formData.salary} 
+                                        onChange={e => handleChange('salary', e.target.value)} 
+                                        onBlur={() => handleBlur('salary')}
+                                        className={getInputBorderClass('salary', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.salary && !fieldErrors.salary && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.salary ? fieldErrors.salary : ''} />
                             </div>
                         </div>
 
@@ -281,13 +449,15 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                         </div>
 
                         <div className="md:col-span-2 pt-6">
-                            <button 
+                            <motion.button 
                                 type="submit"
                                 disabled={loading}
+                                animate={submitShake ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : {}}
+                                transition={{ duration: 0.5 }}
                                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-base"
                             >
                                 {loading ? 'Processing...' : <><UserPlus size={20} /> Register New Employee</>}
-                            </button>
+                            </motion.button>
                         </div>
                     </form>
                 </div>

@@ -25,7 +25,7 @@ import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement
 import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
 import LatecomersPage from '../components/HRDashboard/LatecomersPage';
 
-const SHIFT_START_HOUR = 9;
+const SHIFT_START_HOUR = 12;
 const SHIFT_START_MINUTE = 0;
 const SHIFT_END_HOUR = 18;
 const SHIFT_END_MINUTE = 0;
