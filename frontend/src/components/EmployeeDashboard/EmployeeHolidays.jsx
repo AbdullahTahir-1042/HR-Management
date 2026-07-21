@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { CalendarDays, Clock, Tag, Info, PartyPopper } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CalendarDays, Clock, Tag, Info, PartyPopper, X } from 'lucide-react';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -57,23 +57,128 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
     </div>
 );
 
-const HolidayCard = ({ holiday, index }) => {
+// ── modal component ─────────────────────────────────────────────────────────────
+
+const HolidayDetailModal = ({ holiday, onClose }) => {
+    if (!holiday) return null;
+
+    const style = getTypeStyle(holiday.type);
+    const upcoming = isUpcoming(holiday.startDate);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md p-6 overflow-hidden z-10 space-y-6"
+            >
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                    <X size={18} />
+                </button>
+
+                {/* Header */}
+                <div className="flex items-start gap-4 pr-6">
+                    <div className={`p-4 rounded-2xl ${style.bg} shrink-0`}>
+                        <PartyPopper size={28} className={style.text} />
+                    </div>
+                    <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
+                                {holiday.type || 'Public'}
+                            </span>
+                            {upcoming && (
+                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded-full">
+                                    Upcoming
+                                </span>
+                            )}
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800 leading-snug">{holiday.name}</h2>
+                    </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-400 font-medium flex items-center gap-2">
+                            <Clock size={16} className="text-slate-400" /> Start Date
+                        </span>
+                        <span className="font-semibold text-slate-700">{formatDate(holiday.startDate)}</span>
+                    </div>
+
+                    {holiday.endDate && holiday.endDate !== holiday.startDate && (
+                        <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200/60">
+                            <span className="text-slate-400 font-medium flex items-center gap-2">
+                                <Clock size={16} className="text-slate-400" /> End Date
+                            </span>
+                            <span className="font-semibold text-slate-700">{formatDate(holiday.endDate)}</span>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200/60">
+                        <span className="text-slate-400 font-medium flex items-center gap-2">
+                            <Tag size={16} className="text-slate-400" /> Total Duration
+                        </span>
+                        <span className="font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100">
+                            {getDurationDays(holiday.startDate, holiday.endDate || holiday.startDate)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Info size={14} className="text-slate-400" /> Description & Details
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed bg-slate-50/50 p-4 rounded-2xl border border-slate-100 min-h-[70px]">
+                        {holiday.description || 'No additional description provided for this holiday.'}
+                    </p>
+                </div>
+
+                {/* Action button */}
+                <button
+                    onClick={onClose}
+                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-2xl transition-all shadow-md"
+                >
+                    Close Details
+                </button>
+            </motion.div>
+        </div>
+    );
+};
+
+const HolidayCard = ({ holiday, onClick }) => {
     const style = getTypeStyle(holiday.type);
     const upcoming = isUpcoming(holiday.startDate);
 
     return (
         <motion.div
             variants={cardVariants}
-            className={`bg-white rounded-2xl border ${upcoming ? 'border-indigo-100 shadow-md shadow-indigo-50' : 'border-slate-100 shadow-sm'} p-5 flex flex-col gap-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+            onClick={() => onClick(holiday)}
+            className={`bg-white rounded-2xl border ${upcoming ? 'border-indigo-100 shadow-md shadow-indigo-50' : 'border-slate-100 shadow-sm'} p-5 flex flex-col gap-3 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200 cursor-pointer transition-all duration-200 group`}
         >
             {/* Header row */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className={`p-2.5 rounded-xl ${style.bg} shrink-0`}>
+                    <div className={`p-2.5 rounded-xl ${style.bg} shrink-0 group-hover:scale-105 transition-transform`}>
                         <CalendarDays size={18} className={style.text} />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="font-bold text-slate-800 text-sm truncate">{holiday.name}</h3>
+                        <h3 className="font-bold text-slate-800 text-sm truncate group-hover:text-indigo-600 transition-colors">{holiday.name}</h3>
                         {upcoming && (
                             <span className="text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
                                 Upcoming
@@ -103,13 +208,17 @@ const HolidayCard = ({ holiday, index }) => {
                 </span>
             </div>
 
-            {/* Description */}
+            {/* Description preview */}
             {holiday.description && (
-                <p className="text-xs text-slate-400 flex items-start gap-1.5">
+                <p className="text-xs text-slate-400 line-clamp-2 flex items-start gap-1.5 pt-1 border-t border-slate-50">
                     <Info size={13} className="mt-0.5 shrink-0 text-slate-300" />
                     {holiday.description}
                 </p>
             )}
+
+            <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity pt-1">
+                View Details &rarr;
+            </div>
         </motion.div>
     );
 };
@@ -131,6 +240,8 @@ const EmptyState = () => (
 // ── main component ──────────────────────────────────────────────────────────────
 
 const EmployeeHolidays = ({ holidays = [] }) => {
+    const [selectedHoliday, setSelectedHoliday] = React.useState(null);
+
     const upcoming = useMemo(
         () => holidays.filter((h) => isUpcoming(h.startDate)),
         [holidays]
@@ -198,10 +309,24 @@ const EmployeeHolidays = ({ holidays = [] }) => {
                     className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
                 >
                     {holidays.map((holiday, index) => (
-                        <HolidayCard key={holiday._id} holiday={holiday} index={index} />
+                        <HolidayCard 
+                            key={holiday._id} 
+                            holiday={holiday} 
+                            onClick={(h) => setSelectedHoliday(h)} 
+                        />
                     ))}
                 </motion.div>
             )}
+
+            {/* Modal Detail Pop-up */}
+            <AnimatePresence>
+                {selectedHoliday && (
+                    <HolidayDetailModal
+                        holiday={selectedHoliday}
+                        onClose={() => setSelectedHoliday(null)}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

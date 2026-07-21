@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Building2, Plus, Pencil, Trash2, X, Check,
-    Crown, Users, UserCheck, ChevronDown, Loader2
+    Crown, Users, UserCheck, ChevronDown, Loader2, AlertTriangle, Search
 } from 'lucide-react';
 
 // ─── Small reusable components ───────────────────────────────────────────────
@@ -130,16 +130,54 @@ const AssignTeamLeadModal = ({ dept, onClose, onSuccess }) => {
 
 // ─── Add Department Modal ─────────────────────────────────────────────────────
 
-const AddDeptModal = ({ allEmployees, onClose, onSuccess }) => {
+const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSuccess }) => {
     const [name, setName] = useState('');
     const [desc, setDesc] = useState('');
     const [teamLeadId, setTeamLeadId] = useState('');
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [showDropdown, setShowDropdown] = useState(false);
+    const nameInputRef = useRef(null);
+    const dropdownRef = useRef(null);
 
     // Filter employees who are not assigned to any department
     const eligibleEmployees = allEmployees.filter(emp => !emp.departmentId);
+
+    // Only allow selected members to be eligible team leads
+    const eligibleTeamLeads = eligibleEmployees.filter(emp => selectedEmployeeIds.includes(emp._id));
+
+    // Check if typed name matches an existing department
+    const nameExact = existingDepartments.find(
+        d => d.name.toLowerCase().trim() === name.toLowerCase().trim()
+    );
+    const nameSuggestions = name.trim().length > 0
+        ? existingDepartments.filter(d =>
+            d.name.toLowerCase().includes(name.toLowerCase().trim()) &&
+            d.name.toLowerCase().trim() !== name.toLowerCase().trim()
+        )
+        : [];
+
+    // Auto-update team lead selection if the selected lead is removed from members
+    useEffect(() => {
+        if (teamLeadId && !selectedEmployeeIds.includes(teamLeadId)) {
+            setTeamLeadId('');
+        }
+    }, [selectedEmployeeIds, teamLeadId]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (
+                dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+                nameInputRef.current && !nameInputRef.current.contains(e.target)
+            ) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const toggleEmployee = (id) => {
         setSelectedEmployeeIds(prev =>
@@ -147,8 +185,16 @@ const AddDeptModal = ({ allEmployees, onClose, onSuccess }) => {
         );
     };
 
+    const handleSelectTeamLead = (id) => {
+        setTeamLeadId(id);
+        if (id && !selectedEmployeeIds.includes(id)) {
+            setSelectedEmployeeIds(prev => [...prev, id]);
+        }
+    };
+
     const handleSubmit = async () => {
         if (!name.trim()) return setError('Department name is required');
+        if (nameExact) return setError('A department with this name already exists');
         setSaving(true);
         setError('');
         try {
@@ -186,18 +232,82 @@ const AddDeptModal = ({ allEmployees, onClose, onSuccess }) => {
                 </div>
 
                 <div className="space-y-4">
-                    {/* Name */}
-                    <div>
+                    {/* Name with autocomplete dropdown */}
+                    <div className="relative">
                         <label className="text-xs font-semibold text-slate-500 mb-1 block uppercase tracking-wide">
                             Department Name *
                         </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            placeholder="e.g. Marketing"
-                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 focus:bg-white transition-all"
-                        />
+                        <div className="relative">
+                            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                                ref={nameInputRef}
+                                type="text"
+                                value={name}
+                                onChange={e => { setName(e.target.value); setShowDropdown(true); }}
+                                onFocus={() => setShowDropdown(true)}
+                                placeholder="e.g. Marketing"
+                                className={`w-full border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 bg-slate-50 focus:bg-white transition-all ${
+                                    nameExact
+                                        ? 'border-amber-300 focus:ring-amber-200'
+                                        : 'border-slate-200 focus:ring-indigo-300'
+                                }`}
+                            />
+                        </div>
+
+                        {/* Existing department warning */}
+                        <AnimatePresence>
+                            {nameExact && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg"
+                                >
+                                    <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                                    <span className="text-[11px] font-semibold text-amber-700">
+                                        "{nameExact.name}" already exists · {nameExact.employees?.length || 0} members
+                                    </span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Suggestions dropdown */}
+                        <AnimatePresence>
+                            {showDropdown && nameSuggestions.length > 0 && !nameExact && (
+                                <motion.div
+                                    ref={dropdownRef}
+                                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-20"
+                                >
+                                    <div className="px-3 py-2 bg-slate-50 border-b border-slate-100">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Existing Departments</p>
+                                    </div>
+                                    <div className="max-h-36 overflow-y-auto">
+                                        {nameSuggestions.map(dept => (
+                                            <div
+                                                key={dept._id}
+                                                className="flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50/60 transition-colors cursor-default"
+                                            >
+                                                <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                                                    <Building2 size={14} className="text-indigo-600" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-slate-700 truncate capitalize">{dept.name}</p>
+                                                    <p className="text-[10px] text-slate-400">
+                                                        {dept.employees?.length || 0} members
+                                                        {dept.teamLead ? ` · Lead: ${dept.teamLead.name}` : ''}
+                                                    </p>
+                                                </div>
+                                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md uppercase">Exists</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Description */}
@@ -212,26 +322,6 @@ const AddDeptModal = ({ allEmployees, onClose, onSuccess }) => {
                             placeholder="Brief description..."
                             className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 focus:bg-white transition-all"
                         />
-                    </div>
-
-                    {/* Team Lead Dropdown */}
-                    <div>
-                        <label className="text-xs font-semibold text-slate-500 mb-1 block uppercase tracking-wide">
-                            Team Lead <span className="text-slate-400 normal-case font-normal">(optional)</span>
-                        </label>
-                        <div className="relative">
-                            <select
-                                value={teamLeadId}
-                                onChange={e => setTeamLeadId(e.target.value)}
-                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 focus:bg-white appearance-none transition-all"
-                            >
-                                <option value="">— Select Team Lead —</option>
-                                {eligibleEmployees.map(emp => (
-                                    <option key={emp._id} value={emp._id}>{emp.name}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
                     </div>
 
                     {/* Employees multi-select */}
@@ -257,6 +347,26 @@ const AddDeptModal = ({ allEmployees, onClose, onSuccess }) => {
                                     <span className="text-xs text-slate-400 ml-auto">{emp.status}</span>
                                 </label>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Team Lead Dropdown */}
+                    <div>
+                        <label className="text-xs font-semibold text-slate-500 mb-1 block uppercase tracking-wide">
+                            Team Lead <span className="text-slate-400 normal-case font-normal">(must be a selected member)</span>
+                        </label>
+                        <div className="relative">
+                            <select
+                                value={teamLeadId}
+                                onChange={e => handleSelectTeamLead(e.target.value)}
+                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 focus:bg-white appearance-none transition-all"
+                            >
+                                <option value="">— Select Team Lead —</option>
+                                {eligibleTeamLeads.map(emp => (
+                                    <option key={emp._id} value={emp._id}>{emp.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         </div>
                     </div>
                 </div>
@@ -791,6 +901,7 @@ const HRDepartments = () => {
                 {showAddModal && (
                     <AddDeptModal
                         allEmployees={allEmployees}
+                        existingDepartments={departments}
                         onClose={() => setShowAddModal(false)}
                         onSuccess={() => { fetchDepartments(); showMessage('Department created successfully!'); }}
                     />

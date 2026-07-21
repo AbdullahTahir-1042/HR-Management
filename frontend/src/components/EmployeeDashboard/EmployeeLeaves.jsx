@@ -39,22 +39,38 @@ const EmployeeLeaves = ({ leaveForm, setLeaveForm, handleApplyLeave, leaves, sta
                 {/* Leave Balances Grid */}
                 {leaveBalances.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
-                        {leaveBalances.map(b => (
-                            <div key={b.leaveType?._id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md">
-                                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg">
-                                    {b.leaveType?.name}
-                                </span>
-                                <div className="flex justify-between items-end mt-4">
-                                    <div>
-                                        <p className="text-xl font-bold text-slate-800">{b.remaining} Days</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Remaining of {b.allocated}d</p>
+                        {leaveBalances.map(b => {
+                            const usedPercent = b.allocated > 0 ? Math.min(100, Math.round((b.used / b.allocated) * 100)) : 0;
+                            return (
+                                <div key={b.leaveType?._id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg">
+                                            {b.leaveType?.name}
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                                            {b.used} {b.used === 1 ? 'Day Used' : 'Days Used'}
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase">
-                                        Used: {b.used}d
-                                    </span>
+
+                                    <div>
+                                        <div className="flex items-baseline justify-between">
+                                            <p className="text-2xl font-black text-slate-800">{b.remaining} <span className="text-sm font-semibold text-slate-500">Days Left</span></p>
+                                            <span className="text-xs text-slate-400 font-medium">Total: {b.allocated} Days</span>
+                                        </div>
+                                        
+                                        {/* Progress Bar */}
+                                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2">
+                                            <div 
+                                                className={`h-full rounded-full transition-all duration-300 ${
+                                                    usedPercent > 80 ? 'bg-amber-500' : 'bg-indigo-600'
+                                                }`}
+                                                style={{ width: `${usedPercent}%` }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
