@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
-    Sparkles, GraduationCap, BookOpen
+    Sparkles, GraduationCap, BookOpen, X
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -14,24 +14,33 @@ const NAV_ITEMS = [
     { id: 'announcements',label: 'Announcements',     icon: Bell },
 ];
 
-const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout }) => {
+const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen }) => {
     return (
-        <aside className="w-64 bg-white border-r border-slate-200 flex flex-col sticky top-0 h-screen z-50">
+        <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             {/* Logo */}
-            <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-                <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
-                    <User size={24} />
-                </div>
-                <div>
-                    <span className="font-bold text-lg text-slate-800 tracking-tight block leading-tight">
-                        Employee Portal
-                    </span>
-                    {user?.isTeamLead && (
-                        <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">
-                            <Crown size={10} /> Team Lead
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
+                        <User size={24} />
+                    </div>
+                    <div>
+                        <span className="font-bold text-lg text-slate-800 tracking-tight block leading-tight">
+                            Employee Portal
                         </span>
-                    )}
+                        {user?.isTeamLead && (
+                            <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">
+                                <Crown size={10} /> Team Lead
+                            </span>
+                        )}
+                    </div>
                 </div>
+                <button 
+                    onClick={() => setIsOpen(false)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden focus:outline-none"
+                    aria-label="Close Sidebar"
+                >
+                    <X size={18} />
+                </button>
             </div>
 
             {/* Nav */}

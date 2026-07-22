@@ -111,10 +111,13 @@ const HRDashboard = () => {
         };
     }, []);
 
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+
     useEffect(() => {
         setIsAddingEmployee(false);
         setIsEditingEmployee(false);
         setSelectedEmployee(null);
+        setSidebarOpen(false);
     }, [activeTab]);
 
     const fetchAllLeaves = async () => {
@@ -230,13 +233,21 @@ const HRDashboard = () => {
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
+        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans relative">
             <HRSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 user={user}
                 logout={logout}
+                isOpen={isSidebarOpen}
+                setIsOpen={setSidebarOpen}
             />
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
             <main className="flex-1 overflow-y-auto">
                 <HRHeader
@@ -247,6 +258,7 @@ const HRDashboard = () => {
                     setAttendanceDateFilter={setAttendanceDateFilter}
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
+                    setSidebarOpen={setSidebarOpen}
                 />
 
                 <div className="p-8 max-w-7xl mx-auto">

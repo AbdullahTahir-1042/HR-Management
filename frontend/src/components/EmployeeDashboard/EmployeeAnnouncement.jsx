@@ -38,26 +38,27 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
         }
     };
 
+    const currentUserId = user?._id || user?.id;
+
     const isRead = (announcement) => {
-        return announcement.readBy?.includes(user?.id);
+        if (!currentUserId) return false;
+        return (announcement.readBy || []).some(id => {
+            if (!id) return false;
+            const idStr = typeof id === 'object' ? (id._id || id).toString() : id.toString();
+            return idStr === currentUserId.toString();
+        });
     };
 
     const markAsRead = async (announcement) => {
-        if (isRead(announcement)) return;
+        if (!currentUserId || isRead(announcement)) return;
         try {
-            await apiClient.put(`/announcements/${announcement._id}/read`);
+            const res = await apiClient.put(`/announcements/${announcement._id}/read`);
+            const updated = res.data;
             setAnnouncements(prev =>
-                prev.map(a =>
-                    a._id === announcement._id
-                        ? { ...a, readBy: [...(a.readBy || []), user?.id] }
-                        : a
-                )
+                prev.map(a => a._id === announcement._id ? (updated._id ? updated : { ...a, readBy: [...(a.readBy || []), currentUserId] }) : a)
             );
             if (selected?._id === announcement._id) {
-                setSelected(prev => ({
-                    ...prev,
-                    readBy: [...(prev.readBy || []), user?.id]
-                }));
+                setSelected(updated._id ? updated : prev => ({ ...prev, readBy: [...(prev.readBy || []), currentUserId] }));
             }
             if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {

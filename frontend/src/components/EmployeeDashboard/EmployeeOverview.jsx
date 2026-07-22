@@ -220,9 +220,9 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 onClick={() => setActiveTab('holidays')}
                 className="bg-white rounded-2xl border border-indigo-100 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md p-5 max-w-6xl"
             >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-indigo-50 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <div className="p-3 bg-indigo-50 rounded-xl group-hover:bg-indigo-100 transition-colors shrink-0">
                             <PartyPopper size={22} className="text-indigo-600" />
                         </div>
                         <div>
@@ -230,13 +230,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                 Next Upcoming Holiday
                             </p>
                             {nextHoliday ? (
-                                <div className="flex items-center gap-3">
-                                    <p className="text-lg font-bold text-slate-800">{nextHoliday.name}</p>
-                                    <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <p className="text-base font-bold text-slate-800">{nextHoliday.name}</p>
+                                    <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
                                         {formatShortDate(nextHoliday.startDate)}
                                     </span>
                                     {nextHoliday.type && (
-                                        <span className="text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-full">
+                                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
                                             {nextHoliday.type}
                                         </span>
                                     )}
@@ -246,7 +246,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             )}
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
                         {upcomingCount > 0 && (
                             <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
                                 {upcomingCount} upcoming

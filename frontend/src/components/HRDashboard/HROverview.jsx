@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ShieldCheck, ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle } from 'lucide-react';
 
 const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], mistakeReports = [], setActiveTab }) => {
     return (
@@ -11,28 +11,23 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
             className="space-y-8"
         >
             {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <ShieldCheck size={120} />
-                </div>
-                <div className="relative z-10">
-                    <h1 className="text-2xl font-bold mb-1">Welcome back, {user?.name}! 👋</h1>
-                    <p className="text-indigo-100 text-sm max-w-md">
-                        You have {leaves.filter(l => l.status === 'pending').length} pending leave requests today.
-                    </p>
-                    <div className="mt-4 flex gap-3">
-                        <button 
-                            onClick={() => setActiveTab('leaves')} 
-                            className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
-                        >
-                            Review Leaves <ArrowRight size={16} />
-                        </button>
-                    </div>
+            <div className="bg-gradient-to-r from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg">
+                <h1 className="text-xl font-bold mb-1">Welcome back, {user?.name}</h1>
+                <p className="text-indigo-200 text-sm">
+                    {leaves.filter(l => l.status === 'pending').length} pending leave {leaves.filter(l => l.status === 'pending').length === 1 ? 'request' : 'requests'} awaiting review.
+                </p>
+                <div className="mt-4">
+                    <button 
+                        onClick={() => setActiveTab('leaves')} 
+                        className="bg-white/15 hover:bg-white/25 border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                    >
+                        Review Leaves <ArrowRight size={14} />
+                    </button>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
                 {/* Leave Requests Card */}
                 <motion.div 
