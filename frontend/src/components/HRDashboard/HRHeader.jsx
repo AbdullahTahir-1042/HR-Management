@@ -13,7 +13,8 @@ import {
     CalendarRange,
     Bell,
     User,
-    Menu
+    Menu,
+    AlertTriangle
 } from 'lucide-react';
 
 const HRHeader = ({ 
@@ -38,6 +39,7 @@ const HRHeader = ({
         'holidays': { icon: <CalendarDays size={24} className="text-indigo-600" />, title: 'Holiday Calendar' },
         'hr-requests': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'HR Requests' },
         'announcements': { icon: <Bell size={24} className="text-indigo-600" />, title: 'Announcements' },
+        'mistake-reports': { icon: <AlertTriangle size={24} className="text-indigo-600" />, title: 'Mistake Reports' },
         'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' }
     };
 

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle, MessageSquare } from 'lucide-react';
 
-const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], mistakeReports = [], setActiveTab }) => {
+const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], mistakeReports = [], hrRequests = [], setActiveTab }) => {
     return (
         <motion.div 
             key="dashboard"
@@ -179,6 +179,29 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                             {mistakeReports.length}
                         </p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-rose-500 transition-colors" />
+                    </div>
+                </motion.div>
+
+                {/* HR Requests Card */}
+                <motion.div 
+                    whileHover={{ y: -4 }}
+                    onClick={() => setActiveTab('hr-requests')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                >
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <MessageSquare size={20} />
+                        </div>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                            Pending
+                        </span>
+                    </div>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">HR Requests</p>
+                    <div className="flex items-end justify-between mt-0.5">
+                        <p className="text-xl font-bold text-slate-800">
+                            {hrRequests.filter(r => r.status === 'Pending').length}
+                        </p>
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                 </motion.div>
             </div>

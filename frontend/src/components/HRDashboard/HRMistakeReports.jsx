@@ -515,13 +515,13 @@ const HRMistakeReports = () => {
                                     {/* Row number */}
                                     <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-12">#</th>
                                     {[
-                                        { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[150px]', tooltip: 'Sort by Agent Name' },
-                                        { key: 'department',    label: 'Department',       minW: 'min-w-[130px]', tooltip: 'Sort by Department' },
-                                        { key: 'clinicName',    label: 'Clinic',           minW: 'min-w-[120px]', tooltip: 'Sort by Clinic' },
-                                        { key: 'patientName',   label: 'Patient',          minW: 'min-w-[120px]', tooltip: 'Sort by Patient' },
-                                        { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[120px]', tooltip: 'Sort by Mistake Date' },
-                                        { key: 'submittedBy',   label: 'Reported By',      minW: 'min-w-[130px]', tooltip: 'Sort by Submitter Name' },
-                                        { key: 'status',        label: 'Status',           minW: 'min-w-[100px]', tooltip: 'Sort by Status' },
+                                        { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[120px]', tooltip: 'Sort by Agent Name' },
+                                        { key: 'department',    label: 'Department',       minW: 'min-w-[100px]', tooltip: 'Sort by Department' },
+                                        { key: 'clinicName',    label: 'Clinic',           minW: 'min-w-[90px]',  tooltip: 'Sort by Clinic' },
+                                        { key: 'patientName',   label: 'Patient',          minW: 'min-w-[90px]',  tooltip: 'Sort by Patient' },
+                                        { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[90px]',  tooltip: 'Sort by Mistake Date' },
+                                        { key: 'submittedBy',   label: 'Reported By',      minW: 'min-w-[110px]', tooltip: 'Sort by Submitter Name' },
+                                        { key: 'status',        label: 'Status',           minW: 'min-w-[85px]',  tooltip: 'Sort by Status' },
                                     ].map(col => (
                                         <th
                                             key={col.key}
