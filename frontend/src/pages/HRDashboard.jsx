@@ -249,7 +249,7 @@ const HRDashboard = () => {
                 />
             )}
 
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <HRHeader
                     activeTab={activeTab}
                     leaveFilter={leaveFilter}
@@ -274,6 +274,7 @@ const HRDashboard = () => {
                                 latecomers={latecomers}
                                 announcements={announcements}
                                 mistakeReports={mistakeReports}
+                                hrRequests={hrRequests}
                                 setActiveTab={setActiveTab}
                             />
                         )}
