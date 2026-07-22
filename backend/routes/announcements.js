@@ -5,6 +5,22 @@ const User = require('../models/User'); // Import your User model
 const { auth, isHR } = require('../middleware/auth');
 const { messaging } = require('../config/firebaseAdmin'); // Import Firebase Admin
 
+let clients = [];
+
+// GET SSE stream of announcements
+router.get('/stream', auth, (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    clients.push(res);
+
+    req.on('close', () => {
+        clients = clients.filter(c => c !== res);
+    });
+});
+
 // GET all announcements — any logged-in user (HR or employee) can view
 router.get('/', auth, async (req, res) => {
     try {
@@ -73,6 +89,15 @@ router.post('/', auth, isHR, async (req, res) => {
         }
         // -------------------------------------------
 
+        // Send SSE notification to all connected clients instantly
+        clients.forEach(client => {
+            try {
+                client.write(`data: ${JSON.stringify(populated)}\n\n`);
+            } catch (err) {
+                console.error('Error writing to client stream:', err);
+            }
+        });
+
         res.status(201).json(populated);
     } catch (err) {
         console.error('Error creating announcement:', err);
@@ -83,10 +108,12 @@ router.post('/', auth, isHR, async (req, res) => {
 // PUT mark an announcement as read — any logged-in user
 router.put('/:id/read', auth, async (req, res) => {
     try {
-        await Announcement.findByIdAndUpdate(req.params.id, {
-            $addToSet: { readBy: req.user.id },
-        });
-        res.json({ msg: 'Marked as read' });
+        const updated = await Announcement.findByIdAndUpdate(
+            req.params.id,
+            { $addToSet: { readBy: req.user.id } },
+            { new: true }
+        ).populate('createdBy', 'name');
+        res.json(updated);
     } catch (err) {
         console.error('Error marking announcement as read:', err);
         res.status(500).json({ msg: 'Server error marking as read' });

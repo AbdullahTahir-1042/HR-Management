@@ -105,10 +105,11 @@ const HRReports = ({ employees }) => {
             ? (hoursArray.reduce((a, b) => a + b, 0) / hoursArray.length).toFixed(1)
             : 0;
 
+        const SHIFT_START_HOUR = 12;
         const lateArrivals = filteredAttendance.filter(r => {
             if (!r.checkIn) return false;
             const t = new Date(r.checkIn);
-            return t.getHours() > 9 || (t.getHours() === 9 && t.getMinutes() > 15);
+            return t.getHours() > SHIFT_START_HOUR || (t.getHours() === SHIFT_START_HOUR && t.getMinutes() > 0);
         }).length;
 
         const activeSessions = filteredAttendance.filter(r => r.checkIn && !r.checkOut).length;
@@ -248,10 +249,11 @@ const HRReports = ({ employees }) => {
         return `${h}h ${m}m`;
     };
 
+    const SHIFT_START_HOUR = 12;
     const isLate = (checkIn) => {
         if (!checkIn) return false;
         const t = new Date(checkIn);
-        return t.getHours() > 9 || (t.getHours() === 9 && t.getMinutes() > 15);
+        return t.getHours() > SHIFT_START_HOUR || (t.getHours() === SHIFT_START_HOUR && t.getMinutes() > 0);
     };
 
     const formatCurrency = (val) => {
@@ -428,15 +430,19 @@ const HRReports = ({ employees }) => {
         }
     };
 
-    // ── Departments list ────────────────────────────────────
-    const departments = ['design', 'hr', 'development', 'QA'];
+    // ── Departments list (derived dynamically from employees) ────────────────────────────────────
+    const departments = useMemo(() => {
+        const deptSet = new Set();
+        employees.forEach(e => { if (e.department) deptSet.add(e.department); });
+        return Array.from(deptSet).sort();
+    }, [employees]);
 
     // ── Report Type Metadata ───────────────────────────────
     const reportTypesMeta = [
-        { id: 'attendance', label: 'Attendance', icon: ClipboardList, desc: 'Track clock-ins, late entries, and active hours' },
-        { id: 'leave', label: 'Leave Requests', icon: Calendar, desc: 'Review approved, pending, and rejected leave logs' },
-        { id: 'payroll', label: 'Payroll Summary', icon: DollarSign, desc: 'Calculate monthly base salary, leave deductions, and net payouts' },
-        { id: 'employee', label: 'Staff Directory', icon: Users, desc: 'View headcount, status divisions, and department counts' }
+        { id: 'attendance', label: 'Attendance', icon: ClipboardList },
+        { id: 'leave', label: 'Leave Requests', icon: Calendar },
+        { id: 'payroll', label: 'Payroll', icon: DollarSign },
+        { id: 'employee', label: 'Staff Directory', icon: Users },
     ];
 
     return (
@@ -461,7 +467,7 @@ const HRReports = ({ employees }) => {
             </div>
 
             {/* ── Report Type Switcher ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1.5 gap-1 shadow-sm">
                 {reportTypesMeta.map((type) => {
                     const Icon = type.icon;
                     const isActive = reportType === type.id;
@@ -469,21 +475,14 @@ const HRReports = ({ employees }) => {
                         <button
                             key={type.id}
                             onClick={() => setReportType(type.id)}
-                            className={`p-4 rounded-2xl border text-left transition-all duration-200 flex items-start gap-3 group relative overflow-hidden ${
-                                isActive 
-                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100' 
-                                : 'bg-white border-slate-200 hover:border-indigo-300 text-slate-700 hover:bg-slate-50'
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
+                                isActive
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                             }`}
                         >
-                            <div className={`p-2.5 rounded-xl transition-colors ${
-                                isActive ? 'bg-indigo-500 text-white' : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
-                            }`}>
-                                <Icon size={20} />
-                            </div>
-                            <div className="space-y-0.5">
-                                <h3 className={`font-bold text-sm ${isActive ? 'text-white' : 'text-slate-800'}`}>{type.label}</h3>
-                                <p className={`text-[10px] line-clamp-2 leading-relaxed ${isActive ? 'text-indigo-200' : 'text-slate-400'}`}>{type.desc}</p>
-                            </div>
+                            <Icon size={16} />
+                            {type.label}
                         </button>
                     );
                 })}
@@ -493,15 +492,15 @@ const HRReports = ({ employees }) => {
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Filter size={16} className="text-indigo-600 animate-pulse" />
-                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Report Criteria Filters</span>
+                        <Filter size={15} className="text-slate-400" />
+                        <span className="text-xs font-semibold text-slate-500">Filters</span>
                     </div>
                     {(filters.startDate || filters.endDate || filters.employeeId || filters.department) && (
                         <button
-                            onClick={() => setFilters({ startDate: '', endDate: '', employeeId: '', department: '' })}
-                            className="text-xs text-rose-500 font-bold hover:underline"
+                            onClick={() => setFilters({ startDate: defaultDateRange.firstDay, endDate: defaultDateRange.lastDay, employeeId: '', department: '' })}
+                            className="text-xs text-slate-400 hover:text-rose-500 font-semibold transition-colors"
                         >
-                            Clear all filters
+                            Reset
                         </button>
                     )}
                 </div>
@@ -567,9 +566,8 @@ const HRReports = ({ employees }) => {
 
             {/* ── Loader ── */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
-                    <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <p className="text-sm font-bold text-slate-500">Aggregating report analytics...</p>
+                <div className="flex items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                    <div className="w-8 h-8 border-[3px] border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
                 </div>
             ) : (
                 <>
@@ -587,30 +585,82 @@ const HRReports = ({ employees }) => {
                             {/* Chart (Visual presence history) */}
                             {chartData.length > 0 && (
                                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                                    <h2 className="text-sm font-black text-slate-800 mb-6 flex items-center gap-2">
-                                        <BarChart2 size={16} className="text-indigo-600" />
-                                        Daily Attendance Profile
-                                    </h2>
-                                    <div className="flex items-end gap-3 h-48 px-2 pt-6">
-                                        {chartData.map((item, i) => (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
-                                                <span className="text-[10px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {item.count}
-                                                </span>
-                                                <div
-                                                    className="w-full bg-indigo-500 hover:bg-indigo-600 rounded-t-lg transition-all duration-300 cursor-pointer shadow-sm shadow-indigo-100"
-                                                    style={{ height: `${item.heightPercent}%`, minHeight: '8px' }}
-                                                    title={`${item.date}: ${item.count} present`}
-                                                />
-                                                <span className="text-[9px] text-slate-400 font-bold mt-2 rotate-45 origin-left whitespace-nowrap">
-                                                    {item.date}
-                                                </span>
-                                            </div>
-                                        ))}
+                                    {/* Chart Header */}
+                                    <div className="flex items-center justify-between mb-5">
+                                        <div className="flex items-center gap-2">
+                                            <BarChart2 size={15} className="text-indigo-500" />
+                                            <h2 className="text-sm font-semibold text-slate-700">Daily Attendance</h2>
+                                            <span className="text-xs text-slate-400 font-medium">— last {chartData.length} days</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> High</span>
+                                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-indigo-300 inline-block" /> Low</span>
+                                        </div>
                                     </div>
-                                    <div className="mt-8 flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded bg-indigo-500"></div>
-                                        <span className="text-xs text-slate-400 font-medium">Present employees count per calendar date</span>
+
+                                    {/* Chart Body */}
+                                    <div className="overflow-x-auto pb-2">
+                                        <div className="relative min-w-[500px]">
+                                            {/* Y-axis grid lines */}
+                                            <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none" style={{ bottom: '24px', top: 0 }}>
+                                                {[100, 75, 50, 25, 0].map(pct => (
+                                                    <div key={pct} className="flex items-center gap-2">
+                                                        <span className="text-[9px] text-slate-300 w-4 text-right shrink-0">{Math.round((pct / 100) * Math.max(...chartData.map(d => d.count), 1))}</span>
+                                                        <div className="flex-1 border-t border-dashed border-slate-100" />
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Bars */}
+                                            <div className="flex items-end gap-1.5 ml-7" style={{ height: '160px' }}>
+                                                {chartData.map((item, i) => {
+                                                    const isHigh = item.heightPercent >= 60;
+                                                    return (
+                                                        <div key={i} className="flex-1 flex flex-col items-center gap-0 group relative" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                                                            {/* Hover tooltip */}
+                                                            <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-10">
+                                                                <div className="bg-slate-800 text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap shadow-lg">
+                                                                    {item.count} present
+                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                                                                </div>
+                                                            </div>
+                                                            {/* Bar */}
+                                                            <div
+                                                                className={`w-full rounded-t-md transition-all duration-300 cursor-default ${isHigh ? 'bg-indigo-500 group-hover:bg-indigo-600' : 'bg-indigo-200 group-hover:bg-indigo-300'}`}
+                                                                style={{ height: `${item.heightPercent}%`, minHeight: '3px' }}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* X-axis labels */}
+                                            <div className="flex gap-1.5 mt-2 ml-7">
+                                                {chartData.map((item, i) => (
+                                                    <div key={i} className="flex-1 text-center">
+                                                        <span className="text-[9px] text-slate-400">{item.date}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Summary Row */}
+                                    <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-3 gap-4">
+                                        <div className="text-center">
+                                            <p className="text-lg font-bold text-slate-800">{Math.max(...chartData.map(d => d.count))}</p>
+                                            <p className="text-[10px] text-slate-400 mt-0.5">Peak Day</p>
+                                        </div>
+                                        <div className="text-center border-x border-slate-100">
+                                            <p className="text-lg font-bold text-slate-800">
+                                                {Math.round(chartData.reduce((s, d) => s + d.count, 0) / chartData.length)}
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 mt-0.5">Daily Avg</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-lg font-bold text-slate-800">{chartData.reduce((s, d) => s + d.count, 0)}</p>
+                                            <p className="text-[10px] text-slate-400 mt-0.5">Total Check-ins</p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -826,10 +876,10 @@ const HRReports = ({ employees }) => {
                                                 <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[9px] font-bold tracking-widest">
                                                     <th className="px-6 py-4">Employee</th>
                                                     <th className="px-6 py-4">Department</th>
-                                                    <th className="px-6 py-4 text-indigo-600">Monthly Base</th>
-                                                    <th className="px-6 py-4">Leave Deductions</th>
-                                                    <th className="px-6 py-4 text-emerald-600">Net Payout</th>
-                                                    <th className="px-6 py-4">Formula Details</th>
+                                                    <th className="px-6 py-4">Monthly Base</th>
+                                                    <th className="px-6 py-4">Leave Days</th>
+                                                    <th className="px-6 py-4">Deductions</th>
+                                                    <th className="px-6 py-4">Net Payout</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -841,22 +891,15 @@ const HRReports = ({ employees }) => {
                                                                 <span className="text-[10px] text-slate-400">{p.employee.email}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm capitalize">{p.employee.department}</td>
-                                                        <td className="px-6 py-4 text-slate-800 text-sm font-bold">{formatCurrency(p.baseSalary)}</td>
+                                                        <td className="px-6 py-4 text-slate-600 text-sm capitalize">{p.employee.department || '—'}</td>
+                                                        <td className="px-6 py-4 text-slate-800 text-sm font-semibold">{formatCurrency(p.baseSalary)}</td>
+                                                        <td className="px-6 py-4 text-slate-500 text-sm">{p.leaveDays > 0 ? `${p.leaveDays} days` : '—'}</td>
                                                         <td className="px-6 py-4">
-                                                            <div className="flex flex-col">
-                                                                <span className={`text-sm font-bold ${p.deduction > 0 ? 'text-rose-500' : 'text-slate-500'}`}>
-                                                                    -{formatCurrency(p.deduction)}
-                                                                </span>
-                                                                <span className="text-[9px] text-slate-400 font-semibold">{p.leaveDays} approved leaves</span>
-                                                            </div>
+                                                            <span className={`text-sm font-semibold ${p.deduction > 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                                                                {p.deduction > 0 ? `-${formatCurrency(p.deduction)}` : '—'}
+                                                            </span>
                                                         </td>
-                                                        <td className="px-6 py-4 text-emerald-600 text-sm font-black">{formatCurrency(p.netSalary)}</td>
-                                                        <td className="px-6 py-4 text-slate-400 text-[10px] leading-tight">
-                                                            {p.baseSalary > 0 
-                                                                ? `${formatCurrency(p.baseSalary)} / 30 × ${p.leaveDays} days` 
-                                                                : 'Salary not set'}
-                                                        </td>
+                                                        <td className="px-6 py-4 text-emerald-600 text-sm font-bold">{formatCurrency(p.netSalary)}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>

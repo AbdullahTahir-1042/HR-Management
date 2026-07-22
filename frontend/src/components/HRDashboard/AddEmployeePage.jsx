@@ -200,7 +200,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
             className="max-w-4xl mx-auto"
         >
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-                <div className="p-10">
+                <div className="p-6 sm:p-10">
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {error && (
                             <div className="md:col-span-2 p-4 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold rounded-2xl text-center">

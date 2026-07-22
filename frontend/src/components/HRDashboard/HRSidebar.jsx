@@ -17,18 +17,28 @@ import {
     Calendar,
     Bell,
     BookOpen,
-    AlertTriangle
+    AlertTriangle,
+    X
 } from 'lucide-react';
 
-const HRSidebar = ({ activeTab, setActiveTab, user, logout }) => {
+const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen }) => {
     const navigate = useNavigate();
     return (
-        <aside className="w-64 bg-white border-r border-slate-200 flex flex-col sticky top-0 h-screen z-50">
-            <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-                <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
-                    <ShieldCheck size={24} />
+        <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
+                        <ShieldCheck size={24} />
+                    </div>
+                    <span className="font-bold text-lg text-slate-800 tracking-tight">HR Admin</span>
                 </div>
-                <span className="font-bold text-lg text-slate-800 tracking-tight">HR Admin</span>
+                <button 
+                    onClick={() => setIsOpen(false)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden focus:outline-none"
+                    aria-label="Close Sidebar"
+                >
+                    <X size={18} />
+                </button>
             </div>
 
             <nav className="flex-1 p-4 space-y-3 mt-2 overflow-y-auto">

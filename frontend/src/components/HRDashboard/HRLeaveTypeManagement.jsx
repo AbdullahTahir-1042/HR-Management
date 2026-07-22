@@ -229,63 +229,65 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                         <p className="text-slate-400 text-sm mt-1">Click "Add Leave Type" to set up your first category.</p>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                        {/* Table Header */}
-                        <div className="grid grid-cols-12 px-6 py-3 bg-slate-50 border-b border-slate-100">
-                            <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">#</span>
-                            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Leave Type</span>
-                            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">Annual Quota</span>
-                            <span className="col-span-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Description</span>
-                            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</span>
-                        </div>
+                    <div className="overflow-x-auto">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-w-[768px]">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-12 px-6 py-3 bg-slate-50 border-b border-slate-100">
+                                <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">#</span>
+                                <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Leave Type</span>
+                                <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">Annual Quota</span>
+                                <span className="col-span-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Description</span>
+                                <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</span>
+                            </div>
 
-                        {/* Rows */}
-                        <AnimatePresence>
-                            {leaveTypes.map((lt, index) => (
-                                <motion.div
-                                    key={lt._id}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -16 }}
-                                    transition={{ delay: index * 0.04 }}
-                                    className="grid grid-cols-12 px-6 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition-colors items-center group"
-                                >
-                                    <span className="col-span-1 text-sm text-slate-400 font-bold">{index + 1}</span>
+                            {/* Rows */}
+                            <AnimatePresence>
+                                {leaveTypes.map((lt, index) => (
+                                    <motion.div
+                                        key={lt._id}
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, x: -16 }}
+                                        transition={{ delay: index * 0.04 }}
+                                        className="grid grid-cols-12 px-6 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition-colors items-center group"
+                                    >
+                                        <span className="col-span-1 text-sm text-slate-400 font-bold">{index + 1}</span>
 
-                                    <div className="col-span-3">
-                                        <p className="text-sm font-bold text-slate-800">{lt.name}</p>
-                                    </div>
+                                        <div className="col-span-3">
+                                            <p className="text-sm font-bold text-slate-800">{lt.name}</p>
+                                        </div>
 
-                                    <div className="col-span-2 text-center">
-                                        <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
-                                            {lt.quota} Days
+                                        <div className="col-span-2 text-center">
+                                            <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
+                                                {lt.quota} Days
+                                            </span>
+                                        </div>
+
+                                        <span className="col-span-4 text-xs text-slate-500 font-medium line-clamp-2 pr-4">
+                                            {lt.description || '—'}
                                         </span>
-                                    </div>
 
-                                    <span className="col-span-4 text-xs text-slate-500 font-medium line-clamp-2 pr-4">
-                                        {lt.description || '—'}
-                                    </span>
-
-                                    <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => openEdit(lt)}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                                            title="Edit Config"
-                                        >
-                                            <Pencil size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(lt._id)}
-                                            disabled={deletingId === lt._id}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors disabled:opacity-40"
-                                            title="Delete Config"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+                                        <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => openEdit(lt)}
+                                                className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                                title="Edit Config"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(lt._id)}
+                                                disabled={deletingId === lt._id}
+                                                className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors disabled:opacity-40"
+                                                title="Delete Config"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 )}
             </motion.div>

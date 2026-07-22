@@ -67,7 +67,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
     const getReadByNames = (readByIds = []) => {
         return readByIds
             .map(id => {
-                const emp = employees.find(e => e._id === id);
+                const emp = employees.find(e => e._id?.toString() === id?.toString());
                 return emp?.name || null;
             })
             .filter(Boolean);
@@ -92,7 +92,16 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
         try {
             setSubmitting(true);
             setError('');
-            await apiClient.post('/announcements', { title, message });
+            const res = await apiClient.post('/announcements', { title, message });
+            if ("BroadcastChannel" in window && res.data) {
+                try {
+                    const bc = new BroadcastChannel('announcements_channel');
+                    bc.postMessage({ type: 'NEW_ANNOUNCEMENT', announcement: res.data });
+                    bc.close();
+                } catch (e) {
+                    // Ignore broadcast errors
+                }
+            }
             setTitle('');
             setMessage('');
             setShowForm(false);
@@ -315,7 +324,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                 <p className="text-xs text-slate-400 font-medium mb-2">Haven't read yet:</p>
                                 <div className="flex flex-wrap gap-2">
                                     {employees
-                                        .filter(e => e.role !== 'hr' && !(selected.readBy || []).includes(e._id))
+                                        .filter(e => e.role !== 'hr' && !(selected.readBy || []).some(id => id?.toString() === e._id?.toString()))
                                         .map(emp => (
                                             <span
                                                 key={emp._id}
