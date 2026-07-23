@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import axios from 'axios';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -17,6 +18,7 @@ import EmployeeHRRequests from '../components/EmployeeDashboard/EmployeeHRReques
 import EmployeeAnnouncement from '../components/EmployeeDashboard/EmployeeAnnouncement';
 import UpdateProfilePage from '../components/UpdateProfilePage';
 import MyTeamSection from '../components/EmployeeDashboard/MyTeamSection';
+import MessagesPage from '../components/MessagesPage';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -62,7 +64,7 @@ const EmployeeDashboard = () => {
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // ── UC-09: HR Requests state ───────────────────────────────────────────────
+    // ── UC-09: HR Requests state ──────────────────────────────────────────────
     const [hrRequests, setHrRequests] = useState([]);
     const [hrRequestSubmitting, setHrRequestSubmitting] = useState(false);
 
@@ -73,11 +75,11 @@ const EmployeeDashboard = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
     const [leaveStatusFilter, setLeaveStatusFilter] = useState('all');
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
-    // ── Notification Toast state ───────────────────────────────────────────────
-    const [toast, setToast] = useState(null); // { title, body }
+    // ── Notification Toast state ──────────────────────────────────────────────
+    const [toast, setToast] = useState(null);
     const toastTimerRef = useRef(null);
-    // Ref to track notified announcement IDs so notification NEVER fires twice
     const notifiedAnnouncementIdsRef = useRef(new Set());
     const isInitializedRef = useRef(false);
 
@@ -92,7 +94,7 @@ const EmployeeDashboard = () => {
         setToast(null);
     }, []);
 
-    // ── Initial data load ──────────────────────────────────────────────────────
+    // ── Initial data load ─────────────────────────────────────────────────────
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
@@ -119,8 +121,8 @@ const EmployeeDashboard = () => {
             setLeaveTypes(types.data);
             const ann = announcementsRes.data || [];
             setAnnouncements(ann);
-            
-            // Mark all existing announcements as notified on initial load so old ones never trigger popup
+
+            // Mark all existing announcements as already notified on load
             ann.forEach(a => {
                 if (a._id) notifiedAnnouncementIdsRef.current.add(a._id);
             });
@@ -136,7 +138,22 @@ const EmployeeDashboard = () => {
         fetchDashboardData();
     }, []);
 
-    // ── Firebase notifications + fast polling fallback ─────────────────────────
+    // ── Unread messages badge polling (from feature/chat) ─────────────────────
+    useEffect(() => {
+        const fetchUnreadMessages = async () => {
+            try {
+                const res = await apiClient.get('/conversations');
+                setUnreadMessages(res.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+            } catch (err) {
+                console.error('Error fetching unread messages count:', err);
+            }
+        };
+        fetchUnreadMessages();
+        const interval = setInterval(fetchUnreadMessages, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // ── Firebase notifications + SSE + BroadcastChannel ──────────────────────
     useEffect(() => {
         // 1. Request FCM token and sync to backend
         const setupNotifications = async () => {
@@ -152,26 +169,23 @@ const EmployeeDashboard = () => {
         };
         setupNotifications();
 
-        // Helper to trigger browser desktop notification when app is in background/other tab
+        // Helper to trigger browser desktop notification
         const triggerDesktopNotification = (title, body) => {
             if ("Notification" in window && Notification.permission === "granted") {
                 try {
-                    new Notification(`📢 ${title}`, {
-                        body: body,
-                        icon: '/favicon.svg'
-                    });
+                    new Notification(`📢 ${title}`, { body, icon: '/favicon.svg' });
                 } catch (e) {
                     console.error("Desktop notification error:", e);
                 }
             }
         };
 
-        // Request browser desktop notification permission
+        // Request browser notification permission
         if ("Notification" in window && Notification.permission === "default") {
             Notification.requestPermission();
         }
 
-        // 2. Firebase foreground message — show toast + desktop notification + refresh announcements
+        // 2. Firebase foreground message
         const unsubscribe = onMessageListener((payload) => {
             console.log('Foreground message received:', payload);
             const title = payload?.notification?.title || payload?.data?.title || 'New Announcement';
@@ -181,7 +195,7 @@ const EmployeeDashboard = () => {
             fetchAllAnnouncements();
         });
 
-        // 3. BroadcastChannel listener for sub-second sync across tabs in same browser
+        // 3. BroadcastChannel — sub-second sync across tabs
         let broadcastChannel = null;
         if ("BroadcastChannel" in window) {
             try {
@@ -202,7 +216,7 @@ const EmployeeDashboard = () => {
             }
         }
 
-        // 4. Server-Sent Events (SSE) stream connection — receives announcements in real-time instantly without polling!
+        // 4. SSE stream — real-time announcements without polling
         let eventSource = null;
         try {
             const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -211,9 +225,7 @@ const EmployeeDashboard = () => {
                 localStorage.getItem('authToken') ||
                 localStorage.getItem('x-auth-token') ||
                 '';
-            
             eventSource = new EventSource(`${baseUrl}/announcements/stream?token=${token}`);
-            
             eventSource.onmessage = (event) => {
                 try {
                     const newAnnouncement = JSON.parse(event.data);
@@ -222,7 +234,6 @@ const EmployeeDashboard = () => {
                             notifiedAnnouncementIdsRef.current.add(newAnnouncement._id);
                             showToast(newAnnouncement.title, newAnnouncement.message);
                             triggerDesktopNotification(newAnnouncement.title, newAnnouncement.message);
-                            // Prepend new announcement to the active list instantly
                             setAnnouncements(prev => {
                                 const exists = prev.some(item => item._id === newAnnouncement._id);
                                 if (exists) return prev;
@@ -234,7 +245,6 @@ const EmployeeDashboard = () => {
                     console.error("SSE message parsing error:", err);
                 }
             };
-
             eventSource.onerror = (err) => {
                 console.error("SSE connection error:", err);
             };
@@ -250,7 +260,7 @@ const EmployeeDashboard = () => {
         };
     }, [showToast]);
 
-    // ── Individual fetch helpers ───────────────────────────────────────────────
+    // ── Individual fetch helpers ──────────────────────────────────────────────
     const fetchUserProfile = async () => {
         try {
             const res = await apiClient.get('/auth/user');
@@ -292,7 +302,6 @@ const EmployeeDashboard = () => {
         try {
             const res = await apiClient.get('/announcements');
             setAnnouncements(res.data);
-            announcementsCountRef.current = res.data.length;
         } catch (err) {
             console.error('Error fetching announcements:', err);
         }
@@ -316,7 +325,6 @@ const EmployeeDashboard = () => {
         }
     };
 
-    // ── UC-07: Fetch all company holidays ─────────────────────────────────────
     const fetchHolidays = async () => {
         try {
             const res = await apiClient.get('/holidays');
@@ -326,7 +334,6 @@ const EmployeeDashboard = () => {
         }
     };
 
-    // ── UC-09: Fetch employee's own HR requests ────────────────────────────────
     const fetchHRRequests = async () => {
         try {
             const res = await apiClient.get('/hr-requests/my-requests');
@@ -336,7 +343,6 @@ const EmployeeDashboard = () => {
         }
     };
 
-    // ── UC-09: Submit new HR request ──────────────────────────────────────────
     const handleSubmitHRRequest = async (form) => {
         setHrRequestSubmitting(true);
         try {
@@ -405,7 +411,8 @@ const EmployeeDashboard = () => {
 
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 font-sans relative">
-            {/* ── Announcement Toast (top-right popup) ── */}
+
+            {/* ── Announcement Toast ── */}
             <AnimatePresence>
                 {toast && (
                     <AnnouncementToast
@@ -416,6 +423,7 @@ const EmployeeDashboard = () => {
             </AnimatePresence>
 
             <EmployeeSidebar
+                unreadMessages={unreadMessages}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 user={fullUser || authUser}
@@ -423,8 +431,9 @@ const EmployeeDashboard = () => {
                 isOpen={isSidebarOpen}
                 setIsOpen={setSidebarOpen}
             />
+
             {isSidebarOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
                     onClick={() => setSidebarOpen(false)}
                 />
@@ -475,18 +484,21 @@ const EmployeeDashboard = () => {
                             />
                         )}
 
-                        {/* ── UC-07: Holiday Calendar ── */}
                         {activeTab === 'holidays' && (
                             <EmployeeHolidays holidays={holidays} />
                         )}
 
-                        {/* ── UC-09: HR Requests ── */}
                         {activeTab === 'hr-requests' && (
                             <EmployeeHRRequests
                                 requests={hrRequests}
                                 onSubmit={handleSubmitHRRequest}
                                 submitting={hrRequestSubmitting}
                             />
+                        )}
+
+                        {/* ── NEW: Messages tab from feature/chat ── */}
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
                         )}
 
                         {activeTab === 'profile' && (
@@ -503,6 +515,7 @@ const EmployeeDashboard = () => {
                             />
                         )}
 
+                        {/* ── My Team (Team Leads only) ── */}
                         {activeTab === 'myTeam' && (
                             <MyTeamSection key="myTeam" />
                         )}
