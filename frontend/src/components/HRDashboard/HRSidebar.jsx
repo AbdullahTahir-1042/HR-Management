@@ -120,10 +120,18 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                         </button>
                         <button
                             onClick={() => setActiveTab('hr-requests')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <ClipboardList size={18} />
-                            <span>HR Requests</span>
+                            <span className="text-sm">HR Requests</span>
+                        </button>
+                        {/* Departments */}
+                        <button
+                            onClick={() => setActiveTab('departments')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${activeTab === 'departments' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <Building2 size={18} />
+                            <span className="text-sm">Departments</span>
                         </button>
                     </div>
                 </div>
