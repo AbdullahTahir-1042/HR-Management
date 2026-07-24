@@ -15,8 +15,13 @@ const authMiddleware = async (c, next) => {
         return c.json({ msg: 'No token, authorization denied' }, 401);
     }
     try {
-        const decoded = await verify(token, c.env.JWT_SECRET || 'your_super_secret_jwt_key_123');
+        const decoded = await verify(token, c.env.JWT_SECRET || 'your_super_secret_jwt_key_123', 'HS256');
         c.set('user', decoded.user);
+        // Fire-and-forget presence heartbeat — waitUntil keeps it alive past the response.
+        c.executionCtx.waitUntil(
+            c.env.DB.prepare('UPDATE users SET lastSeenAt = ? WHERE id = ?')
+                .bind(new Date().toISOString(), decoded.user.id).run().catch(() => {})
+        );
         await next();
     } catch (err) {
         return c.json({ msg: 'Token is not valid' }, 401);
@@ -137,6 +142,15 @@ app.post('/auth/register', authMiddleware, isHRMiddleware, async (c) => {
 // Get all users (HR only)
 app.get('/auth/users', authMiddleware, isHRMiddleware, async (c) => {
     const { results } = await c.env.DB.prepare('SELECT id, name, email, role, status, salary, photo, department, reportingTo, phone, leaveBalance, createdAt FROM users WHERE isDeleted = 0 ORDER BY createdAt DESC').all();
+    return c.json(results);
+});
+
+// Lightweight company directory (for messaging, etc.) — any authenticated user
+app.get('/auth/colleagues', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const { results } = await c.env.DB.prepare(
+        'SELECT id as _id, name, email, role, department, photo, lastSeenAt FROM users WHERE isDeleted = 0 AND id != ? ORDER BY name ASC'
+    ).bind(user.id).all();
     return c.json(results);
 });
 
@@ -684,6 +698,479 @@ app.put('/hr-requests/:id', authMiddleware, isHRMiddleware, async (c) => {
         .run();
 
     return c.json({ msg: 'Request updated' });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. CONVERSATIONS & MESSAGES API (Direct Messages + Groups)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TYPING_TTL_MS = 6000;
+
+const isAdminOfRow = (conversationRow, userId) => {
+    const adminIds = JSON.parse(conversationRow.admins || '[]');
+    return conversationRow.createdBy === userId || adminIds.includes(userId);
+};
+
+const hydrateConversations = async (db, conversationIds, userId) => {
+    if (conversationIds.length === 0) return [];
+    const placeholders = conversationIds.map(() => '?').join(',');
+
+    const { results: convRows } = await db.prepare(
+        `SELECT id, type, name, createdBy, admins, lastMessageAt, createdAt FROM conversations WHERE id IN (${placeholders})`
+    ).bind(...conversationIds).all();
+
+    const { results: participantRows } = await db.prepare(
+        `SELECT cp.conversation_id, u.id as _id, u.name, u.email, u.photo, u.role, u.department, u.lastSeenAt
+         FROM conversation_participants cp JOIN users u ON cp.user_id = u.id
+         WHERE cp.conversation_id IN (${placeholders})`
+    ).bind(...conversationIds).all();
+
+    const { results: lastMessages } = await db.prepare(
+        `SELECT conversation_id, sender_id, text, createdAt FROM messages
+         WHERE conversation_id IN (${placeholders}) ORDER BY createdAt DESC`
+    ).bind(...conversationIds).all();
+
+    const { results: unreadRows } = await db.prepare(
+        `SELECT m.conversation_id as conversation_id FROM messages m
+         WHERE m.conversation_id IN (${placeholders}) AND m.sender_id != ?
+           AND m.id NOT IN (SELECT message_id FROM message_reads WHERE user_id = ?)`
+    ).bind(...conversationIds, userId, userId).all();
+
+    const participantsByConv = {};
+    participantRows.forEach(p => {
+        if (!participantsByConv[p.conversation_id]) participantsByConv[p.conversation_id] = [];
+        participantsByConv[p.conversation_id].push({ _id: p._id, name: p.name, email: p.email, photo: p.photo, role: p.role, department: p.department, lastSeenAt: p.lastSeenAt });
+    });
+
+    const lastMessageByConv = {};
+    lastMessages.forEach(m => {
+        if (!lastMessageByConv[m.conversation_id]) lastMessageByConv[m.conversation_id] = m;
+    });
+
+    const unreadByConv = {};
+    unreadRows.forEach(r => {
+        unreadByConv[r.conversation_id] = (unreadByConv[r.conversation_id] || 0) + 1;
+    });
+
+    return convRows.map(conv => {
+        const participants = participantsByConv[conv.id] || [];
+        const other = conv.type === 'dm' ? participants.find(p => p._id !== userId) : null;
+        const last = lastMessageByConv[conv.id];
+        const adminIds = JSON.parse(conv.admins || '[]');
+        return {
+            _id: conv.id,
+            type: conv.type,
+            name: conv.type === 'group' ? conv.name : (other?.name || 'Unknown User'),
+            photo: conv.type === 'dm' ? (other?.photo || null) : null,
+            participants,
+            memberCount: participants.length,
+            adminIds,
+            viewerIsAdmin: conv.type === 'group' ? isAdminOfRow(conv, userId) : false,
+            otherUser: other ? { _id: other._id, name: other.name, lastSeenAt: other.lastSeenAt } : null,
+            lastMessage: last?.text || '',
+            lastMessageAt: last?.createdAt || conv.createdAt,
+            lastMessageFromMe: last ? last.sender_id === userId : false,
+            unreadCount: unreadByConv[conv.id] || 0
+        };
+    }).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+};
+
+// List all conversations (DMs + groups) for the logged-in user
+app.get('/conversations', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const { results } = await c.env.DB.prepare(
+        'SELECT conversation_id FROM conversation_participants WHERE user_id = ?'
+    ).bind(user.id).all();
+
+    const hydrated = await hydrateConversations(c.env.DB, results.map(r => r.conversation_id), user.id);
+    return c.json(hydrated);
+});
+
+// Get the existing DM with a user, or create one
+app.post('/conversations/dm', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const { userId } = await c.req.json();
+    if (!userId) return c.json({ msg: 'A valid userId is required' }, 400);
+    if (userId === user.id) return c.json({ msg: 'Cannot start a conversation with yourself' }, 400);
+
+    const otherUser = await c.env.DB.prepare('SELECT id FROM users WHERE id = ? AND isDeleted = 0').bind(userId).first();
+    if (!otherUser) return c.json({ msg: 'User not found' }, 404);
+
+    const existing = await c.env.DB.prepare(
+        `SELECT c.id FROM conversations c
+         WHERE c.type = 'dm'
+           AND c.id IN (SELECT conversation_id FROM conversation_participants WHERE user_id = ?)
+           AND c.id IN (SELECT conversation_id FROM conversation_participants WHERE user_id = ?)`
+    ).bind(user.id, userId).first();
+
+    let conversationId = existing?.id;
+
+    if (!conversationId) {
+        conversationId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        await c.env.DB.prepare(
+            'INSERT INTO conversations (id, type, name, createdBy, lastMessageAt, createdAt) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(conversationId, 'dm', '', user.id, now, now).run();
+        await c.env.DB.prepare('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)')
+            .bind(conversationId, user.id).run();
+        await c.env.DB.prepare('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)')
+            .bind(conversationId, userId).run();
+    }
+
+    const [hydrated] = await hydrateConversations(c.env.DB, [conversationId], user.id);
+    return c.json(hydrated);
+});
+
+// Create a new group conversation
+app.post('/conversations/group', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const { name, participantIds } = await c.req.json();
+    if (!name || !name.trim()) return c.json({ msg: 'Group name is required' }, 400);
+
+    const ids = Array.isArray(participantIds) ? participantIds : [];
+    if (ids.length < 1) return c.json({ msg: 'Select at least one other participant' }, 400);
+
+    const uniqueParticipants = Array.from(new Set([user.id, ...ids]));
+    const placeholders = uniqueParticipants.map(() => '?').join(',');
+    const { results: foundUsers } = await c.env.DB.prepare(
+        `SELECT id FROM users WHERE id IN (${placeholders}) AND isDeleted = 0`
+    ).bind(...uniqueParticipants).all();
+    if (foundUsers.length !== uniqueParticipants.length) {
+        return c.json({ msg: 'One or more selected users could not be found' }, 400);
+    }
+
+    const conversationId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(
+        'INSERT INTO conversations (id, type, name, createdBy, admins, lastMessageAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(conversationId, 'group', name.trim(), user.id, JSON.stringify([user.id]), now, now).run();
+
+    for (const participantId of uniqueParticipants) {
+        await c.env.DB.prepare('INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)')
+            .bind(conversationId, participantId).run();
+    }
+
+    const [hydrated] = await hydrateConversations(c.env.DB, [conversationId], user.id);
+    return c.json(hydrated, 201);
+});
+
+// Rename a group
+app.put('/conversations/:id', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+
+    const conversation = await c.env.DB.prepare('SELECT * FROM conversations WHERE id = ?').bind(id).first();
+    if (!conversation) return c.json({ msg: 'Conversation not found' }, 404);
+    if (conversation.type !== 'group') return c.json({ msg: 'Only groups can be renamed' }, 400);
+    if (!isAdminOfRow(conversation, user.id)) return c.json({ msg: 'Only group admins can rename the group' }, 403);
+
+    const { name } = await c.req.json();
+    if (!name || !name.trim()) return c.json({ msg: 'Group name is required' }, 400);
+
+    await c.env.DB.prepare('UPDATE conversations SET name = ? WHERE id = ?').bind(name.trim(), id).run();
+
+    const [hydrated] = await hydrateConversations(c.env.DB, [id], user.id);
+    return c.json(hydrated);
+});
+
+// Add members to a group
+app.put('/conversations/:id/participants', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+
+    const conversation = await c.env.DB.prepare('SELECT * FROM conversations WHERE id = ?').bind(id).first();
+    if (!conversation) return c.json({ msg: 'Conversation not found' }, 404);
+    if (conversation.type !== 'group') return c.json({ msg: 'Only groups support adding members' }, 400);
+
+    const membership = await c.env.DB.prepare(
+        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
+    ).bind(id, user.id).first();
+    if (!membership) return c.json({ msg: 'Access denied' }, 403);
+
+    const { participantIds } = await c.req.json();
+    const ids = Array.isArray(participantIds) ? participantIds : [];
+    if (ids.length === 0) return c.json({ msg: 'No participants provided' }, 400);
+
+    const placeholders = ids.map(() => '?').join(',');
+    const { results: foundUsers } = await c.env.DB.prepare(
+        `SELECT id FROM users WHERE id IN (${placeholders}) AND isDeleted = 0`
+    ).bind(...ids).all();
+    if (foundUsers.length !== ids.length) return c.json({ msg: 'One or more users could not be found' }, 400);
+
+    for (const participantId of ids) {
+        await c.env.DB.prepare('INSERT OR IGNORE INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)')
+            .bind(id, participantId).run();
+    }
+
+    const [hydrated] = await hydrateConversations(c.env.DB, [id], user.id);
+    return c.json(hydrated);
+});
+
+// Toggle a member's admin status
+app.put('/conversations/:id/participants/:userId/promote', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+    const targetId = c.req.param('userId');
+
+    const conversation = await c.env.DB.prepare('SELECT * FROM conversations WHERE id = ?').bind(id).first();
+    if (!conversation) return c.json({ msg: 'Conversation not found' }, 404);
+    if (conversation.type !== 'group') return c.json({ msg: 'Only groups have admins' }, 400);
+    if (!isAdminOfRow(conversation, user.id)) return c.json({ msg: 'Only group admins can manage admins' }, 403);
+
+    const membership = await c.env.DB.prepare(
+        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
+    ).bind(id, targetId).first();
+    if (!membership) return c.json({ msg: 'User is not a member of this group' }, 400);
+
+    const adminIds = new Set(JSON.parse(conversation.admins || '[]'));
+    if (adminIds.has(targetId)) adminIds.delete(targetId); else adminIds.add(targetId);
+    await c.env.DB.prepare('UPDATE conversations SET admins = ? WHERE id = ?')
+        .bind(JSON.stringify(Array.from(adminIds)), id).run();
+
+    const [hydrated] = await hydrateConversations(c.env.DB, [id], user.id);
+    return c.json(hydrated);
+});
+
+// Leave a group
+app.delete('/conversations/:id/participants/me', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+
+    const conversation = await c.env.DB.prepare('SELECT * FROM conversations WHERE id = ?').bind(id).first();
+    if (!conversation) return c.json({ msg: 'Conversation not found' }, 404);
+    if (conversation.type !== 'group') return c.json({ msg: 'Cannot leave a direct message' }, 400);
+
+    await c.env.DB.prepare('DELETE FROM conversation_participants WHERE conversation_id = ? AND user_id = ?')
+        .bind(id, user.id).run();
+
+    const remainingAdmins = JSON.parse(conversation.admins || '[]').filter(a => a !== user.id);
+    await c.env.DB.prepare('UPDATE conversations SET admins = ? WHERE id = ?')
+        .bind(JSON.stringify(remainingAdmins), id).run();
+
+    return c.json({ msg: 'Left group' });
+});
+
+// Remove a specific member from a group (admin-only — distinct from self-leave above)
+app.delete('/conversations/:id/participants/:userId', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+    const targetId = c.req.param('userId');
+
+    const conversation = await c.env.DB.prepare('SELECT * FROM conversations WHERE id = ?').bind(id).first();
+    if (!conversation) return c.json({ msg: 'Conversation not found' }, 404);
+    if (conversation.type !== 'group') return c.json({ msg: 'Cannot remove members from a direct message' }, 400);
+    if (!isAdminOfRow(conversation, user.id)) return c.json({ msg: 'Only group admins can remove members' }, 403);
+    if (targetId === user.id) return c.json({ msg: 'Use the leave-group action to remove yourself' }, 400);
+
+    await c.env.DB.prepare('DELETE FROM conversation_participants WHERE conversation_id = ? AND user_id = ?')
+        .bind(id, targetId).run();
+
+    const remainingAdmins = JSON.parse(conversation.admins || '[]').filter(a => a !== targetId);
+    await c.env.DB.prepare('UPDATE conversations SET admins = ? WHERE id = ?')
+        .bind(JSON.stringify(remainingAdmins), id).run();
+
+    const [hydrated] = await hydrateConversations(c.env.DB, [id], user.id);
+    return c.json(hydrated);
+});
+
+// Ping "I'm typing" — expires on its own after a few seconds
+app.post('/conversations/:id/typing', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+
+    const membership = await c.env.DB.prepare(
+        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
+    ).bind(id, user.id).first();
+    if (!membership) return c.json({ msg: 'Access denied' }, 403);
+
+    const typingUntil = new Date(Date.now() + TYPING_TTL_MS).toISOString();
+    await c.env.DB.prepare(
+        `INSERT INTO typing_status (conversation_id, user_id, typingUntil) VALUES (?, ?, ?)
+         ON CONFLICT (conversation_id, user_id) DO UPDATE SET typingUntil = excluded.typingUntil`
+    ).bind(id, user.id, typingUntil).run();
+
+    return c.json({ msg: 'ok' });
+});
+
+// Get a page of the thread (newest-first cursor via ?before=<messageId>),
+// mark delivered/read, and return who's currently typing.
+app.get('/conversations/:id/messages', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+
+    const membership = await c.env.DB.prepare(
+        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
+    ).bind(id, user.id).first();
+    if (!membership) return c.json({ msg: 'Access denied' }, 403);
+
+    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10) || 50, 100);
+    const before = c.req.query('before');
+
+    let beforeCreatedAt = null;
+    if (before) {
+        const beforeMsg = await c.env.DB.prepare('SELECT createdAt FROM messages WHERE id = ?').bind(before).first();
+        if (beforeMsg) beforeCreatedAt = beforeMsg.createdAt;
+    }
+
+    const whereClause = beforeCreatedAt ? 'WHERE m.conversation_id = ? AND m.createdAt < ?' : 'WHERE m.conversation_id = ?';
+    const bindArgs = beforeCreatedAt ? [id, beforeCreatedAt] : [id];
+
+    const { results: rawMessages } = await c.env.DB.prepare(
+        `SELECT m.id as _id, m.text, m.createdAt, m.replyTo,
+                u.id as sender_id, u.name as sender_name, u.email as sender_email, u.photo as sender_photo
+         FROM messages m JOIN users u ON m.sender_id = u.id
+         ${whereClause}
+         ORDER BY m.createdAt DESC LIMIT ?`
+    ).bind(...bindArgs, limit).all();
+
+    const hasMore = rawMessages.length === limit;
+    const pageIds = rawMessages.map(m => m._id);
+    const orderedMessages = rawMessages.slice().reverse();
+
+    // Delivered = this participant's client has now fetched the thread.
+    await c.env.DB.prepare(
+        `INSERT OR IGNORE INTO message_delivered (message_id, user_id)
+         SELECT id, ? FROM messages WHERE conversation_id = ? AND sender_id != ?`
+    ).bind(user.id, id, user.id).run();
+
+    // Opening the thread means catching up — mark everything seen.
+    await c.env.DB.prepare(
+        `INSERT OR IGNORE INTO message_reads (message_id, user_id)
+         SELECT id, ? FROM messages WHERE conversation_id = ? AND sender_id != ?`
+    ).bind(user.id, id, user.id).run();
+
+    const [conversation] = await hydrateConversations(c.env.DB, [id], user.id);
+    if (!conversation) return c.json({ msg: 'Conversation not found' }, 404);
+
+    const totalRecipients = conversation.participants.filter(p => p._id !== user.id).length;
+
+    const deliveredCounts = {}, readCounts = {}, replyMap = {};
+    if (pageIds.length > 0) {
+        const ph = pageIds.map(() => '?').join(',');
+
+        const { results: deliveredRows } = await c.env.DB.prepare(
+            `SELECT message_id, COUNT(*) as cnt FROM message_delivered WHERE message_id IN (${ph}) AND user_id != ? GROUP BY message_id`
+        ).bind(...pageIds, user.id).all();
+        deliveredRows.forEach(r => { deliveredCounts[r.message_id] = r.cnt; });
+
+        const { results: readRows } = await c.env.DB.prepare(
+            `SELECT message_id, COUNT(*) as cnt FROM message_reads WHERE message_id IN (${ph}) AND user_id != ? GROUP BY message_id`
+        ).bind(...pageIds, user.id).all();
+        readRows.forEach(r => { readCounts[r.message_id] = r.cnt; });
+
+        const replyIds = [...new Set(rawMessages.map(m => m.replyTo).filter(Boolean))];
+        if (replyIds.length > 0) {
+            const rph = replyIds.map(() => '?').join(',');
+            const { results: replyRows } = await c.env.DB.prepare(
+                `SELECT m.id, m.text, u.name as sender_name
+                 FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id IN (${rph})`
+            ).bind(...replyIds).all();
+            replyRows.forEach(r => { replyMap[r.id] = r; });
+        }
+    }
+
+    const formatted = orderedMessages.map(m => {
+        const reply = m.replyTo ? replyMap[m.replyTo] : null;
+        return {
+            _id: m._id,
+            text: m.text,
+            createdAt: m.createdAt,
+            sender: { _id: m.sender_id, name: m.sender_name, email: m.sender_email, photo: m.sender_photo },
+            replyTo: reply ? {
+                _id: reply.id,
+                text: reply.text,
+                senderName: reply.sender_name
+            } : null,
+            deliveredCount: deliveredCounts[m._id] || 0,
+            readCount: readCounts[m._id] || 0,
+            totalRecipients
+        };
+    });
+
+    const { results: typingRows } = await c.env.DB.prepare(
+        `SELECT ts.user_id, u.name FROM typing_status ts JOIN users u ON ts.user_id = u.id
+         WHERE ts.conversation_id = ? AND ts.user_id != ? AND ts.typingUntil > ?`
+    ).bind(id, user.id, new Date().toISOString()).all();
+
+    return c.json({
+        conversation,
+        messages: formatted,
+        hasMore,
+        typingUsers: typingRows.map(t => ({ _id: t.user_id, name: t.name }))
+    });
+});
+
+// Send a message in a conversation (optionally replying to another)
+app.post('/conversations/:id/messages', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const id = c.req.param('id');
+
+    const membership = await c.env.DB.prepare(
+        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
+    ).bind(id, user.id).first();
+    if (!membership) return c.json({ msg: 'Access denied' }, 403);
+
+    const { text, replyTo } = await c.req.json();
+    if (!text || !text.trim()) return c.json({ msg: 'Message text is required' }, 400);
+    if (text.trim().length > 4000) return c.json({ msg: 'Message is too long (max 4000 characters)' }, 400);
+
+    let replyToId = null;
+    if (replyTo) {
+        const original = await c.env.DB.prepare('SELECT id FROM messages WHERE id = ? AND conversation_id = ?').bind(replyTo, id).first();
+        if (!original) return c.json({ msg: 'Message being replied to was not found in this conversation' }, 400);
+        replyToId = original.id;
+    }
+
+    const messageId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(
+        'INSERT INTO messages (id, conversation_id, sender_id, text, replyTo, createdAt) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(messageId, id, user.id, text.trim(), replyToId, now).run();
+    await c.env.DB.prepare('INSERT OR IGNORE INTO message_reads (message_id, user_id) VALUES (?, ?)')
+        .bind(messageId, user.id).run();
+    await c.env.DB.prepare('INSERT OR IGNORE INTO message_delivered (message_id, user_id) VALUES (?, ?)')
+        .bind(messageId, user.id).run();
+    await c.env.DB.prepare('UPDATE conversations SET lastMessageAt = ? WHERE id = ?').bind(now, id).run();
+    await c.env.DB.prepare('DELETE FROM typing_status WHERE conversation_id = ? AND user_id = ?').bind(id, user.id).run();
+
+    // NOTE: intentionally no push-notification step here. The Express side
+    // sends FCM pushes via firebase-admin, which doesn't run in the Workers
+    // runtime, and this Worker never had announcements/FCM wiring to begin
+    // with. Browser notifications (added client-side) cover the "app open
+    // in another tab" case identically on both backends; background push
+    // parity for the Cloudflare deployment is a known follow-up, not
+    // something silently dropped.
+
+    const sender = await c.env.DB.prepare('SELECT id, name, email, photo FROM users WHERE id = ?').bind(user.id).first();
+    const participantCount = await c.env.DB.prepare(
+        'SELECT COUNT(*) as cnt FROM conversation_participants WHERE conversation_id = ?'
+    ).bind(id).first();
+
+    let replyPreview = null;
+    if (replyToId) {
+        const reply = await c.env.DB.prepare(
+            `SELECT m.id, m.text, u.name as sender_name
+             FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?`
+        ).bind(replyToId).first();
+        if (reply) {
+            replyPreview = {
+                _id: reply.id,
+                text: reply.text,
+                senderName: reply.sender_name
+            };
+        }
+    }
+
+    return c.json({
+        _id: messageId,
+        text: text.trim(),
+        createdAt: now,
+        sender: { _id: sender.id, name: sender.name, email: sender.email, photo: sender.photo },
+        replyTo: replyPreview,
+        deliveredCount: 0,
+        readCount: 0,
+        totalRecipients: participantCount.cnt - 1
+    }, 201);
 });
 
 export default app;
