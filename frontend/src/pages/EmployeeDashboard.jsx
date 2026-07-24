@@ -17,6 +17,7 @@ import EmployeeHRRequests from '../components/EmployeeDashboard/EmployeeHRReques
 import EmployeeAnnouncement from '../components/EmployeeDashboard/EmployeeAnnouncement';
 import UpdateProfilePage from '../components/UpdateProfilePage';
 import MyTeamSection from '../components/EmployeeDashboard/MyTeamSection';
+import MessagesPage from '../components/MessagesPage';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -501,6 +502,10 @@ const EmployeeDashboard = () => {
                                 initialAnnouncements={announcements}
                                 onRefreshAnnouncements={fetchAllAnnouncements}
                             />
+                        )}
+
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
                         )}
 
                         {activeTab === 'myTeam' && (

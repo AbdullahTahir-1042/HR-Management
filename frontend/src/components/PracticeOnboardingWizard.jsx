@@ -108,9 +108,7 @@ const PracticeOnboardingWizard = () => {
     const fetchProviders = async () => {
         setProvidersLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { 'x-auth-token': token } };
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/practice/providers`, config);
+            const res = await apiClient.get('/practice/providers');
             setProviders(res.data);
         } catch (err) {
             console.error("Error fetching providers:", err);
@@ -135,9 +133,7 @@ const PracticeOnboardingWizard = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { 'x-auth-token': token } };
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/practice/providers`, providerForm, config);
+            const res = await apiClient.post('/practice/providers', providerForm);
             setProviders([...providers, res.data]);
             setProviderForm({
                 firstName: '',
@@ -167,9 +163,7 @@ const PracticeOnboardingWizard = () => {
         if (!window.confirm("Are you sure you want to delete this provider?")) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { 'x-auth-token': token } };
-            await axios.delete(`${import.meta.env.VITE_API_URL}/practice/providers/${id}`, config);
+            await apiClient.delete(`/practice/providers/${id}`);
             setProviders(providers.filter(p => p._id !== id));
         } catch (err) {
             console.error("Error deleting provider:", err);
