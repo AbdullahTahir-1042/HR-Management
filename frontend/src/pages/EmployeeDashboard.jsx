@@ -516,6 +516,10 @@ const EmployeeDashboard = () => {
                         )}
 
                         {/* ── My Team (Team Leads only) ── */}
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
+                        )}
+
                         {activeTab === 'myTeam' && (
                             <MyTeamSection key="myTeam" />
                         )}

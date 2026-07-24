@@ -117,7 +117,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                 </motion.div>
 
-                {/* ✅ NEW — Holidays Card */}
+                
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('holidays')}
