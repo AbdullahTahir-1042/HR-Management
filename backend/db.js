@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const dns = require('dns');
 
 dotenv.config();
+
+// Force Node.js to use Google DNS (8.8.8.8) so that MongoDB Atlas SRV/TXT
+// lookups succeed even when the local router DNS blocks them.
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const seedLeaveTypes = async () => {
     try {

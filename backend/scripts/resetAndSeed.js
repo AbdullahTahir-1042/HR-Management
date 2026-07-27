@@ -1,10 +1,14 @@
-﻿// Reset & Dummy-Data Seed Script
+// Reset & Dummy-Data Seed Script
 // Clears all data EXCEPT hr users, then re-seeds fresh test data.
 // Usage: cd backend && node scripts/resetAndSeed.js
 
 const path = require('path');
 const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '../.env') });
+
+// Force Google DNS so MongoDB Atlas SRV lookups work on restricted networks
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const mongoose = require('mongoose');
 const User = require('../models/User');
@@ -205,7 +209,7 @@ const run = async () => {
         { name: 'Independence Day',        startDate: '2026-08-14', endDate: '2026-08-14', description: 'Pakistan Independence Day',         type: 'public'  },
         { name: 'Eid al-Fitr',             startDate: '2026-03-30', endDate: '2026-04-01', description: 'Eid ul Fitr holidays',              type: 'public'  },
         { name: 'Eid al-Adha',             startDate: '2026-06-06', endDate: '2026-06-08', description: 'Eid ul Adha holidays',              type: 'public'  },
-        { name: 'Company Anniversary Day', startDate: '2026-09-01', endDate: '2026-09-01', description: 'Annual company founding celebration',type: 'company' },
+        { name: 'Company Anniversary Day', startDate: '2026-09-01', endDate: '2026-09-01', description: 'Annual company founding celebration', type: 'optional' },
         { name: 'Christmas',               startDate: '2026-12-25', endDate: '2026-12-25', description: 'Christmas holiday',                 type: 'public'  },
         { name: 'New Year',                startDate: '2027-01-01', endDate: '2027-01-01', description: 'New Year celebration',              type: 'public'  },
     ];
