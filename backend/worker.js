@@ -214,7 +214,61 @@ app.delete('/auth/users/:id', authMiddleware, isHRMiddleware, async (c) => {
         return c.json({ msg: 'You cannot delete your own account' }, 400);
     }
 
+    // 1. Soft-delete the user
     await c.env.DB.prepare('UPDATE users SET isDeleted = 1 WHERE id = ?').bind(paramId).run();
+
+    try {
+        // 2. Find all conversations the user is a participant in
+        const { results: convs } = await c.env.DB.prepare(
+            'SELECT c.id, c.type, c.admins FROM conversations c JOIN conversation_participants cp ON c.id = cp.conversation_id WHERE cp.user_id = ?'
+        ).bind(paramId).all();
+
+        for (const conv of convs || []) {
+            if (conv.type === 'dm') {
+                // Delete DM: delete all related data in D1
+                await c.env.DB.prepare('DELETE FROM message_reads WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)').bind(conv.id).run();
+                await c.env.DB.prepare('DELETE FROM message_delivered WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)').bind(conv.id).run();
+                await c.env.DB.prepare('DELETE FROM message_deleted_for WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)').bind(conv.id).run();
+                await c.env.DB.prepare('DELETE FROM conversation_participants WHERE conversation_id = ?').bind(conv.id).run();
+                await c.env.DB.prepare('DELETE FROM typing_status WHERE conversation_id = ?').bind(conv.id).run();
+                await c.env.DB.prepare('DELETE FROM messages WHERE conversation_id = ?').bind(conv.id).run();
+                await c.env.DB.prepare('DELETE FROM conversations WHERE id = ?').bind(conv.id).run();
+            } else if (conv.type === 'group') {
+                // Pull participant
+                await c.env.DB.prepare('DELETE FROM conversation_participants WHERE conversation_id = ? AND user_id = ?').bind(conv.id, paramId).run();
+
+                // Check remaining count
+                const remaining = await c.env.DB.prepare('SELECT COUNT(*) as count FROM conversation_participants WHERE conversation_id = ?').bind(conv.id).first();
+                const remainingCount = remaining ? remaining.count : 0;
+
+                if (remainingCount === 0) {
+                    await c.env.DB.prepare('DELETE FROM message_reads WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)').bind(conv.id).run();
+                    await c.env.DB.prepare('DELETE FROM message_delivered WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)').bind(conv.id).run();
+                    await c.env.DB.prepare('DELETE FROM message_deleted_for WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)').bind(conv.id).run();
+                    await c.env.DB.prepare('DELETE FROM typing_status WHERE conversation_id = ?').bind(conv.id).run();
+                    await c.env.DB.prepare('DELETE FROM messages WHERE conversation_id = ?').bind(conv.id).run();
+                    await c.env.DB.prepare('DELETE FROM conversations WHERE id = ?').bind(conv.id).run();
+                } else {
+                    // Update group admins list
+                    let admins = [];
+                    try { admins = JSON.parse(conv.admins || '[]'); } catch(e) {}
+                    admins = admins.filter(id => id !== paramId);
+
+                    if (admins.length === 0) {
+                        // Promote first remaining participant to admin
+                        const firstPart = await c.env.DB.prepare('SELECT user_id FROM conversation_participants WHERE conversation_id = ? LIMIT 1').bind(conv.id).first('user_id');
+                        if (firstPart) {
+                            admins = [firstPart];
+                        }
+                    }
+                    await c.env.DB.prepare('UPDATE conversations SET admins = ? WHERE id = ?').bind(JSON.stringify(admins), conv.id).run();
+                }
+            }
+        }
+    } catch (dbErr) {
+        console.error('Error cleaning up user chats in D1:', dbErr.message);
+    }
+
     return c.json({ msg: 'User soft-deleted successfully' });
 });
 
