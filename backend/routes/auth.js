@@ -6,6 +6,8 @@ const User = require('../models/User');
 const LeaveRequest = require('../models/LeaveRequest');
 const Attendance = require('../models/Attendance');
 const Department = require('../models/Department');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 const { auth, isHR } = require('../middleware/auth');
 
 // @route   POST api/auth/register
@@ -263,6 +265,37 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
 
         user.isDeleted = true;
         await user.save();
+
+        // Clean up conversations and messages for the deleted user
+        const userConversations = await Conversation.find({ participants: req.params.id });
+
+        for (const conv of userConversations) {
+            if (conv.type === 'dm') {
+                // Delete all messages in the DM
+                await Message.deleteMany({ conversation: conv._id });
+                // Delete the DM conversation
+                await Conversation.deleteOne({ _id: conv._id });
+            } else if (conv.type === 'group') {
+                // Remove user from participants and admins
+                await Conversation.updateOne(
+                    { _id: conv._id },
+                    { $pull: { participants: req.params.id, admins: req.params.id } }
+                );
+
+                // Fetch updated conversation to see if it's now empty
+                const updatedConv = await Conversation.findById(conv._id);
+                if (!updatedConv || !updatedConv.participants || updatedConv.participants.length === 0) {
+                    await Message.deleteMany({ conversation: conv._id });
+                    await Conversation.deleteOne({ _id: conv._id });
+                } else {
+                    // If no admins are left, promote the first participant to admin
+                    if (!updatedConv.admins || updatedConv.admins.length === 0) {
+                        updatedConv.admins = [updatedConv.participants[0]];
+                        await updatedConv.save();
+                    }
+                }
+            }
+        }
 
         res.json({ msg: 'User soft-deleted successfully' });
     } catch (err) {
