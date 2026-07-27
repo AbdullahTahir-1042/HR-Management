@@ -84,9 +84,19 @@ const shapeMessages = (messages, conversation, userId) => {
 // @access  Private
 router.get('/', auth, async (req, res) => {
     try {
-        const conversations = await Conversation.find({ participants: req.user.id })
+        const raw = await Conversation.find({ participants: req.user.id })
             .populate('participants', 'name email photo role department lastSeenAt')
             .populate('admins', '_id');
+
+        // Deduplicate by _id (a user's id appearing >1 time in participants
+        // can produce duplicate documents from MongoDB's $elemMatch-style query)
+        const seen = new Set();
+        const conversations = raw.filter(c => {
+            const id = String(c._id);
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+        });
 
         const results = await Promise.all(
             conversations.map(conv => hydrateConversation(conv, req.user.id))

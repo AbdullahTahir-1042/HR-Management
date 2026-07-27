@@ -7,12 +7,12 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-    { id: 'dashboard',     label: 'Dashboard',        icon: LayoutDashboard },
-    { id: 'attendance',    label: 'Mark Attendance',   icon: Clock },
-    { id: 'leaves',        label: 'Request Leave',     icon: Calendar },
-    { id: 'holidays',      label: 'Holiday Calendar',  icon: PartyPopper },
-    { id: 'hr-requests',   label: 'HR Requests',       icon: MessageSquare },
-    { id: 'announcements', label: 'Announcements',     icon: Bell },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'attendance', label: 'Mark Attendance', icon: Clock },
+    { id: 'leaves', label: 'Request Leave', icon: Calendar },
+    { id: 'holidays', label: 'Holiday Calendar', icon: PartyPopper },
+    { id: 'hr-requests', label: 'HR Requests', icon: MessageSquare },
+    { id: 'announcements', label: 'Announcements', icon: Bell },
 ];
 
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
