@@ -91,7 +91,6 @@ const HRHeader = ({
 
                 {activeTab === 'attendance' && (
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Calendar size={16} className="text-slate-400" />
                         <input
                             type="date"
                             value={attendanceDateFilter}
