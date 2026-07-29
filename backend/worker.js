@@ -273,6 +273,57 @@ app.get('/attendance/all', authMiddleware, isHRMiddleware, async (c) => {
     return c.json(formatted);
 });
 
+// Attendance & Leave reports (HR only)
+app.get('/attendance/report', authMiddleware, isHRMiddleware, async (c) => {
+    const type = c.req.query('type');
+    const employeeId = c.req.query('employeeId');
+
+    if (type === 'leave') {
+        let query = 'SELECT r.id as _id, r.startDate, r.endDate, r.reason, r.status, u.id as emp_id, u.name as emp_name, u.email as emp_email, u.department as emp_dept, t.id as type_id, t.name as type_name, t.quota as type_quota FROM leave_requests r JOIN users u ON r.employee_id = u.id LEFT JOIN leave_types t ON r.leave_type_id = t.id';
+        const params = [];
+        if (employeeId) {
+            query += ' WHERE r.employee_id = ?';
+            params.push(employeeId);
+        }
+        query += ' ORDER BY r.startDate DESC';
+
+        const stmt = c.env.DB.prepare(query);
+        const { results } = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
+
+        const formatted = results.map(r => ({
+            _id: r._id,
+            startDate: r.startDate,
+            endDate: r.endDate,
+            reason: r.reason,
+            status: r.status,
+            employee: { _id: r.emp_id, name: r.emp_name, email: r.emp_email, department: r.emp_dept },
+            leaveType: { _id: r.type_id, name: r.type_name || 'Annual Leave', quota: r.type_quota || 20 }
+        }));
+        return c.json(formatted);
+    }
+
+    // Default: Attendance report
+    let query = 'SELECT a.*, u.id as emp_id, u.name as emp_name, u.email as emp_email, u.department as emp_dept FROM attendance a JOIN users u ON a.employee_id = u.id';
+    const params = [];
+    if (employeeId) {
+        query += ' WHERE a.employee_id = ?';
+        params.push(employeeId);
+    }
+    query += ' ORDER BY a.date DESC';
+
+    const stmt = c.env.DB.prepare(query);
+    const { results } = params.length > 0 ? await stmt.bind(...params).all() : await stmt.all();
+
+    const formatted = results.map(r => ({
+        _id: r.id,
+        date: r.date,
+        checkIn: r.checkIn,
+        checkOut: r.checkOut,
+        employee: { _id: r.emp_id, name: r.emp_name, email: r.emp_email, department: r.emp_dept }
+    }));
+    return c.json(formatted);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. LEAVES MANAGEMENT API
 // ─────────────────────────────────────────────────────────────────────────────
@@ -291,26 +342,6 @@ app.post('/leaves/apply', authMiddleware, async (c) => {
     // Validate type
     const leaveType = await c.env.DB.prepare('SELECT * FROM leave_types WHERE id = ?').bind(leaveTypeId).first();
     if (!leaveType) return c.json({ msg: 'Invalid leave type' }, 400);
-
-    // Dynamic balance calculations
-    const currentYear = new Date().getFullYear();
-    const approvedLeaves = await c.env.DB.prepare(
-        'SELECT startDate, endDate FROM leave_requests WHERE employee_id = ? AND leave_type_id = ? AND status = "approved"'
-    ).bind(user.id, leaveTypeId).all();
-
-    let usedDays = 0;
-    approvedLeaves.results.forEach(l => {
-        const s = new Date(l.startDate);
-        const e = new Date(l.endDate);
-        if (s.getFullYear() === currentYear) {
-            usedDays += Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
-        }
-    });
-
-    const remaining = Math.max(0, leaveType.quota - usedDays);
-    if (diffDays > remaining) {
-        return c.json({ msg: `Insufficient quota. Requested ${diffDays} days, but only ${remaining} days remaining.` }, 400);
-    }
 
     const leaveId = crypto.randomUUID();
     await c.env.DB.prepare('INSERT INTO leave_requests (id, employee_id, leave_type_id, startDate, endDate, reason, status) VALUES (?, ?, ?, ?, ?, ?, "pending")')
@@ -452,37 +483,6 @@ app.delete('/leaves/:id', authMiddleware, isHRMiddleware, async (c) => {
 app.put('/leaves/:id/status', authMiddleware, isHRMiddleware, async (c) => {
     const id = c.req.param('id');
     const { status } = await c.req.json();
-
-    const req = await c.env.DB.prepare('SELECT * FROM leave_requests WHERE id = ?').bind(id).first();
-    if (!req) return c.json({ msg: 'Leave request not found' }, 404);
-
-    if (status === 'approved') {
-        // Double check quota limit before approval
-        const start = new Date(req.startDate);
-        const end = new Date(req.endDate);
-        const reqDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-        const currentYear = start.getFullYear();
-
-        const leaveType = await c.env.DB.prepare('SELECT quota FROM leave_types WHERE id = ?').bind(req.leave_type_id).first();
-        if (leaveType) {
-            const approved = await c.env.DB.prepare(
-                'SELECT startDate, endDate FROM leave_requests WHERE employee_id = ? AND leave_type_id = ? AND status = "approved" AND id != ?'
-            ).bind(req.employee_id, req.leave_type_id, id).all();
-
-            let used = 0;
-            approved.results.forEach(l => {
-                const s = new Date(l.startDate);
-                const e = new Date(l.endDate);
-                if (s.getFullYear() === currentYear) {
-                    used += Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
-                }
-            });
-
-            if (used + reqDays > leaveType.quota) {
-                return c.json({ msg: 'Approval failed. Approving this request will exceed the employee\'s remaining quota.' }, 400);
-            }
-        }
-    }
 
     await c.env.DB.prepare('UPDATE leave_requests SET status = ? WHERE id = ?').bind(status, id).run();
     return c.json({ msg: 'Status updated successfully' });
