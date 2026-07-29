@@ -324,82 +324,95 @@ const HRMistakeReports = () => {
 
             {/* ── Stats Cards ───────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total */}
-                <motion.div
+                {/* Total Reports Card */}
+                <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
-                    className="relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group"
+                    onClick={() => setStatusFilter('')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        !statusFilter 
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10' 
+                            : 'border-slate-200/80 hover:border-indigo-300 hover:shadow-xs'
+                    }`}
                 >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-100/80 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-slate-100 to-slate-200/60 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
-                            <ShieldAlert size={22} className="text-slate-600" />
+                        <div className={`p-2.5 rounded-xl transition-all ${
+                            !statusFilter ? 'bg-indigo-600 text-white' : 'bg-gradient-to-br from-slate-100 to-slate-200/60 text-slate-600 group-hover:scale-110'
+                        }`}>
+                            <ShieldAlert size={22} />
                         </div>
                         <div>
                             <p className="text-[28px] font-extrabold text-slate-800 leading-none"><AnimatedNumber value={totalReports} /></p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Total Reports</p>
                         </div>
                     </div>
-                </motion.div>
+                </motion.button>
 
-                {/* Pending */}
-                <motion.div
+                {/* Pending Review Card */}
+                <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                    className="relative overflow-hidden bg-white border border-amber-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group"
+                    onClick={() => setStatusFilter('pending')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        statusFilter === 'pending' 
+                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10' 
+                            : 'border-amber-100 hover:border-amber-300 hover:shadow-xs'
+                    }`}
                 >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-amber-100 to-orange-100/60 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
-                            <Clock size={22} className="text-amber-600" />
+                        <div className={`p-2.5 rounded-xl transition-all ${
+                            statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-gradient-to-br from-amber-100 to-orange-100/60 text-amber-600 group-hover:scale-110'
+                        }`}>
+                            <Clock size={22} />
                         </div>
                         <div>
                             <p className="text-[28px] font-extrabold text-amber-700 leading-none"><AnimatedNumber value={pendingCount} /></p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Pending Review</p>
                         </div>
                     </div>
-                </motion.div>
+                </motion.button>
 
-                {/* Resolved */}
-                <motion.div
+                {/* Resolved Card */}
+                <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="relative overflow-hidden bg-white border border-emerald-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group"
+                    onClick={() => setStatusFilter('resolved')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        statusFilter === 'resolved' 
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10' 
+                            : 'border-emerald-100 hover:border-emerald-300 hover:shadow-xs'
+                    }`}
                 >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-emerald-100 to-teal-100/60 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
-                            <CheckCircle size={22} className="text-emerald-600" />
+                        <div className={`p-2.5 rounded-xl transition-all ${
+                            statusFilter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-gradient-to-br from-emerald-100 to-teal-100/60 text-emerald-600 group-hover:scale-110'
+                        }`}>
+                            <CheckCircle size={22} />
                         </div>
                         <div>
                             <p className="text-[28px] font-extrabold text-emerald-700 leading-none"><AnimatedNumber value={resolvedCount} /></p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Resolved</p>
                         </div>
                     </div>
-                </motion.div>
+                </motion.button>
 
                 {/* Resolution Rate */}
-                <motion.div
+                <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    className="relative overflow-hidden bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group"
+                    onClick={() => setStatusFilter('resolved')}
+                    className="text-left relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl p-5 transition-all cursor-pointer group hover:border-indigo-300 hover:shadow-xs"
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50/60 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-indigo-100 to-violet-100/60 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
+                        <div className="bg-gradient-to-br from-indigo-100 to-purple-100/60 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
                             <TrendingUp size={22} className="text-indigo-600" />
                         </div>
                         <div>
-                            <p className="text-[28px] font-extrabold text-indigo-700 leading-none"><AnimatedNumber value={`${resolvedPct}%`} /></p>
+                            <p className="text-[28px] font-extrabold text-indigo-700 leading-none"><AnimatedNumber value={resolvedPct} />%</p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Resolution Rate</p>
                         </div>
                     </div>
-                    {/* Mini progress bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-100/50">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${resolvedPct}%` }}
-                            transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
-                            className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-r-full"
-                        />
-                    </div>
-                </motion.div>
+                </motion.button>
             </div>
 
             {/* ── Filters Bar ───────────────────────────────────── */}

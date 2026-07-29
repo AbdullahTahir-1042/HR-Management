@@ -17,14 +17,18 @@ const NAV_ITEMS = [
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen }) => {
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-            {/* Logo */}
+            {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
+                <button
+                    onClick={() => setActiveTab('dashboard')}
+                    className="flex items-center gap-3 cursor-pointer group text-left p-1 -ml-1 rounded-xl hover:bg-slate-50 transition-all focus:outline-none"
+                    title="Go to Dashboard Overview"
+                >
+                    <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform duration-200">
                         <User size={24} />
                     </div>
                     <div>
-                        <span className="font-bold text-lg text-slate-800 tracking-tight block leading-tight">
+                        <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight block leading-tight transition-colors duration-200">
                             Employee Portal
                         </span>
                         {user?.isTeamLead && (
@@ -33,8 +37,8 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                             </span>
                         )}
                     </div>
-                </div>
-                <button 
+                </button>
+                <button
                     onClick={() => setIsOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden focus:outline-none"
                     aria-label="Close Sidebar"
@@ -75,33 +79,6 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         </span>
                     </button>
                 )}
-
-                {/* 👇 PRACTICE ONBOARDING (LINK 1) COMMENTED OUT */}
-                {/* <Link 
-                    to="/practice-onboarding"
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                >
-                    <Sparkles size={20} />
-                    <span className="text-sm">Practice Onboarding</span>
-                </Link> */}
-
-                {/* 👇 PRACTICE ONBOARDING (BUTTON 2) COMMENTED OUT */}
-                {/* <button
-                    onClick={() => navigate('/practice-onboarding')}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                >
-                    <GraduationCap size={20} />
-                    <span className="text-sm">Practice Onboarding</span>
-                </button> */}
-
-                {/* 👇 PRACTICE ONBOARDING (LINK 3) COMMENTED OUT */}
-                {/* <Link 
-                    to="/practice-onboarding"
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                >
-                    <BookOpen size={20} />
-                    <span className="text-sm">practice-onboarding</span>
-                </Link> */}
             </nav>
 
             {/* Profile + Logout */}

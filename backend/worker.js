@@ -419,7 +419,7 @@ app.get('/leaves/my-leaves', authMiddleware, async (c) => {
 // All requests (HR only)
 app.get('/leaves/all', authMiddleware, isHRMiddleware, async (c) => {
     const { results } = await c.env.DB.prepare(
-        'SELECT r.id as _id, r.startDate, r.endDate, r.reason, r.status, u.id as emp_id, u.name as emp_name, u.email as emp_email, t.name as type_name FROM leave_requests r JOIN users u ON r.employee_id = u.id LEFT JOIN leave_types t ON r.leave_type_id = t.id ORDER BY r.startDate DESC'
+        'SELECT r.id as _id, r.startDate, r.endDate, r.reason, r.status, u.id as emp_id, u.name as emp_name, u.email as emp_email, u.department as emp_dept, u.reportingTo as emp_reportingTo, u.isTeamLead as emp_isTeamLead, t.name as type_name FROM leave_requests r JOIN users u ON r.employee_id = u.id LEFT JOIN leave_types t ON r.leave_type_id = t.id ORDER BY r.startDate DESC'
     ).all();
 
     const formatted = results.map(r => ({
@@ -428,10 +428,24 @@ app.get('/leaves/all', authMiddleware, isHRMiddleware, async (c) => {
         endDate: r.endDate,
         reason: r.reason,
         status: r.status,
-        employee: { _id: r.emp_id, name: r.emp_name, email: r.emp_email },
+        employee: { 
+            _id: r.emp_id, 
+            name: r.emp_name, 
+            email: r.emp_email,
+            department: r.emp_dept,
+            reportingTo: r.emp_reportingTo,
+            isTeamLead: !!r.emp_isTeamLead
+        },
         leaveType: { name: r.type_name || 'Annual Leave' }
     }));
     return c.json(formatted);
+});
+
+// Delete leave request (HR only)
+app.delete('/leaves/:id', authMiddleware, isHRMiddleware, async (c) => {
+    const id = c.req.param('id');
+    await c.env.DB.prepare('DELETE FROM leave_requests WHERE id = ?').bind(id).run();
+    return c.json({ msg: 'Leave request deleted successfully' });
 });
 
 // Approve/Reject leave

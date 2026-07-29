@@ -140,24 +140,26 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
             animate={{ opacity: 1, y: 0 }}
             className="max-w-5xl mx-auto pb-10"
         >
-            {/* Navigation & Actions */}
-            <div className="flex items-center justify-between mb-8">
+            {/* Top Navigation & Actions Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <button 
                     onClick={onBack}
-                    className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold text-sm"
+                    className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-xs group cursor-pointer"
                 >
-                    <ArrowLeft size={18} /> Back to Directory
+                    <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
+                    <span>Back to Staff Directory</span>
                 </button>
-                <div className="flex gap-3">
+
+                <div className="flex items-center gap-3">
                     <button 
                         onClick={() => onEdit(employee)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50/30 rounded-xl transition-all font-bold text-sm shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 rounded-xl transition-all font-bold text-sm shadow-xs cursor-pointer"
                     >
                         <Edit3 size={16}/> Edit Profile
                     </button>
                     <button 
                         onClick={() => onDelete(employee._id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-rose-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm shadow-xs cursor-pointer"
                     >
                         <Trash2 size={16}/> Delete
                     </button>

@@ -7,34 +7,103 @@ import apiClient from '../../api/axiosClient';
 const validators = {
     name: (val) => {
         if (!val.trim()) return 'Full name is required';
-        if (val.trim().length < 3) return 'Name must be at least 3 characters';
-        if (!/^[a-zA-Z\s.'\-]+$/.test(val.trim())) return 'Name can only contain letters, spaces, and hyphens';
+        const trimmed = val.trim();
+        if (trimmed.length < 3) return 'Name must be at least 3 characters';
+        if (trimmed.length > 50) return 'Name cannot exceed 50 characters';
+        if (!/^[a-zA-Z\s.'\-]+$/.test(trimmed)) return 'Name can only contain letters, spaces, and hyphens';
+        const words = trimmed.split(/\s+/);
+        if (words.length < 2) return 'Please enter both first and last name (e.g. John Doe)';
         return '';
     },
     email: (val) => {
         if (!val.trim()) return 'Email address is required';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) return 'Please enter a valid email address';
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(val.trim())) return 'Please enter a valid work email (e.g. john@company.com)';
         return '';
     },
     phone: (val) => {
         if (!val.trim()) return 'Phone number is required';
-        const digits = val.replace(/\D/g, '');
-        if (digits.length < 10) return 'Phone number must have at least 10 digits';
-        if (digits.length > 15) return 'Phone number is too long';
+        const trimmed = val.trim();
+        const digits = trimmed.replace(/\D/g, '');
+
+        // 1. Detect dummy repeated or sequential numbers (e.g. "1111111111", "0000000000", "1234567890")
+        if (/^(\d)\1{8,}$/.test(digits)) {
+            return 'Please enter a valid phone number (repetitive dummy digits are not allowed)';
+        }
+        if (digits === '1234567890' || digits === '0123456789' || digits === '9876543210') {
+            return 'Please enter a valid phone number (sequential dummy digits are not allowed)';
+        }
+
+        // 2. Minimum / maximum digit count check
+        if (digits.length < 10) return 'Phone number must contain at least 10 digits';
+        if (digits.length > 15) return 'Phone number cannot exceed 15 digits';
+
+        // 3. Local Mobile Operator Prefix Check (03XX XXXXXXX or +92 3XX XXXXXXX)
+        if (trimmed.startsWith('03') || trimmed.startsWith('+923') || trimmed.startsWith('923')) {
+            const pkDigits = trimmed.startsWith('+92') ? '0' + trimmed.slice(3).replace(/\D/g, '') :
+                             trimmed.startsWith('92') ? '0' + trimmed.slice(2).replace(/\D/g, '') :
+                             trimmed.replace(/\D/g, '');
+
+            if (pkDigits.length !== 11) {
+                return 'Pakistani mobile number must be exactly 11 digits (e.g. 0300 1234567 or +92 300 1234567)';
+            }
+            const prefix = pkDigits.slice(0, 4);
+            const validPrefixes = [
+                '0300','0301','0302','0303','0304','0305','0306','0307','0308','0309',
+                '0310','0311','0312','0313','0314','0315','0316','0317','0318',
+                '0320','0321','0322','0323','0324','0325',
+                '0330','0331','0332','0333','0334','0335','0336','0337',
+                '0340','0341','0342','0343','0344','0345','0346','0347','0348','0349',
+                '0355','0370'
+            ];
+            if (!validPrefixes.includes(prefix)) {
+                return 'Invalid mobile network prefix (must start with valid code like 0300, 0312, 0333, 0345)';
+            }
+            return '';
+        }
+
+        // 4. Standard International Number Check
+        if (!/^\+?[1-9]\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}$/.test(trimmed)) {
+            return 'Please enter a valid phone number (e.g. +92 300 1234567 or 0300 1234567)';
+        }
+
         return '';
     },
     password: (val) => {
-        if (!val) return 'Password is required';
-        if (val.length < 6) return 'Password must be at least 6 characters';
-        if (!/[a-zA-Z]/.test(val)) return 'Password must contain at least one letter';
-        if (!/[0-9]/.test(val)) return 'Password must contain at least one number';
+        if (!val) return 'Temporary password is required';
+        if (val.length < 6) return 'Password must be at least 6 characters long';
+        if (!/[a-zA-Z]/.test(val)) return 'Password must contain at least 1 letter';
+        if (!/[0-9]/.test(val)) return 'Password must contain at least 1 number';
         return '';
     },
     salary: (val) => {
-        if (!val && val !== 0) return 'Salary is required';
-        if (isNaN(val) || Number(val) <= 0) return 'Salary must be a positive number';
+        if (val === '' || val === null || val === undefined) return 'Salary is required';
+        const num = Number(val);
+        if (isNaN(num) || num <= 0) return 'Salary must be a positive number';
+        if (num < 10000) return 'Salary must be at least ₨ 10,000';
+        if (num > 50000000) return 'Salary exceeds maximum limit';
+        return '';
+    },
+    reportingTo: (val) => {
+        if (val && val.trim()) {
+            if (!/^[a-zA-Z\s.'\-]+$/.test(val.trim())) return 'Manager name can only contain letters and spaces';
+        }
         return '';
     }
+};
+
+// ── Password Strength Calculator ──────────────────────────────────────────────
+const getPasswordStrength = (pass) => {
+    if (!pass) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (pass.length >= 6) score++;
+    if (/[a-zA-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (pass.length >= 8) score++;
+
+    if (score <= 2) return { score, label: 'Weak', color: 'bg-rose-500', text: 'text-rose-500' };
+    if (score === 3) return { score, label: 'Fair', color: 'bg-amber-500', text: 'text-amber-500' };
+    return { score, label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-500' };
 };
 
 // ── Inline Field Error Component ──────────────────────────────────────────────
@@ -50,6 +119,31 @@ const FieldError = ({ message }) => {
             <AlertCircle size={12} className="shrink-0" />
             {message}
         </motion.p>
+    );
+};
+
+// ── Password Strength Meter Component ─────────────────────────────────────────
+const PasswordStrengthMeter = ({ password }) => {
+    if (!password) return null;
+    const strength = getPasswordStrength(password);
+
+    return (
+        <div className="mt-2 space-y-1 ml-1">
+            <div className="flex gap-1.5 h-1.5">
+                {[1, 2, 3, 4].map((seg) => (
+                    <div
+                        key={seg}
+                        className={`flex-1 rounded-full transition-all duration-300 ${
+                            seg <= strength.score ? strength.color : 'bg-slate-200'
+                        }`}
+                    />
+                ))}
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                <span>Strength: <span className={strength.text}>{strength.label}</span></span>
+                <span>Requirements: Min 6 characters (letters & numbers)</span>
+            </div>
+        </div>
     );
 };
 
@@ -199,6 +293,17 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
             exit={{ opacity: 0, x: -20 }}
             className="max-w-4xl mx-auto"
         >
+            {/* Top Navigation */}
+            <div className="mb-6">
+                <button 
+                    onClick={onBack}
+                    className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-xs group cursor-pointer"
+                >
+                    <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
+                    <span>Back to Staff Directory</span>
+                </button>
+            </div>
+
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
                 <div className="p-6 sm:p-10">
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -309,12 +414,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                     </button>
                                 </div>
                                 <FieldError message={touched.password ? fieldErrors.password : ''} />
-                                {/* Password strength hint */}
-                                {touched.password && !fieldErrors.password && (
-                                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-[11px] font-semibold mt-1.5 ml-1 flex items-center gap-1">
-                                        <CheckCircle2 size={12} /> Strong password
-                                    </motion.p>
-                                )}
+                                <PasswordStrengthMeter password={formData.password} />
                             </div>
 
                             {/* Salary */}

@@ -104,11 +104,14 @@ router.get('/report', [auth, isHR], async (req, res) => {
         // CASE 1: If HR wants a Leave Report
         if (type === 'leave') {
             if (startDate && endDate) {
-                filter.startDate = { $gte: new Date(startDate) };
-                filter.endDate = { $lte: new Date(endDate) };
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                filter.startDate = { $lte: end };
+                filter.endDate = { $gte: new Date(startDate) };
             }
             const leaveRecords = await LeaveRequest.find(filter)
                 .populate('employee', ['name', 'email', 'department'])
+                .populate('leaveType')
                 .sort({ createdAt: -1 });
             return res.json(leaveRecords);
         }

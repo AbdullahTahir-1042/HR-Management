@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
@@ -18,7 +19,7 @@ import EmployeeDetailsPage from '../components/HRDashboard/EmployeeDetailsPage';
 import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
 import HRDepartments from '../components/HRDashboard/HRDepartments';
-import HRReports from '../components/HRDashboard/HRReports'; // 👈 NEW
+import HRReports from '../components/HRDashboard/HRReports';
 import HRMistakeReports from '../components/HRDashboard/HRMistakeReports';
 import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
 import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
@@ -38,8 +39,8 @@ const HRDashboard = () => {
     const [holidays, setHolidays] = useState([]);
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [mistakeReports, setMistakeReports] = useState([]);
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
-    // ── UC-09: HR Requests state ───────────────────────────────────────────────
     const [hrRequests, setHrRequests] = useState([]);
     const [announcements, setAnnouncements] = useState([]);
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -48,16 +49,17 @@ const HRDashboard = () => {
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Filters
+    const getTodayStr = () => new Date().toISOString().slice(0, 10);
+    const [departments, setDepartments] = useState([]);
     const [latecomerDateFilter, setLatecomerDateFilter] = useState('');
     const [leaveFilter, setLeaveFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-    const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
+    const [attendanceDateFilter, setAttendanceDateFilter] = useState(getTodayStr());
 
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes, announcementsRes, mistakeReportsRes] = await Promise.all([
+            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes, announcementsRes, mistakeReportsRes, deptsRes] = await Promise.all([
                 apiClient.get('/leaves/all'),
                 apiClient.get('/attendance/all'),
                 apiClient.get('/auth/users'),
@@ -65,7 +67,8 @@ const HRDashboard = () => {
                 apiClient.get('/hr-requests'),
                 apiClient.get('/leaves/types'),
                 apiClient.get('/announcements'),
-                apiClient.get('/mistake-reports')
+                apiClient.get('/mistake-reports'),
+                apiClient.get('/departments')
             ]);
             setLeaves(leavesRes.data);
             setAttendance(attendanceRes.data);
@@ -75,6 +78,7 @@ const HRDashboard = () => {
             setLeaveTypes(leaveTypesRes.data);
             setAnnouncements(announcementsRes.data);
             setMistakeReports(mistakeReportsRes.data);
+            setDepartments(deptsRes.data || []);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
         } finally {
@@ -84,6 +88,21 @@ const HRDashboard = () => {
 
     useEffect(() => {
         fetchDashboardData();
+    }, []);
+
+    // Lightweight poll just for the sidebar's unread-messages badge
+    useEffect(() => {
+        const fetchUnreadMessages = async () => {
+            try {
+                const res = await apiClient.get('/conversations');
+                setUnreadMessages((res.data || []).reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+            } catch (err) {
+                console.error('Error fetching unread messages count:', err);
+            }
+        };
+        fetchUnreadMessages();
+        const interval = setInterval(fetchUnreadMessages, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     // --- FIREBASE NOTIFICATION SETUP ---
@@ -112,13 +131,75 @@ const HRDashboard = () => {
     }, []);
 
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [navHistory, setNavHistory] = useState([]);
 
-    useEffect(() => {
+    const pushNavState = () => {
+        setNavHistory(prev => [
+            ...prev,
+            {
+                activeTab,
+                selectedEmployee,
+                isAddingEmployee,
+                isEditingEmployee
+            }
+        ]);
+    };
+
+    const handleTabChange = (newTab) => {
+        if (newTab === activeTab && !selectedEmployee && !isAddingEmployee && !isEditingEmployee) return;
+        if (newTab === 'dashboard') {
+            setNavHistory([]);
+        } else {
+            pushNavState();
+        }
+        setActiveTab(newTab);
         setIsAddingEmployee(false);
         setIsEditingEmployee(false);
         setSelectedEmployee(null);
         setSidebarOpen(false);
-    }, [activeTab]);
+    };
+
+    const handleSelectEmployee = (emp) => {
+        pushNavState();
+        setSelectedEmployee(emp);
+    };
+
+    const handleStartAddEmployee = () => {
+        pushNavState();
+        setIsAddingEmployee(true);
+    };
+
+    const handleStartEditEmployee = () => {
+        pushNavState();
+        setIsEditingEmployee(true);
+    };
+
+    const handleGoBack = () => {
+        if (navHistory.length > 0) {
+            const lastState = navHistory[navHistory.length - 1];
+            setNavHistory(prev => prev.slice(0, -1));
+            setActiveTab(lastState.activeTab || 'employees');
+            setSelectedEmployee(lastState.selectedEmployee || null);
+            setIsAddingEmployee(!!lastState.isAddingEmployee);
+            setIsEditingEmployee(!!lastState.isEditingEmployee);
+            return;
+        }
+        if (isEditingEmployee) {
+            setIsEditingEmployee(false);
+            return;
+        }
+        if (selectedEmployee) {
+            setSelectedEmployee(null);
+            return;
+        }
+        if (isAddingEmployee) {
+            setIsAddingEmployee(false);
+            return;
+        }
+        setActiveTab('dashboard');
+    };
+
+    const canGoBack = activeTab !== 'dashboard' || !!selectedEmployee || isAddingEmployee || isEditingEmployee;
 
     const fetchAllLeaves = async () => {
         const res = await apiClient.get('/leaves/all');
@@ -148,7 +229,6 @@ const HRDashboard = () => {
         }
     };
 
-    // ── UC-09: Fetch all HR requests ───────────────────────────────────────────
     const fetchHRRequests = async () => {
         try {
             const res = await apiClient.get('/hr-requests');
@@ -167,7 +247,6 @@ const HRDashboard = () => {
         }
     };
 
-    // ── UC-09: Update HR request status & note ─────────────────────────────────
     const handleUpdateHRRequest = async (id, { status, hrNote }) => {
         try {
             await apiClient.put(`/hr-requests/${id}`, { status, hrNote });
@@ -177,6 +256,7 @@ const HRDashboard = () => {
             alert('Failed to update request.');
         }
     };
+
     const fetchAllAnnouncements = async () => {
         try {
             const res = await apiClient.get('/announcements');
@@ -189,9 +269,30 @@ const HRDashboard = () => {
     const handleStatusUpdate = async (id, status) => {
         await apiClient.put(`/leaves/${id}/status`, { status });
         fetchAllLeaves();
+        try {
+            const bc = new BroadcastChannel('leaves_channel');
+            bc.postMessage({ type: 'LEAVE_STATUS_CHANGED', leaveId: id, status });
+            bc.close();
+        } catch (e) { /* BroadcastChannel not supported */ }
     };
 
-    
+    const handleDeleteLeave = async (id) => {
+        if (window.confirm('Are you sure you want to delete this leave request?')) {
+            try {
+                await apiClient.delete(`/leaves/${id}`);
+                fetchAllLeaves();
+                try {
+                    const bc = new BroadcastChannel('leaves_channel');
+                    bc.postMessage({ type: 'LEAVE_STATUS_CHANGED', leaveId: id, status: 'deleted' });
+                    bc.close();
+                } catch (e) { /* BroadcastChannel not supported */ }
+            } catch (err) {
+                console.error('Error deleting leave request:', err);
+                alert(err.response?.data?.msg || 'Failed to delete leave request');
+            }
+        }
+    };
+
     const latecomers = attendance
     .filter(record => record.checkIn)
     .map(record => {
@@ -211,6 +312,7 @@ const HRDashboard = () => {
         return { ...record, minutesLate, compensated };
     })
     .filter(record => record.minutesLate > 0); 
+
     const filteredLatecomers = latecomers.filter(l => latecomerDateFilter ? l.date === latecomerDateFilter : true);
     const filteredLeaves = leaves.filter(l => leaveFilter === 'all' ? true : l.status === leaveFilter);
     const filteredAttendance = attendance.filter(a => {
@@ -252,6 +354,7 @@ const HRDashboard = () => {
             <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <HRHeader
                     activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                     leaveFilter={leaveFilter}
                     setLeaveFilter={setLeaveFilter}
                     attendanceDateFilter={attendanceDateFilter}
@@ -262,8 +365,19 @@ const HRDashboard = () => {
                 />
 
                 <div className="p-8 max-w-7xl mx-auto">
-                    <AnimatePresence mode="wait">
+                    {activeTab !== 'dashboard' && !selectedEmployee && !isAddingEmployee && !isEditingEmployee && (
+                        <div className="mb-6">
+                            <button 
+                                onClick={handleGoBack}
+                                className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-2xs group cursor-pointer"
+                            >
+                                <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
+                                <span>Back</span>
+                            </button>
+                        </div>
+                    )}
 
+                    <AnimatePresence mode="wait">
                         {activeTab === 'dashboard' && (
                             <HROverview
                                 user={user}
@@ -341,6 +455,9 @@ const HRDashboard = () => {
                             <HRLeaveManagement
                                 filteredLeaves={filteredLeaves}
                                 handleStatusUpdate={handleStatusUpdate}
+                                handleDeleteLeave={handleDeleteLeave}
+                                employees={employees}
+                                departments={departments}
                             />
                         )}
 
@@ -406,7 +523,6 @@ const HRDashboard = () => {
                                 onRefreshAnnouncements={fetchAllAnnouncements}
                             />
                         )}
-
                     </AnimatePresence>
                 </div>
             </main>

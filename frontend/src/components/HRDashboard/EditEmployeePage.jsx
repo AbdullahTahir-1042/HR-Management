@@ -101,12 +101,14 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
             exit={{ opacity: 0, x: -20 }}
             className="max-w-4xl mx-auto"
         >
-            <div className="flex items-center justify-between mb-8">
+            {/* Top Navigation */}
+            <div className="mb-6">
                 <button 
                     onClick={onBack}
-                    className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold text-sm"
+                    className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-xs group cursor-pointer"
                 >
-                    <ArrowLeft size={18} /> Cancel Editing
+                    <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
+                    <span>Back to Employee Details</span>
                 </button>
             </div>
 
