@@ -26,6 +26,16 @@ const UserSchema = new mongoose.Schema({
         enum: ['full time', 'probation', 'internship'],
         default: 'full time'
     },
+    joiningStatus: {
+        type: String,
+        enum: ['Intern', 'Fresh Join'],
+        default: 'Fresh Join'
+    },
+    promotionRank: {
+        type: String,
+        enum: ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'],
+        default: 'Junior'
+    },
     salary: {
         type: Number,
         default: 0

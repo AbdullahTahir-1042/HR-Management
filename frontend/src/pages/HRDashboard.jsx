@@ -364,7 +364,7 @@ const HRDashboard = () => {
                     setSidebarOpen={setSidebarOpen}
                 />
 
-                <div className="p-8 max-w-7xl mx-auto">
+                <div className="p-4 lg:p-6 max-w-full mx-auto">
                     {activeTab !== 'dashboard' && !selectedEmployee && !isAddingEmployee && !isEditingEmployee && (
                         <div className="mb-6">
                             <button 

@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import LeaveDetailModal from '../LeaveDetailModal';
+
+const getLeaveTypeId = (leaveType) => {
+    if (!leaveType) return '';
+    if (typeof leaveType === 'object') return String(leaveType._id || leaveType.id || '');
+    return String(leaveType);
+};
 
 const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leaves, statusFilter, setStatusFilter, leaveBalances = [], leaveTypes = [], onRefresh }) => {
     const [selectedLeave, setSelectedLeave] = useState(null);
@@ -27,41 +33,177 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         return reason.length > 20 ? reason.substring(0, 20) + '...' : reason;
     };
 
-    // Selected leave balance lookup & excess/deduction calculation
-    const getLeaveTypeId = (leaveType) => {
-        if (!leaveType) return '';
-        if (typeof leaveType === 'object') return String(leaveType._id || leaveType.id || '');
-        return String(leaveType);
+    const getDatesInRange = (startDateStr, endDateStr) => {
+        if (!startDateStr || !endDateStr) return [];
+        const dates = [];
+        const curr = new Date(startDateStr + 'T00:00:00');
+        const last = new Date(endDateStr + 'T00:00:00');
+        while (curr <= last) {
+            dates.push(curr.toISOString().slice(0, 10));
+            curr.setDate(curr.getDate() + 1);
+        }
+        return dates;
     };
 
-    const selectedBalance = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === String(leaveForm.leaveTypeId));
+    // Map of all currently booked/pending dates for this employee
+    const bookedDatesMap = React.useMemo(() => {
+        const map = new Map();
+        if (!leaves || !Array.isArray(leaves)) return map;
+
+        leaves.forEach(l => {
+            if (l.status === 'rejected') return; // Ignore rejected
+            if (!l.startDate || !l.endDate) return;
+            const lStart = String(l.startDate).slice(0, 10);
+            const lEnd = String(l.endDate).slice(0, 10);
+            const dateList = getDatesInRange(lStart, lEnd);
+            dateList.forEach(d => {
+                map.set(d, l);
+            });
+        });
+        return map;
+    }, [leaves]);
+
+    const [viewMonth, setViewMonth] = useState(() => new Date());
+    const [showVisualCalendar, setShowVisualCalendar] = useState(true);
+
+    const calendarGrid = React.useMemo(() => {
+        const year = viewMonth.getFullYear();
+        const month = viewMonth.getMonth();
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        const startingDayOfWeek = firstDay.getDay();
+        const totalDays = lastDay.getDate();
+
+        const days = [];
+        for (let i = 0; i < startingDayOfWeek; i++) {
+            days.push(null);
+        }
+
+        for (let d = 1; d <= totalDays; d++) {
+            const yyyy = year;
+            const mm = String(month + 1).padStart(2, '0');
+            const dd = String(d).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            days.push({ dayNumber: d, dateStr });
+        }
+
+        return {
+            year,
+            month,
+            days,
+            monthName: firstDay.toLocaleString('default', { month: 'long' })
+        };
+    }, [viewMonth]);
+
+    const todayStr = React.useMemo(() => {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }, []);
+
+    const handleCalendarDayClick = (dateStr) => {
+        if (dateStr < todayStr) return; // Block past date selection
+
+        if (!leaveForm.startDate || (leaveForm.startDate && leaveForm.endDate)) {
+            setLeaveForm(prev => ({ ...prev, startDate: dateStr, endDate: '' }));
+        } else {
+            if (dateStr >= leaveForm.startDate) {
+                setLeaveForm(prev => ({ ...prev, endDate: dateStr }));
+            } else {
+                setLeaveForm(prev => ({ ...prev, startDate: dateStr, endDate: '' }));
+            }
+        }
+    };
+
+    const handlePrevMonth = (e) => {
+        e.preventDefault();
+        setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    };
+
+    const handleNextMonth = (e) => {
+        e.preventDefault();
+        setViewMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    };
 
     const deductionPreview = React.useMemo(() => {
-        if (!leaveForm.startDate || !leaveForm.endDate || !selectedBalance) return null;
-        const s = new Date(leaveForm.startDate);
-        const e = new Date(leaveForm.endDate);
-        if (s > e) return null;
+        if (!leaveForm.startDate || !leaveForm.endDate || !leaveForm.leaveTypeId) return null;
+        const s = new Date(leaveForm.startDate + 'T00:00:00');
+        const e = new Date(leaveForm.endDate + 'T00:00:00');
+        if (isNaN(s.getTime()) || isNaN(e.getTime()) || s > e) return null;
 
-        const duration = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
-        const remaining = selectedBalance.remaining || 0;
-        const excessDays = Math.max(0, duration - remaining);
+        const requestedDates = getDatesInRange(leaveForm.startDate, leaveForm.endDate);
+        const totalDuration = requestedDates.length;
 
+        // Separate overlapping vs net new dates
+        const overlappingDates = [];
+        const netNewDates = [];
+        const conflictingLeavesSet = new Set();
+
+        requestedDates.forEach(d => {
+            if (bookedDatesMap.has(d)) {
+                overlappingDates.push(d);
+                conflictingLeavesSet.add(bookedDatesMap.get(d));
+            } else {
+                netNewDates.push(d);
+            }
+        });
+
+        const overlapCount = overlappingDates.length;
+        const netDuration = netNewDates.length;
+
+        // 1. Get balance or fallback to calculate from leaves array
+        let remaining = 0;
+        let allocated = 12;
+
+        const typeIdStr = String(leaveForm.leaveTypeId);
+        const bal = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeIdStr);
+
+        if (bal !== undefined) {
+            remaining = bal.remaining ?? 0;
+            allocated = bal.allocated ?? 12;
+        } else {
+            const lTypeObj = leaveTypes.find(t => String(t._id || t.id || '') === typeIdStr);
+            allocated = Number(lTypeObj?.quota || lTypeObj?.maxDays) || 12;
+
+            // Calculate approved used days from leaves list
+            const usedDays = leaves
+                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && l.status === 'approved')
+                .reduce((acc, l) => {
+                    const ls = String(l.startDate).slice(0, 10);
+                    const le = String(l.endDate).slice(0, 10);
+                    return acc + getDatesInRange(ls, le).length;
+                }, 0);
+
+            remaining = Math.max(0, allocated - usedDays);
+        }
+
+        const excessDays = Math.max(0, netDuration - remaining);
         const baseSalary = Number(user?.salary) || 0;
         const dailyRate = baseSalary > 0 ? Math.round(baseSalary / 30) : 0;
         const estimatedDeduction = excessDays * dailyRate;
 
         return {
-            duration,
+            totalDuration,
+            overlapCount,
+            netDuration,
+            overlappingDates,
+            conflictingLeaves: Array.from(conflictingLeavesSet),
             remaining,
+            allocated,
             excessDays,
             dailyRate,
-            estimatedDeduction
+            estimatedDeduction,
+            isFullyBooked: netDuration === 0
         };
-    }, [leaveForm.startDate, leaveForm.endDate, selectedBalance, user?.salary]);
+    }, [leaveForm.startDate, leaveForm.endDate, leaveForm.leaveTypeId, bookedDatesMap, leaveBalances, leaveTypes, leaves, user?.salary]);
 
     return (
         <>
-            <motion.div 
+            <motion.div
                 key="leaves"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -89,13 +231,12 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             <p className="text-2xl font-black text-slate-800">{b.remaining} <span className="text-sm font-semibold text-slate-500">Days Left</span></p>
                                             <span className="text-xs text-slate-400 font-medium">Total: {b.allocated} Days</span>
                                         </div>
-                                        
+
                                         {/* Progress Bar */}
                                         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2">
-                                            <div 
-                                                className={`h-full rounded-full transition-all duration-300 ${
-                                                    usedPercent > 80 ? 'bg-amber-500' : 'bg-indigo-600'
-                                                }`}
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-300 ${usedPercent > 80 ? 'bg-amber-500' : 'bg-indigo-600'
+                                                    }`}
                                                 style={{ width: `${usedPercent}%` }}
                                             />
                                         </div>
@@ -118,10 +259,10 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Leave Type</label>
-                                        <select 
-                                            className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700" 
-                                            value={leaveForm.leaveTypeId || ''} 
-                                            onChange={e => setLeaveForm({...leaveForm, leaveTypeId: e.target.value})} 
+                                        <select
+                                            className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700"
+                                            value={leaveForm.leaveTypeId || ''}
+                                            onChange={e => setLeaveForm({ ...leaveForm, leaveTypeId: e.target.value })}
                                             required
                                         >
                                             <option value="">Select Type</option>
@@ -137,169 +278,391 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             })}
                                         </select>
                                     </div>
+                                    {/* Start & End Date Status Cards */}
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Start Date</label>
-                                            <input 
-                                                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700" 
-                                                type="date" 
-                                                value={leaveForm.startDate} 
-                                                onChange={e => setLeaveForm({...leaveForm, startDate: e.target.value})} 
-                                                required 
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between">
+                                                <span>Start Date</span>
+                                                {leaveForm.startDate && (
+                                                    <span className="text-[9px] font-extrabold text-indigo-600">Selected</span>
+                                                )}
+                                            </label>
+                                            <input
+                                                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
+                                                type="date"
+                                                min={todayStr}
+                                                value={leaveForm.startDate}
+                                                onChange={e => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+                                                required
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">End Date</label>
-                                            <input 
-                                                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700" 
-                                                type="date" 
-                                                value={leaveForm.endDate} 
-                                                onChange={e => setLeaveForm({...leaveForm, endDate: e.target.value})} 
-                                                required 
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between">
+                                                <span>End Date</span>
+                                                {leaveForm.endDate && (
+                                                    <span className="text-[9px] font-extrabold text-indigo-600">Selected</span>
+                                                )}
+                                            </label>
+                                            <input
+                                                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
+                                                type="date"
+                                                min={todayStr}
+                                                value={leaveForm.endDate}
+                                                onChange={e => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+                                                required
                                             />
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Reason</label>
-                                        <textarea 
-                                            className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 resize-none" 
-                                            placeholder="Tell us why..." 
-                                            value={leaveForm.reason} 
-                                            onChange={e => setLeaveForm({...leaveForm, reason: e.target.value})} 
-                                            required 
-                                            rows={3}
-                                        />
+
+                                    {/* Expandable/Collapsible Visual Calendar Switch & Clear Button */}
+                                    <div className="flex items-center justify-between pt-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowVisualCalendar(!showVisualCalendar)}
+                                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <Calendar size={14} />
+                                            <span>{showVisualCalendar ? 'Hide Visual Calendar' : 'Show Interactive Visual Calendar'}</span>
+                                        </button>
+                                        {(leaveForm.startDate || leaveForm.endDate) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setLeaveForm(prev => ({ ...prev, startDate: '', endDate: '' }))}
+                                                className="text-[11px] font-bold text-rose-500 hover:text-rose-700 underline cursor-pointer"
+                                            >
+                                                Clear Dates
+                                            </button>
+                                        )}
                                     </div>
 
-                                    {/* Deduction / Excess Quota Warning Banner */}
-                                    {deductionPreview && deductionPreview.excessDays > 0 && (
-                                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1 text-xs">
-                                            <div className="flex items-center gap-1.5 font-bold text-amber-800">
-                                                <AlertTriangle size={15} className="shrink-0 text-amber-600" />
-                                                <span>Quota Exceeded ({deductionPreview.excessDays} Unpaid {deductionPreview.excessDays === 1 ? 'Day' : 'Days'})</span>
+                                    {/* ── INTERACTIVE VISUAL CALENDAR PICKER ── */}
+                                    {showVisualCalendar && (
+                                        <div className="bg-slate-50 p-3.5 border border-slate-200 rounded-2xl space-y-2.5 shadow-xs">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                                    <Calendar size={14} className="text-indigo-600" />
+                                                    <span>{calendarGrid.monthName} {calendarGrid.year}</span>
+                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handlePrevMonth}
+                                                        className="p-1 hover:bg-slate-200 rounded-lg text-slate-600 transition-all cursor-pointer"
+                                                        title="Previous Month"
+                                                    >
+                                                        <ChevronLeft size={16} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleNextMonth}
+                                                        className="p-1 hover:bg-slate-200 rounded-lg text-slate-600 transition-all cursor-pointer"
+                                                        title="Next Month"
+                                                    >
+                                                        <ChevronRight size={16} />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <p className="text-[11px] leading-relaxed text-amber-700">
-                                                Remaining balance: <strong>{deductionPreview.remaining} {deductionPreview.remaining === 1 ? 'day' : 'days'}</strong>. {deductionPreview.excessDays} {deductionPreview.excessDays === 1 ? 'day' : 'days'} will be processed as <strong>Unpaid Leave</strong>.
+
+                                            {/* Instructions Banner */}
+                                            <p className="text-[10px] text-slate-500 font-semibold bg-white p-2 rounded-lg border border-slate-200/60">
+                                                👉 <strong>Click any day</strong> for Start Date, then <strong>click a second day</strong> for End Date. Booked leave dates are marked in gold.
                                             </p>
-                                            {deductionPreview.dailyRate > 0 && (
-                                                <div className="pt-1.5 mt-1 border-t border-amber-200/60 font-bold flex justify-between items-center text-slate-800">
-                                                    <span>Est. Salary Deduction:</span>
-                                                    <span className="text-rose-600 font-black">
-                                                        -₨ {deductionPreview.estimatedDeduction.toLocaleString()}
+
+                                            {/* Calendar Weekday Headers */}
+                                            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-slate-400 uppercase">
+                                                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                                            </div>
+
+                                            {/* Calendar Days Grid */}
+                                            <div className="grid grid-cols-7 gap-1">
+                                                {calendarGrid.days.map((item, idx) => {
+                                                    if (!item) {
+                                                        return <div key={`pad-${idx}`} className="h-7" />;
+                                                    }
+
+                                                    const { dayNumber, dateStr } = item;
+                                                    const isPast = dateStr < todayStr;
+                                                    const isBooked = bookedDatesMap.has(dateStr);
+                                                    const bookedLeaveObj = isBooked ? bookedDatesMap.get(dateStr) : null;
+
+                                                    const isStart = leaveForm.startDate === dateStr;
+                                                    const isEnd = leaveForm.endDate === dateStr;
+                                                    const isInSelectedRange = leaveForm.startDate && leaveForm.endDate && dateStr >= leaveForm.startDate && dateStr <= leaveForm.endDate;
+
+                                                    const isConflict = isBooked && isInSelectedRange;
+
+                                                    let btnStyle = "bg-white text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200/80 cursor-pointer";
+
+                                                    if (isPast) {
+                                                        btnStyle = "bg-slate-100 text-slate-300 border border-slate-100 cursor-default opacity-50";
+                                                    } else if (isConflict) {
+                                                        btnStyle = "bg-rose-500 text-white font-black ring-2 ring-rose-300 animate-pulse cursor-pointer";
+                                                    } else if (isStart || isEnd) {
+                                                        btnStyle = "bg-indigo-600 text-white font-black shadow-md ring-2 ring-indigo-400 cursor-pointer";
+                                                    } else if (isInSelectedRange) {
+                                                        btnStyle = "bg-indigo-100 text-indigo-900 font-bold border-t border-b border-indigo-200 cursor-pointer";
+                                                    } else if (isBooked) {
+                                                        btnStyle = "bg-amber-100/90 text-amber-900 border border-amber-300 font-extrabold opacity-95 cursor-default";
+                                                    }
+
+                                                    return (
+                                                        <button
+                                                            key={dateStr}
+                                                            type="button"
+                                                            disabled={isPast}
+                                                            onClick={() => handleCalendarDayClick(dateStr)}
+                                                            className={`h-7 rounded-lg text-xs flex items-center justify-center transition-all relative ${btnStyle}`}
+                                                            title={
+                                                                isPast
+                                                                    ? `🚫 Past date (Cannot select past dates)`
+                                                                    : isConflict
+                                                                        ? `⚠️ Conflict: Overlaps with booked leave (${bookedLeaveObj?.status})`
+                                                                        : isBooked
+                                                                            ? `🔒 Booked Leave (${bookedLeaveObj?.status})`
+                                                                            : `Select ${dateStr}`
+                                                            }
+                                                        >
+                                                            <span>{dayNumber}</span>
+                                                            {isBooked && !isConflict && (
+                                                                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Color Legend */}
+                                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[9px] font-bold text-slate-500 flex-wrap gap-1">
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-2.5 h-2.5 rounded bg-indigo-600 inline-block" /> Selected Range
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-2.5 h-2.5 rounded bg-amber-200 border border-amber-400 inline-block" /> Booked Leave
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-2.5 h-2.5 rounded bg-slate-200 border border-slate-300 inline-block" /> Past Date
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Reason</label>
+                                    <textarea
+                                        className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 resize-none"
+                                        placeholder="Tell us why..."
+                                        value={leaveForm.reason}
+                                        onChange={e => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                                        required
+                                        rows={3}
+                                    />
+                                </div>
+
+                                {/* Booked Dates Quick Reference Tags */}
+                                {bookedDatesMap.size > 0 && (
+                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                            <Calendar size={12} className="text-indigo-600" /> Your Booked Leave Dates ({bookedDatesMap.size} days):
+                                        </p>
+                                        <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pt-0.5">
+                                            {Array.from(bookedDatesMap.entries()).map(([dStr, lObj]) => (
+                                                <span key={dStr} className="text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md" title={`${lObj.status?.toUpperCase()}`}>
+                                                    {dStr}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Deduction & Overlap Preview Banner */}
+                                {deductionPreview && (
+                                    <div className="space-y-2">
+                                        {/* 1. Duration Summary Box */}
+                                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                                            <div className="flex items-center justify-between font-bold">
+                                                <span className="text-slate-600">Selected Date Range:</span>
+                                                <span className="text-slate-800 font-extrabold">{deductionPreview.totalDuration} Days</span>
+                                            </div>
+
+                                            {/* Overlap Breakdown */}
+                                            {deductionPreview.overlapCount > 0 && (
+                                                <div className="pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                                                    <span className="text-amber-600 font-bold flex items-center gap-1">
+                                                        <AlertTriangle size={12} /> Already Booked (Excluded):
+                                                    </span>
+                                                    <span className="font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                                        -{deductionPreview.overlapCount} {deductionPreview.overlapCount === 1 ? 'Day' : 'Days'}
                                                     </span>
                                                 </div>
                                             )}
+
+                                            <div className="pt-1.5 border-t border-slate-200 flex items-center justify-between font-bold text-indigo-900 bg-indigo-50/50 p-2 rounded-lg">
+                                                <span>Net New Leave Duration:</span>
+                                                <span className="text-sm font-black text-indigo-700">{deductionPreview.netDuration} {deductionPreview.netDuration === 1 ? 'Day' : 'Days'}</span>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                                <button className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm mt-auto">
-                                    <Send size={18} /> Submit Application
+
+                                        {/* 2. Overlap Detailed Alert */}
+                                        {deductionPreview.overlapCount > 0 && (
+                                            <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-xs space-y-1 text-amber-900">
+                                                <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                                                    <AlertTriangle size={14} className="shrink-0 text-amber-600" />
+                                                    <span>Overlapping Dates Auto-Excluded</span>
+                                                </div>
+                                                <p className="text-[11px] leading-relaxed text-amber-700">
+                                                    <strong>{deductionPreview.overlapCount} day(s)</strong> in this period overlap with existing booked leave(s). They will <strong>not be double-counted</strong>.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* 3. Fully Booked Error */}
+                                        {deductionPreview.isFullyBooked && (
+                                            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2">
+                                                <AlertTriangle size={15} className="shrink-0 text-rose-600" />
+                                                <span>All selected dates are already covered by your existing leave. Please pick different dates.</span>
+                                            </div>
+                                        )}
+
+                                        {/* 4. Quota Exceeded / Unpaid Leave Salary Deduction Warning */}
+                                        {!deductionPreview.isFullyBooked && deductionPreview.excessDays > 0 && (
+                                            <div className="p-3 bg-rose-50/90 border border-rose-200 rounded-xl text-xs space-y-1 text-rose-900">
+                                                <div className="flex items-center gap-1.5 font-bold text-rose-800">
+                                                    <AlertTriangle size={14} className="shrink-0 text-rose-600" />
+                                                    <span>Quota Exceeded ({deductionPreview.excessDays} Unpaid {deductionPreview.excessDays === 1 ? 'Day' : 'Days'})</span>
+                                                </div>
+                                                <p className="text-[11px] leading-relaxed text-rose-700">
+                                                    You have <strong>{deductionPreview.remaining} paid day(s)</strong> remaining. The net excess <strong>{deductionPreview.excessDays} day(s)</strong> will be processed as <strong>Unpaid Leave</strong>.
+                                                </p>
+                                                {deductionPreview.dailyRate > 0 && (
+                                                    <div className="pt-1.5 mt-1 border-t border-rose-200/80 font-bold flex justify-between items-center text-slate-800">
+                                                        <span>Est. Monthly Payroll Deduction:</span>
+                                                        <span className="text-rose-600 font-black text-sm">
+                                                            -₨ {deductionPreview.estimatedDeduction.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* 5. Fully Covered Banner */}
+                                        {!deductionPreview.isFullyBooked && deductionPreview.excessDays === 0 && (
+                                            <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
+                                                <span>✓ Net duration ({deductionPreview.netDuration} days) is fully covered under your paid leave quota. No salary deduction.</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                        </div>
+                        <button
+                            disabled={deductionPreview?.isFullyBooked}
+                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm mt-auto cursor-pointer"
+                        >
+                            <Send size={18} /> Submit Application
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {/* Leave History Table */}
+            <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+                    <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <ClipboardList size={20} className="text-indigo-600" />
+                            <h3 className="text-lg font-bold text-slate-800">My Leave History</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                                {['all', 'pending', 'approved', 'rejected'].map(status => (
+                                    <button
+                                        key={status}
+                                        onClick={() => setStatusFilter(status)}
+                                        className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${statusFilter === status ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+                            {onRefresh && (
+                                <button
+                                    onClick={onRefresh}
+                                    title="Sync latest status from HR"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all"
+                                >
+                                    <RefreshCw size={12} />
+                                    Sync
                                 </button>
-                            </form>
+                            )}
                         </div>
                     </div>
-
-                    {/* Leave History Table */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
-                            <div className="p-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <ClipboardList size={20} className="text-indigo-600" />
-                                    <h3 className="text-lg font-bold text-slate-800">My Leave History</h3>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-                                        {['all', 'pending', 'approved', 'rejected'].map(status => (
-                                            <button 
-                                                key={status}
-                                                onClick={() => setStatusFilter(status)}
-                                                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${statusFilter === status ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
-                                            >
-                                                {status}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {onRefresh && (
-                                        <button
-                                            onClick={onRefresh}
-                                            title="Sync latest status from HR"
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all"
-                                        >
-                                            <RefreshCw size={12} />
-                                            Sync
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-x-auto flex flex-col justify-between">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                                            <th className="px-6 py-4">Type</th>
-                                            <th className="px-6 py-4">Duration</th>
-                                            <th className="px-6 py-4 text-center">Days</th>
-                                            <th className="px-6 py-4">Reason</th>
-                                            <th className="px-6 py-4 text-right">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {leaves.map(leave => (
-                                            <tr 
-                                                key={leave._id} 
-                                                className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                                                onClick={() => setSelectedLeave(leave)}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <span className="font-bold text-slate-800 text-xs bg-indigo-50/60 border border-indigo-100/80 px-2.5 py-1 rounded-lg inline-block">
-                                                        {leave.leaveType?.name || 'Annual Leave'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-slate-700 font-medium text-xs whitespace-nowrap">
-                                                        {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="text-slate-600 font-bold text-xs bg-slate-100 px-2.5 py-0.5 rounded-md inline-block">
-                                                        {calculateDays(leave.startDate, leave.endDate)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-slate-600 text-xs bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 group-hover:border-indigo-200 transition-colors block truncate max-w-[180px]">
-                                                        {truncateReason(leave.reason)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <span className={`
+                    <div className="flex-1 overflow-x-auto flex flex-col justify-between">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                                    <th className="px-3 py-3">Type</th>
+                                    <th className="px-3 py-3">Duration</th>
+                                    <th className="px-3 py-3 text-center">Days</th>
+                                    <th className="px-3 py-3">Reason</th>
+                                    <th className="px-3 py-3 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {leaves.map(leave => (
+                                    <tr
+                                        key={leave._id}
+                                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                                        onClick={() => setSelectedLeave(leave)}
+                                    >
+                                        <td className="px-3 py-3">
+                                            <span className="font-bold text-slate-800 text-xs bg-indigo-50/60 border border-indigo-100/80 px-2.5 py-1 rounded-lg inline-block">
+                                                {leave.leaveType?.name || 'Annual Leave'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <div className="text-slate-700 font-medium text-xs whitespace-nowrap">
+                                                {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3 text-center">
+                                            <span className="text-slate-600 font-bold text-xs bg-slate-100 px-2.5 py-0.5 rounded-md inline-block">
+                                                {calculateDays(leave.startDate, leave.endDate)}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3">
+                                            <span className="text-slate-600 text-xs bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 group-hover:border-indigo-200 transition-colors block truncate max-w-[180px]">
+                                                {truncateReason(leave.reason)}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3 text-right">
+                                            <span className={`
                                                         px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block
                                                         ${leave.status === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200' : ''}
                                                         ${leave.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ''}
                                                         ${leave.status === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' : ''}
                                                     `}>
-                                                        {leave.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                {leaves.length === 0 && (
-                                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
-                                        <ClipboardList size={36} className="mb-2 opacity-30" />
-                                        <p className="text-xs font-semibold">No leave requests found {statusFilter !== 'all' && `with status "${statusFilter}"`}.</p>
-                                    </div>
-                                )}
+                                                {leave.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {leaves.length === 0 && (
+                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
+                                <ClipboardList size={36} className="mb-2 opacity-30" />
+                                <p className="text-xs font-semibold">No leave requests found {statusFilter !== 'all' && `with status "${statusFilter}"`}.</p>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
-            </motion.div>
+            </div>
+        </div>
+    </motion.div>
 
-            <LeaveDetailModal 
-                leave={selectedLeave} 
-                onClose={() => setSelectedLeave(null)} 
-            />
-        </>
+    <LeaveDetailModal
+        leave={selectedLeave}
+        onClose={() => setSelectedLeave(null)}
+    />
+</>
     );
 };
 
