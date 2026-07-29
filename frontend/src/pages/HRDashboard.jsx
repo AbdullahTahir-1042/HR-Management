@@ -18,6 +18,7 @@ import AddEmployeePage from '../components/HRDashboard/AddEmployeePage';
 import EmployeeDetailsPage from '../components/HRDashboard/EmployeeDetailsPage';
 import EditEmployeePage from '../components/HRDashboard/EditEmployeePage';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import MessagesPage from '../components/MessagesPage';
 import HRDepartments from '../components/HRDashboard/HRDepartments';
 import HRReports from '../components/HRDashboard/HRReports';
 import HRMistakeReports from '../components/HRDashboard/HRMistakeReports';
@@ -48,6 +49,7 @@ const HRDashboard = () => {
     const [isEditingEmployee, setIsEditingEmployee] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     const getTodayStr = () => new Date().toISOString().slice(0, 10);
     const [departments, setDepartments] = useState([]);
@@ -337,6 +339,7 @@ const HRDashboard = () => {
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 font-sans relative">
             <HRSidebar
+                unreadMessages={unreadMessages}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 user={user}
@@ -487,6 +490,10 @@ const HRDashboard = () => {
                                 requests={hrRequests}
                                 onUpdate={handleUpdateHRRequest}
                             />
+                        )}
+
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
                         )}
 
                         {activeTab === 'profile' && (

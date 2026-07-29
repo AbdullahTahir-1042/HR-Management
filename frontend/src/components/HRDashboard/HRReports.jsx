@@ -729,7 +729,7 @@ const HRReports = ({ employees }) => {
                                     </div>
 
                                     {/* Chart Body */}
-                                    <div className="overflow-x-auto pb-2">
+                                    <div className="overflow-x-auto pt-8 pb-2">
                                         <div className="relative min-w-[500px]">
                                             {/* Y-axis grid lines */}
                                             <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none" style={{ bottom: '24px', top: 0 }}>
@@ -747,18 +747,19 @@ const HRReports = ({ employees }) => {
                                                     const isHigh = item.heightPercent >= 60;
                                                     return (
                                                         <div key={i} className="flex-1 flex flex-col items-center gap-0 group relative" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                                                            {/* Hover tooltip */}
-                                                            <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-10">
-                                                                <div className="bg-slate-800 text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap shadow-lg">
-                                                                    {item.count} present
-                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                                                            {/* Bar with nested tooltip */}
+                                                            <div
+                                                                className={`w-full rounded-t-md transition-all duration-300 cursor-default relative ${isHigh ? 'bg-indigo-500 group-hover:bg-indigo-600' : 'bg-indigo-200 group-hover:bg-indigo-300'}`}
+                                                                style={{ height: `${item.heightPercent}%`, minHeight: '3px' }}
+                                                            >
+                                                                {/* Hover tooltip */}
+                                                                <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-20">
+                                                                    <div className="bg-slate-800 text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap shadow-lg">
+                                                                        {item.count} present
+                                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            {/* Bar */}
-                                                            <div
-                                                                className={`w-full rounded-t-md transition-all duration-300 cursor-default ${isHigh ? 'bg-indigo-500 group-hover:bg-indigo-600' : 'bg-indigo-200 group-hover:bg-indigo-300'}`}
-                                                                style={{ height: `${item.heightPercent}%`, minHeight: '3px' }}
-                                                            />
                                                         </div>
                                                     );
                                                 })}
