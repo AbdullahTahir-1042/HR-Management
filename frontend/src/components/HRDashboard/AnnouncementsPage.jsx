@@ -277,69 +277,6 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                         </p>
                     )}
                 </div>
-
-                {isHR && !isEditing && (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                                <Eye size={15} className="text-indigo-500" />
-                                Read Receipts
-                            </h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                readCount === totalEmployees && totalEmployees > 0
-                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                                    : 'bg-slate-100 text-slate-500'
-                            }`}>
-                                {readCount} / {totalEmployees} read
-                            </span>
-                        </div>
-
-                        {totalEmployees > 0 && (
-                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                <div
-                                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${(readCount / totalEmployees) * 100}%` }}
-                                />
-                            </div>
-                        )}
-
-                        {readByNames.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                                {readByNames.map((name, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-100"
-                                    >
-                                        <CheckCheck size={12} />
-                                        {name}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-slate-400 font-medium">No one has read this announcement yet.</p>
-                        )}
-
-                        {totalEmployees > readCount && (
-                            <div className="pt-2 border-t border-slate-100">
-                                <p className="text-xs text-slate-400 font-medium mb-2">Haven't read yet:</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {employees
-                                        .filter(e => e.role !== 'hr' && !(selected.readBy || []).some(id => id?.toString() === e._id?.toString()))
-                                        .map(emp => (
-                                            <span
-                                                key={emp._id}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-xs font-semibold border border-slate-200"
-                                            >
-                                                <User size={12} />
-                                                {emp.name}
-                                            </span>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
             </motion.div>
         );
     }
@@ -472,14 +409,6 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                                 <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
                                                     <Calendar size={12} />
                                                     {formatDate(entry.createdAt)}
-                                                </span>
-                                                <span className={`flex items-center gap-1.5 text-xs font-semibold ${
-                                                    readCount === totalEmps && totalEmps > 0
-                                                        ? 'text-emerald-500'
-                                                        : 'text-slate-400'
-                                                }`}>
-                                                    <Eye size={12} />
-                                                    {readCount}/{totalEmps} read
                                                 </span>
                                             </div>
                                         </div>

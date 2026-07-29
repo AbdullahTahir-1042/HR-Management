@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarCheck, Check, X, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarCheck, Check, X, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import LeaveDetailModal from '../LeaveDetailModal';
 import LeaveConfirmationModal from '../LeaveConfirmationModal';
 
@@ -178,7 +178,7 @@ const DurationCell = ({ leave, isHovered, onHoverStart, onHoverEnd }) => {
     );
 };
 
-const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate }) => {
+const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLeave, employees = [], departments = [] }) => {
     const [selectedLeave, setSelectedLeave] = useState(null);
     const [confirmAction, setConfirmAction] = useState(null); // { leave, action }
     const [hoveredLeaveId, setHoveredLeaveId] = useState(null);
@@ -223,18 +223,69 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredLeaves.map(leave => (
-                                <tr 
-                                    key={leave._id} 
-                                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                                    onClick={() => setSelectedLeave(leave)}
-                                >
-                                    <td className="px-8 py-6">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-slate-800">{leave.employee?.name}</span>
-                                            <span className="text-xs text-slate-400">{leave.employee?.email}</span>
-                                        </div>
-                                    </td>
+                            {filteredLeaves.map(leave => {
+                                const empId = leave.employee?._id || (typeof leave.employee === 'string' ? leave.employee : null);
+                                const emp = (empId ? employees.find(e => String(e._id) === String(empId)) : null) || leave.employee || {};
+
+                                const teamName = emp.department || '';
+                                
+                                // Strict department match: check department document first
+                                const deptObj = teamName 
+                                    ? departments.find(d => d.name && d.name.toLowerCase() === teamName.toLowerCase()) 
+                                    : null;
+                                
+                                const deptLeadFromDeptObj = deptObj?.teamLead 
+                                    ? (typeof deptObj.teamLead === 'object' ? deptObj.teamLead.name : null) 
+                                    : null;
+
+                                // Strict department match: check employee registry for a designated isTeamLead in THIS department
+                                const deptLeadFromEmpObj = teamName 
+                                    ? employees.find(e => 
+                                        e.department && 
+                                        e.department.toLowerCase() === teamName.toLowerCase() && 
+                                        e.isTeamLead && 
+                                        String(e._id) !== String(emp._id || empId)
+                                      )?.name 
+                                    : null;
+
+                                const activeDeptLead = deptLeadFromEmpObj || deptLeadFromDeptObj;
+
+                                const leadName = emp.isTeamLead 
+                                    ? 'Team Lead' 
+                                    : activeDeptLead
+                                        ? activeDeptLead
+                                        : (emp.reportingTo && emp.reportingTo.trim() !== '')
+                                            ? emp.reportingTo.trim()
+                                            : null;
+
+                                return (
+                                    <tr 
+                                        key={leave._id} 
+                                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                                        onClick={() => setSelectedLeave(leave)}
+                                    >
+                                        <td className="px-8 py-6">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-800">{emp.name || leave.employee?.name || 'Employee'}</span>
+                                                <span className="text-xs text-slate-400">{emp.email || leave.employee?.email || ''}</span>
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                                    {teamName && (
+                                                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-bold capitalize border border-slate-200">
+                                                            Team: {teamName}
+                                                        </span>
+                                                    )}
+                                                    {emp.isTeamLead ? (
+                                                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md text-[10px] font-bold border border-purple-100">
+                                                            Team Lead
+                                                        </span>
+                                                    ) : leadName ? (
+                                                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-bold border border-indigo-100">
+                                                            Lead: {leadName}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                        </td>
                                     <td className="px-8 py-6 text-slate-600 text-sm">
                                         <DurationCell
                                             leave={leave}
@@ -264,27 +315,53 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate }) => {
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
-                                        {leave.status === 'pending' && (
-                                            <div className="flex gap-2 justify-end">
-                                                <button 
-                                                    onClick={() => setConfirmAction({ leave, action: 'approved' })}
-                                                    className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-sm transition-colors"
-                                                    title="Approve"
-                                                >
-                                                    <Check size={16} />
-                                                </button>
+                                        <div className="flex gap-2 justify-end items-center">
+                                            {leave.status === 'pending' ? (
+                                                <>
+                                                    <button 
+                                                        onClick={() => setConfirmAction({ leave, action: 'approved' })}
+                                                        className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-sm transition-colors"
+                                                        title="Approve Leave"
+                                                    >
+                                                        <Check size={16} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setConfirmAction({ leave, action: 'rejected' })}
+                                                        className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors"
+                                                        title="Reject Leave"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </>
+                                            ) : leave.status === 'approved' ? (
                                                 <button 
                                                     onClick={() => setConfirmAction({ leave, action: 'rejected' })}
-                                                    className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors"
-                                                    title="Reject"
+                                                    className="px-2.5 py-1 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-lg transition-colors"
+                                                    title="Change status to Rejected"
                                                 >
-                                                    <X size={16} />
+                                                    Reject
                                                 </button>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <button 
+                                                    onClick={() => setConfirmAction({ leave, action: 'approved' })}
+                                                    className="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors"
+                                                    title="Change status to Approved"
+                                                >
+                                                    Approve
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleDeleteLeave && handleDeleteLeave(leave._id)}
+                                                className="p-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 rounded-lg transition-colors"
+                                                title="Delete Leave Request"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
-                            ))}
+                            );
+                        })}
                         </tbody>
                     </table>
                     {filteredLeaves.length === 0 && (

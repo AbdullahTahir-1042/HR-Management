@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Mail, Shield, Calendar, UserPlus, Briefcase, Building2, UserCheck, Trash2 } from 'lucide-react';
+import { 
+    Users, Mail, Shield, Calendar, UserPlus, Briefcase, 
+    Building2, UserCheck, Trash2, Crown, Phone, Eye, Pencil, 
+    LayoutGrid, List, Search, Filter, AlertCircle
+} from 'lucide-react';
 
-const HREmployeeList = ({ employees, searchTerm, onAddNew, onSelect, onDelete }) => {
-    
+const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, onEdit, onDelete }) => {
+    const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
+    const [deptFilter, setDeptFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads'
+
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
@@ -21,128 +28,468 @@ const HREmployeeList = ({ employees, searchTerm, onAddNew, onSelect, onDelete })
         }).format(amount || 0);
     };
 
-    const filteredEmployees = employees.filter(emp => 
-        emp.role === 'employee' && (
+    // Extract unique department list
+    const departments = Array.from(new Set(
+        employees.map(e => e.department).filter(Boolean)
+    ));
+
+    // Filter employees based on search term, department filter & statusFilter
+    const filteredEmployees = employees.filter(emp => {
+        const matchesSearch = 
             emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    );
+            emp.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.reportingTo?.toLowerCase().includes(searchTerm.toLowerCase());
+            
+        const matchesDept = deptFilter === 'all' || emp.department?.toLowerCase() === deptFilter.toLowerCase();
+
+        let matchesStatus = true;
+        if (statusFilter === 'full time') {
+            matchesStatus = emp.status === 'full time' || !emp.status;
+        } else if (statusFilter === 'probation') {
+            matchesStatus = emp.status === 'probation' || emp.status === 'internship';
+        } else if (statusFilter === 'teamLeads') {
+            matchesStatus = !!emp.isTeamLead;
+        }
+
+        return matchesSearch && matchesDept && matchesStatus;
+    });
+
+    // KPI Metrics
+    const totalStaff = employees.length;
+    const fullTimeCount = employees.filter(e => e.status === 'full time' || !e.status).length;
+    const probationCount = employees.filter(e => e.status === 'probation' || e.status === 'internship').length;
+    const teamLeadsCount = employees.filter(e => e.isTeamLead).length;
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold">
-                        {filteredEmployees.length} Active
-                    </span>
-                </div>
-                <button 
-                    onClick={onAddNew}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center gap-2 text-sm"
+        <div className="space-y-8">
+
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Staff Card */}
+                <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`text-left bg-white p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 group ${
+                        statusFilter === 'all' 
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10' 
+                            : 'border-slate-200 hover:border-indigo-300 hover:shadow-xs'
+                    }`}
                 >
-                    <UserPlus size={18} /> Add New Employee
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        statusFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
+                    }`}>
+                        <Users size={22} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Staff</p>
+                        <p className="text-2xl font-black text-slate-800">{totalStaff}</p>
+                    </div>
+                </button>
+
+                {/* Full Time Card */}
+                <button
+                    onClick={() => setStatusFilter('full time')}
+                    className={`text-left bg-white p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 group ${
+                        statusFilter === 'full time' 
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10' 
+                            : 'border-slate-200 hover:border-emerald-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        statusFilter === 'full time' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
+                    }`}>
+                        <Briefcase size={22} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Full Time</p>
+                        <p className="text-2xl font-black text-slate-800">{fullTimeCount}</p>
+                    </div>
+                </button>
+
+                {/* Probation & Interns Card */}
+                <button
+                    onClick={() => setStatusFilter('probation')}
+                    className={`text-left bg-white p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 group ${
+                        statusFilter === 'probation' 
+                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10' 
+                            : 'border-slate-200 hover:border-amber-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        statusFilter === 'probation' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'
+                    }`}>
+                        <UserCheck size={22} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Probation & Interns</p>
+                        <p className="text-2xl font-black text-slate-800">{probationCount}</p>
+                    </div>
+                </button>
+
+                {/* Team Leads Card */}
+                <button
+                    onClick={() => setStatusFilter('teamLeads')}
+                    className={`text-left bg-white p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 group ${
+                        statusFilter === 'teamLeads' 
+                            ? 'border-violet-500 ring-2 ring-violet-500/10 shadow-md bg-violet-50/10' 
+                            : 'border-slate-200 hover:border-violet-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        statusFilter === 'teamLeads' ? 'bg-violet-600 text-white' : 'bg-violet-50 text-violet-600 group-hover:bg-violet-100'
+                    }`}>
+                        <Crown size={22} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Team Leads</p>
+                        <p className="text-2xl font-black text-slate-800">{teamLeadsCount}</p>
+                    </div>
                 </button>
             </div>
 
-            <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
-            >
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-[0.1em]">
-                                <th className="px-6 py-4">Employee</th>
-                                <th className="px-6 py-4">Department</th>
-                                <th className="px-6 py-4">Reporting To</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Salary</th>
-                                <th className="px-6 py-4">Joined On</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filteredEmployees.map(emp => (
-                                <tr 
-                                    key={emp._id} 
-                                    onClick={() => onSelect(emp)}
-                                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                                >
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shadow-sm group-hover:border-indigo-200 transition-colors">
-                                                {emp.photo ? (
-                                                    <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <span className="text-indigo-600 font-bold text-sm">{emp.name?.[0]}</span>
+            {/* Header Controls Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-100">
+                        {filteredEmployees.length} Staff Member{filteredEmployees.length !== 1 ? 's' : ''}
+                    </span>
+
+                    {/* Active Filter Pill */}
+                    {statusFilter !== 'all' && (
+                        <button
+                            onClick={() => setStatusFilter('all')}
+                            className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                            title="Clear Status Filter"
+                        >
+                            <span>Filter: {statusFilter === 'teamLeads' ? 'Team Leads' : statusFilter === 'full time' ? 'Full Time' : 'Probation/Interns'}</span>
+                            <span className="text-amber-900 font-extrabold text-sm">&times;</span>
+                        </button>
+                    )}
+
+                    {/* Department Filter */}
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                        <Filter size={14} className="text-slate-400" />
+                        <select
+                            value={deptFilter}
+                            onChange={(e) => setDeptFilter(e.target.value)}
+                            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                        >
+                            <option value="all">All Departments</option>
+                            {departments.map((dept, idx) => (
+                                <option key={idx} value={dept}>
+                                    {dept}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* View Switcher Toggle */}
+                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+                        <button
+                            onClick={() => setViewMode('table')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                                viewMode === 'table' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                            title="Table View"
+                        >
+                            <List size={16} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`p-1.5 rounded-lg transition-all ${
+                                viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                            title="Grid Cards View"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Add New Employee Primary Button */}
+                {onAddNew && (
+                    <button
+                        onClick={onAddNew}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm shrink-0"
+                    >
+                        <UserPlus size={18} />
+                        <span>Add New Employee</span>
+                    </button>
+                )}
+            </div>
+
+            {/* Main Content View */}
+            {viewMode === 'table' ? (
+                /* TABLE VIEW */
+                <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden"
+                >
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                                    <th className="px-6 py-4">Employee</th>
+                                    <th className="px-6 py-4">Department & Role</th>
+                                    <th className="px-6 py-4">Reporting To</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4">Salary</th>
+                                    <th className="px-6 py-4">Joined On</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredEmployees.map(emp => (
+                                    <tr 
+                                        key={emp._id} 
+                                        onClick={() => onSelect && onSelect(emp)}
+                                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                                    >
+                                        {/* Employee Name, Photo, Email, Phone & Lead badge */}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 shadow-2xs group-hover:border-indigo-300 transition-colors shrink-0">
+                                                    {emp.photo ? (
+                                                        <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-indigo-600 font-black text-sm">{emp.name?.[0]?.toUpperCase()}</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors truncate">
+                                                            {emp.name}
+                                                        </span>
+                                                        {emp.isTeamLead && (
+                                                            <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-md text-[10px] font-extrabold flex items-center gap-0.5 shrink-0" title="Team Lead">
+                                                                <Crown size={10} /> Lead
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs text-slate-400 font-medium truncate">{emp.email}</span>
+                                                    {emp.phone && (
+                                                        <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
+                                                            <Phone size={10} /> {emp.phone}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Department & Account Role */}
+                                        <td className="px-6 py-4">
+                                            <div className="space-y-1">
+                                                <span className="flex items-center gap-1.5 text-slate-700 text-xs font-bold capitalize">
+                                                    <Building2 size={13} className="text-indigo-500" />
+                                                    {emp.department || 'General'}
+                                                </span>
+                                                <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                                    emp.role === 'hr' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-slate-100 text-slate-500'
+                                                }`}>
+                                                    {emp.role === 'hr' ? 'HR Admin' : 'Employee'}
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        {/* Reporting To */}
+                                        <td className="px-6 py-4">
+                                            <span className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
+                                                <UserCheck size={13} className="text-slate-400" />
+                                                {emp.reportingTo || 'Unassigned'}
+                                            </span>
+                                        </td>
+
+                                        {/* Employment Status */}
+                                        <td className="px-6 py-4">
+                                            <span className={`
+                                                px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit
+                                                ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : ''}
+                                                ${emp.status === 'probation' ? 'bg-amber-50 text-amber-600 border border-amber-200' : ''}
+                                                ${emp.status === 'internship' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : ''}
+                                            `}>
+                                                <Briefcase size={11} />
+                                                {emp.status || 'full time'}
+                                            </span>
+                                        </td>
+
+                                        {/* Salary */}
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-800 font-black text-xs">
+                                                {formatSalary(emp.salary)}
+                                            </div>
+                                        </td>
+
+                                        {/* Joined On */}
+                                        <td className="px-6 py-4 text-slate-600 text-xs font-medium">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar size={13} className="text-slate-400" />
+                                                {formatDate(emp.createdAt)}
+                                            </div>
+                                        </td>
+
+                                        {/* Actions */}
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                                                {onSelect && (
+                                                    <button
+                                                        onClick={() => onSelect(emp)}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                        title="View Full Profile"
+                                                    >
+                                                        <Eye size={17} />
+                                                    </button>
+                                                )}
+                                                {onEdit && (
+                                                    <button
+                                                        onClick={() => onEdit(emp)}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                        title="Edit Employee"
+                                                    >
+                                                        <Pencil size={17} />
+                                                    </button>
+                                                )}
+                                                {onDelete && (
+                                                    <button
+                                                        onClick={() => onDelete(emp._id)}
+                                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                        title="Delete Employee"
+                                                    >
+                                                        <Trash2 size={17} />
+                                                    </button>
                                                 )}
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">{emp.name}</span>
-                                                <span className="text-[10px] text-slate-400 font-medium">{emp.email}</span>
-                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {filteredEmployees.length === 0 && (
+                            <div className="p-16 text-center text-slate-400">
+                                <Users size={44} className="mx-auto mb-3 opacity-20" />
+                                <p className="font-semibold text-sm">No employees found matching your filter criteria.</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            ) : (
+                /* GRID CARDS VIEW */
+                <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                    {filteredEmployees.map(emp => (
+                        <div
+                            key={emp._id}
+                            onClick={() => onSelect && onSelect(emp)}
+                            className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
+                        >
+                            <div>
+                                <div className="flex items-start justify-between gap-3 mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 group-hover:border-indigo-300 transition-colors shrink-0">
+                                            {emp.photo ? (
+                                                <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-indigo-600 font-black text-base">{emp.name?.[0]?.toUpperCase()}</span>
+                                            )}
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="flex items-center gap-1.5 text-slate-600 text-sm font-medium capitalize">
-                                            <Building2 size={14} className="text-slate-400" />
-                                            {emp.department || 'development'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
-                                            <UserCheck size={14} className="text-slate-400" />
-                                            {emp.reportingTo || 'Unassigned'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className={`
-                                            px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit
-                                            ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : ''}
-                                            ${emp.status === 'probation' ? 'bg-amber-50 text-amber-600 border border-amber-100' : ''}
-                                            ${emp.status === 'internship' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : ''}
-                                        `}>
-                                            <Briefcase size={12} />
-                                            {emp.status || 'full time'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="text-slate-700 font-bold text-sm">
-                                            {formatSalary(emp.salary)}
+                                        <div>
+                                            <h4 className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                                                {emp.name}
+                                                {emp.isTeamLead && (
+                                                    <Crown size={12} className="text-amber-500 shrink-0" />
+                                                )}
+                                            </h4>
+                                            <p className="text-xs text-slate-400 font-medium truncate">{emp.email}</p>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-slate-600 text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar size={14} className="text-slate-400" />
-                                            {formatDate(emp.createdAt)}
+                                    </div>
+                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                        emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                                    }`}>
+                                        {emp.status || 'full time'}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
+                                    <div className="flex justify-between items-center text-slate-600">
+                                        <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+                                            <Building2 size={13} /> Department:
+                                        </span>
+                                        <span className="font-bold capitalize text-slate-700">{emp.department || 'General'}</span>
+                                    </div>
+                                    {emp.phone && (
+                                        <div className="flex justify-between items-center text-slate-600">
+                                            <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+                                                <Phone size={13} /> Phone:
+                                            </span>
+                                            <span className="font-semibold text-slate-700">{emp.phone}</span>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onDelete(emp._id);
-                                            }}
-                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    )}
+                                    <div className="flex justify-between items-center text-slate-600">
+                                        <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+                                            <UserCheck size={13} /> Manager:
+                                        </span>
+                                        <span className="font-semibold text-slate-700">{emp.reportingTo || 'Unassigned'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-600">
+                                        <span className="flex items-center gap-1.5 text-slate-400 font-medium">
+                                            <Calendar size={13} /> Joined:
+                                        </span>
+                                        <span className="font-semibold text-slate-700">{formatDate(emp.createdAt)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Annual Salary</p>
+                                    <p className="text-sm font-black text-slate-800">{formatSalary(emp.salary)}</p>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    {onSelect && (
+                                        <button
+                                            onClick={() => onSelect(emp)}
+                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                            title="View Details"
+                                        >
+                                            <Eye size={17} />
+                                        </button>
+                                    )}
+                                    {onEdit && (
+                                        <button
+                                            onClick={() => onEdit(emp)}
+                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                            title="Edit Employee"
+                                        >
+                                            <Pencil size={17} />
+                                        </button>
+                                    )}
+                                    {onDelete && (
+                                        <button
+                                            onClick={() => onDelete(emp._id)}
+                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                             title="Delete Employee"
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={17} />
                                         </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                     {filteredEmployees.length === 0 && (
-                        <div className="p-20 text-center text-slate-400">
-                            <Users size={48} className="mx-auto mb-4 opacity-20" />
-                            <p className="font-medium">No employees found matching your search.</p>
+                        <div className="col-span-full p-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+                            <Users size={44} className="mx-auto mb-3 opacity-20" />
+                            <p className="font-semibold text-sm">No employees found matching your filter criteria.</p>
                         </div>
                     )}
-                </div>
-            </motion.div>
+                </motion.div>
+            )}
+
         </div>
     );
 };

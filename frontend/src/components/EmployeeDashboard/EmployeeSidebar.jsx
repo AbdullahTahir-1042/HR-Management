@@ -1,32 +1,34 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
-    Sparkles, GraduationCap, BookOpen, X, MessageCircle
+    Sparkles, GraduationCap, BookOpen, X
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'attendance', label: 'Mark Attendance', icon: Clock },
-    { id: 'leaves', label: 'Request Leave', icon: Calendar },
-    { id: 'holidays', label: 'Holiday Calendar', icon: PartyPopper },
-    { id: 'hr-requests', label: 'HR Requests', icon: MessageSquare },
-    { id: 'announcements', label: 'Announcements', icon: Bell },
+    { id: 'dashboard',    label: 'Dashboard',        icon: LayoutDashboard },
+    { id: 'attendance',   label: 'Mark Attendance',   icon: Clock },
+    { id: 'leaves',       label: 'Request Leave',     icon: Calendar },
+    { id: 'holidays',     label: 'Holiday Calendar',  icon: PartyPopper },
+    { id: 'hr-requests',  label: 'HR Requests',       icon: MessageSquare },
+    { id: 'announcements',label: 'Announcements',     icon: Bell },
 ];
 
-const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
-    const navigate = useNavigate();
+const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen }) => {
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-            {/* Logo */}
+            {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100">
+                <button
+                    onClick={() => setActiveTab('dashboard')}
+                    className="flex items-center gap-3 cursor-pointer group text-left p-1 -ml-1 rounded-xl hover:bg-slate-50 transition-all focus:outline-none"
+                    title="Go to Dashboard Overview"
+                >
+                    <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform duration-200">
                         <User size={24} />
                     </div>
                     <div>
-                        <span className="font-bold text-lg text-slate-800 tracking-tight block leading-tight">
+                        <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight block leading-tight transition-colors duration-200">
                             Employee Portal
                         </span>
                         {user?.isTeamLead && (
@@ -35,7 +37,7 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                             </span>
                         )}
                     </div>
-                </div>
+                </button>
                 <button
                     onClick={() => setIsOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden focus:outline-none"
@@ -47,8 +49,6 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
 
             {/* Nav */}
             <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto">
-
-                {/* Regular Nav Items */}
                 {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
                     <button
                         key={id}
@@ -62,23 +62,6 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         <span className="text-sm">{label}</span>
                     </button>
                 ))}
-
-                {/* Messages — NEW from feature/chat branch */}
-                <button
-                    onClick={() => setActiveTab('messages')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                        ${activeTab === 'messages'
-                            ? 'bg-indigo-50 text-indigo-600 font-bold'
-                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                >
-                    <MessageCircle size={20} />
-                    <span className="text-sm flex-1 text-left">Messages</span>
-                    {unreadMessages > 0 && (
-                        <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full">
-                            {unreadMessages > 99 ? '99+' : unreadMessages}
-                        </span>
-                    )}
-                </button>
 
                 {/* My Team — only visible to Team Leads */}
                 {user?.isTeamLead && (
@@ -96,10 +79,6 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         </span>
                     </button>
                 )}
-
-                {/* Commented out onboarding links preserved below */}
-                {/* <Link to="/practice-onboarding" ...> */}
-                {/* <button onClick={() => navigate('/practice-onboarding')} ...> */}
             </nav>
 
             {/* Profile + Logout */}

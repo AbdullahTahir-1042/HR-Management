@@ -3,7 +3,7 @@ import axios from 'axios';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Megaphone } from 'lucide-react';
+import { X, Megaphone, ArrowLeft } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { requestForToken, onMessageListener } from '../firebase';
@@ -70,6 +70,30 @@ const EmployeeDashboard = () => {
 
     const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [navHistory, setNavHistory] = useState([]);
+
+    const handleTabChange = (newTab) => {
+        if (newTab === activeTab) return;
+        if (newTab === 'dashboard') {
+            setNavHistory([]);
+        } else {
+            setNavHistory(prev => [...prev, activeTab]);
+        }
+        setActiveTab(newTab);
+        setSidebarOpen(false);
+    };
+
+    const handleGoBack = () => {
+        if (navHistory.length > 0) {
+            const lastTab = navHistory[navHistory.length - 1];
+            setNavHistory(prev => prev.slice(0, -1));
+            setActiveTab(lastTab);
+            return;
+        }
+        setActiveTab('dashboard');
+    };
+
+    const canGoBack = activeTab !== 'dashboard';
 
     // Filters
     const [announcements, setAnnouncements] = useState([]);
@@ -298,6 +322,20 @@ const EmployeeDashboard = () => {
         }
     };
 
+    // Combined helper: refresh leaves + balances together
+    const refreshLeavesAndBalances = async () => {
+        try {
+            const [leavesRes, balancesRes] = await Promise.all([
+                apiClient.get('/leaves/my-leaves'),
+                apiClient.get('/leaves/balances')
+            ]);
+            setLeaves(leavesRes.data);
+            setLeaveBalances(balancesRes.data);
+        } catch (err) {
+            console.error('Error refreshing leaves/balances:', err);
+        }
+    };
+
     const fetchAllAnnouncements = async () => {
         try {
             const res = await apiClient.get('/announcements');
@@ -376,17 +414,18 @@ const EmployeeDashboard = () => {
         const end = new Date(leaveForm.endDate);
         if (start > end) return alert('Start date cannot be after the end date.');
         const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-        const noticeDays = Math.ceil(Math.abs(start - new Date()) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1 && noticeDays < 4)
-            return alert('For a 1-day leave, you must apply at least 4 days in advance.');
-        if (diffDays > 1 && noticeDays < 8)
-            return alert('For leaves longer than 1 day, you must apply at least 8 days in advance.');
         try {
             await apiClient.post('/leaves/apply', leaveForm);
             alert('Leave request submitted!');
             setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
             fetchMyLeaves();
             fetchLeaveBalances();
+            // Notify HR portal instantly via BroadcastChannel (same pattern as announcements)
+            try {
+                const bc = new BroadcastChannel('leaves_channel');
+                bc.postMessage({ type: 'LEAVE_STATUS_CHANGED', status: 'pending' });
+                bc.close();
+            } catch (e) { /* BroadcastChannel not supported */ }
         } catch (err) {
             alert(err.response?.data?.msg || 'Error applying for leave');
         }
@@ -397,6 +436,32 @@ const EmployeeDashboard = () => {
     useEffect(() => {
         setSidebarOpen(false);
     }, [activeTab]);
+
+    // ── Refresh leaves & balances whenever the Leaves tab is opened ────────────
+    useEffect(() => {
+        if (activeTab === 'leaves') {
+            refreshLeavesAndBalances();
+        }
+    }, [activeTab]);
+
+    // ── BroadcastChannel: sync instantly when HR approves/rejects a leave ─────
+    // Same pattern as announcements_channel \u2014 zero polling, instant update.
+    useEffect(() => {
+        if (!('BroadcastChannel' in window)) return;
+        let bc;
+        try {
+            bc = new BroadcastChannel('leaves_channel');
+            bc.onmessage = (event) => {
+                if (event.data?.type === 'LEAVE_STATUS_CHANGED') {
+                    // Silently refresh leaves & balances \u2014 no loading flash
+                    refreshLeavesAndBalances();
+                }
+            };
+        } catch (e) {
+            console.error('BroadcastChannel setup error (leaves_channel):', e);
+        }
+        return () => { if (bc) bc.close(); };
+    }, []);
 
     if (loading) {
         return (
@@ -425,7 +490,7 @@ const EmployeeDashboard = () => {
             <EmployeeSidebar
                 unreadMessages={unreadMessages}
                 activeTab={activeTab}
-                setActiveTab={setActiveTab}
+                setActiveTab={handleTabChange}
                 user={fullUser || authUser}
                 logout={logout}
                 isOpen={isSidebarOpen}
@@ -440,9 +505,28 @@ const EmployeeDashboard = () => {
             )}
 
             <main className="flex-1 overflow-y-auto">
-                <EmployeeHeader activeTab={activeTab} setSidebarOpen={setSidebarOpen} />
+                <EmployeeHeader
+                    activeTab={activeTab}
+                    setActiveTab={handleTabChange}
+                    onBack={handleGoBack}
+                    canGoBack={canGoBack}
+                    setSidebarOpen={setSidebarOpen}
+                />
 
                 <div className="p-4 md:p-8 max-w-7xl mx-auto">
+                    {/* Inline Body Back Button */}
+                    {activeTab !== 'dashboard' && canGoBack && (
+                        <div className="mb-6">
+                            <button 
+                                onClick={handleGoBack}
+                                className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-2xs group cursor-pointer"
+                            >
+                                <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
+                                <span>Back</span>
+                            </button>
+                        </div>
+                    )}
+
                     <AnimatePresence mode="wait">
 
                         {activeTab === 'dashboard' && (
@@ -471,6 +555,7 @@ const EmployeeDashboard = () => {
 
                         {activeTab === 'leaves' && (
                             <EmployeeLeaves
+                                user={fullUser || authUser}
                                 leaveForm={leaveForm}
                                 setLeaveForm={setLeaveForm}
                                 handleApplyLeave={handleApplyLeave}
@@ -481,6 +566,7 @@ const EmployeeDashboard = () => {
                                 setStatusFilter={setLeaveStatusFilter}
                                 leaveBalances={leaveBalances}
                                 leaveTypes={leaveTypes}
+                                onRefresh={refreshLeavesAndBalances}
                             />
                         )}
 

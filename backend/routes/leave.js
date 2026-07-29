@@ -198,41 +198,11 @@ router.post('/apply', auth, async (req, res) => {
 
         // Calculate duration in days
         const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-        
-        // Calculate days from today to start date
-        const noticePeriod = Math.ceil((start - today) / (1000 * 60 * 60 * 24));
-
-        if (duration === 1 && noticePeriod < 4) {
-            return res.status(400).json({ msg: 'One-day leave must be requested at least 4 days in advance.' });
-        }
-        if (duration > 1 && noticePeriod < 8) {
-            return res.status(400).json({ msg: 'Multi-day leave must be requested at least 8 days in advance.' });
+        if (duration <= 0) {
+            return res.status(400).json({ msg: 'End date cannot be before start date.' });
         }
 
-        // Validate leave balance
-        const currentYear = new Date().getFullYear();
-        const startOfYear = new Date(currentYear, 0, 1);
-        const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
-
-        // Find all approved leave requests for this user in the current year of this type
-        const approvedLeaves = await LeaveRequest.find({
-            employee: req.user.id,
-            status: 'approved',
-            leaveType: leaveTypeId,
-            startDate: { $gte: startOfYear, $lte: endOfYear }
-        });
-
-        let usedDays = 0;
-        approvedLeaves.forEach(leave => {
-            usedDays += calculateDays(leave.startDate, leave.endDate);
-        });
-
-        const remaining = leaveType.quota - usedDays;
-        if (duration > remaining) {
-            return res.status(400).json({
-                msg: `Insufficient leave balance for ${leaveType.name}. Remaining: ${remaining} day(s), requested: ${duration} day(s).`
-            });
-        }
+        // Create leave request (quota balance warning calculated on UI, excess converted to unpaid leave in payroll)
 
         const leave = new LeaveRequest({
             employee: req.user.id,
@@ -276,11 +246,27 @@ router.get('/my-leaves', auth, async (req, res) => {
 router.get('/all', [auth, isHR], async (req, res) => {
     try {
         const leaves = await LeaveRequest.find()
-            .populate('employee', ['name', 'email'])
+            .populate('employee', ['name', 'email', 'department', 'reportingTo', 'isTeamLead'])
             .populate('leaveType')
             .sort({ createdAt: -1 });
         res.json(leaves);
     } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE api/leaves/:id
+// @desc    Delete a leave request (HR only)
+// @access  Private (HR)
+router.delete('/:id', [auth, isHR], async (req, res) => {
+    try {
+        const leave = await LeaveRequest.findByIdAndDelete(req.params.id);
+        if (!leave) {
+            return res.status(404).json({ msg: 'Leave request not found' });
+        }
+        res.json({ msg: 'Leave request deleted successfully' });
+    } catch (err) {
+        console.error('Delete leave error:', err.message);
         res.status(500).send('Server Error');
     }
 });
@@ -295,34 +281,7 @@ router.put('/:id/status', [auth, isHR], async (req, res) => {
         let leave = await LeaveRequest.findById(req.params.id).populate('leaveType');
         if (!leave) return res.status(404).json({ msg: 'Leave request not found' });
 
-        // Validate leave balance before approving
-        if (status === 'approved' && leave.status !== 'approved') {
-            const currentYear = new Date().getFullYear();
-            const startOfYear = new Date(currentYear, 0, 1);
-            const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
-            // Fetch approved leaves of this type for the employee this year
-            const approvedLeaves = await LeaveRequest.find({
-                employee: leave.employee,
-                status: 'approved',
-                leaveType: leave.leaveType._id,
-                startDate: { $gte: startOfYear, $lte: endOfYear }
-            });
-
-            let usedDays = 0;
-            approvedLeaves.forEach(l => {
-                usedDays += calculateDays(l.startDate, l.endDate);
-            });
-
-            const requestedDays = calculateDays(leave.startDate, leave.endDate);
-            const remaining = leave.leaveType.quota - usedDays;
-
-            if (requestedDays > remaining) {
-                return res.status(400).json({
-                    msg: `Cannot approve. Insufficient leave balance for ${leave.leaveType.name}. Remaining: ${remaining} day(s), requested: ${requestedDays} day(s).`
-                });
-            }
-        }
 
         leave.status = status;
         await leave.save();

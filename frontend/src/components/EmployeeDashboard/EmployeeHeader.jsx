@@ -1,6 +1,6 @@
-import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft } from 'lucide-react';
 
-const EmployeeHeader = ({ activeTab, setSidebarOpen }) => {
+const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, setSidebarOpen }) => {
     const config = {
         dashboard:     { icon: <LayoutDashboard size={24} className="text-indigo-600" />, label: 'Overview' },
         attendance:    { icon: <Clock size={24} className="text-indigo-600" />,           label: 'Mark Attendance' },

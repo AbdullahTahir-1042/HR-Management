@@ -14,11 +14,15 @@ import {
     Bell,
     User,
     Menu,
-    AlertTriangle
+    AlertTriangle,
+    ArrowLeft
 } from 'lucide-react';
 
 const HRHeader = ({ 
     activeTab, 
+    setActiveTab,
+    onBack,
+    canGoBack = true,
     leaveFilter, 
     setLeaveFilter, 
     attendanceDateFilter, 
@@ -95,12 +99,28 @@ const HRHeader = ({
                             type="date"
                             value={attendanceDateFilter}
                             onChange={(e) => setAttendanceDateFilter(e.target.value)}
-                            className="px-4 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm flex-1 sm:flex-none"
+                            className="px-3 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm flex-1 sm:flex-none"
                         />
-                        {attendanceDateFilter && (
-                            <button onClick={() => setAttendanceDateFilter('')} className="text-xs text-indigo-600 font-bold hover:underline">
-                                Clear
+                        {attendanceDateFilter !== new Date().toISOString().slice(0, 10) && (
+                            <button
+                                onClick={() => setAttendanceDateFilter(new Date().toISOString().slice(0, 10))}
+                                className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors"
+                            >
+                                Today
                             </button>
+                        )}
+                        {attendanceDateFilter !== '' ? (
+                            <button 
+                                onClick={() => setAttendanceDateFilter('')} 
+                                className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors"
+                                title="View complete historical logs"
+                            >
+                                All Logs
+                            </button>
+                        ) : (
+                            <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold">
+                                All Logs Active
+                            </span>
                         )}
                     </div>
                 )}

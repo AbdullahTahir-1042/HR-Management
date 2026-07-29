@@ -17,10 +17,36 @@ router.post('/register', [auth, isHR], async (req, res) => {
     let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead } = req.body;
     if (email) email = email.toLowerCase();
 
+    // ── Server-Side Strong Validations ───────────────────────────────────────
+    if (!name || name.trim().length < 3) {
+        return res.status(400).json({ msg: 'Full name must be at least 3 characters long' });
+    }
+    const nameWords = name.trim().split(/\s+/);
+    if (nameWords.length < 2) {
+        return res.status(400).json({ msg: 'Please provide both first and last name (e.g. John Doe)' });
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email || !emailRegex.test(email.trim())) {
+        return res.status(400).json({ msg: 'Please provide a valid work email address' });
+    }
+    const phoneDigits = phone ? phone.replace(/\D/g, '') : '';
+    if (!phone || phoneDigits.length < 10 || phoneDigits.length > 15) {
+        return res.status(400).json({ msg: 'Phone number must contain between 10 and 15 digits' });
+    }
+    if (/^(\d)\1{8,}$/.test(phoneDigits) || phoneDigits === '1234567890' || phoneDigits === '0123456789' || phoneDigits === '9876543210') {
+        return res.status(400).json({ msg: 'Please provide a valid, real phone number (repetitive or sequential dummy digits are not allowed)' });
+    }
+    if (!password || password.length < 6 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+        return res.status(400).json({ msg: 'Password must be at least 6 characters with at least one letter and one number' });
+    }
+    if (salary === undefined || salary === null || isNaN(salary) || Number(salary) < 10000 || Number(salary) > 50000000) {
+        return res.status(400).json({ msg: 'Annual salary must be a valid number between ₨ 10,000 and ₨ 50,000,000' });
+    }
+
     try {
         let user = await User.findOne({ email });
         if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
+            return res.status(400).json({ msg: 'An account with this email address already exists' });
         }
 
         let departmentId = null;

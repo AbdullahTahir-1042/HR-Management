@@ -45,16 +45,23 @@ const cardVariants = {
 
 // ── sub-components ──────────────────────────────────────────────────────────────
 
-const StatCard = ({ icon: Icon, label, value, color }) => (
-    <div className={`bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4 shadow-sm`}>
-        <div className={`p-3 rounded-xl ${color}`}>
+const StatCard = ({ icon: Icon, label, value, active, color, onClick }) => (
+    <button
+        onClick={onClick}
+        className={`text-left bg-white rounded-2xl border p-5 flex items-center gap-4 transition-all cursor-pointer group ${
+            active 
+                ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10' 
+                : 'border-slate-200 hover:border-indigo-300 hover:shadow-xs'
+        }`}
+    >
+        <div className={`p-3 rounded-xl transition-all ${color}`}>
             <Icon size={20} className="text-white" />
         </div>
         <div>
-            <p className="text-xs text-slate-400 font-medium">{label}</p>
-            <p className="text-2xl font-bold text-slate-800">{value}</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{label}</p>
+            <p className="text-2xl font-black text-slate-800">{value}</p>
         </div>
-    </div>
+    </button>
 );
 
 // ── modal component ─────────────────────────────────────────────────────────────
@@ -98,24 +105,28 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
                     </div>
                     <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
+                            <h2 className="text-xl font-bold text-slate-800">{holiday.name}</h2>
+                            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
                                 {holiday.type || 'Public'}
                             </span>
-                            {upcoming && (
-                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded-full">
-                                    Upcoming
-                                </span>
-                            )}
                         </div>
-                        <h2 className="text-xl font-bold text-slate-800 leading-snug">{holiday.name}</h2>
+                        {upcoming ? (
+                            <span className="inline-block text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                                Upcoming Holiday
+                            </span>
+                        ) : (
+                            <span className="inline-block text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                                Past Holiday
+                            </span>
+                        )}
                     </div>
                 </div>
 
-                {/* Details Grid */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                {/* Details list */}
+                <div className="space-y-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-400 font-medium flex items-center gap-2">
-                            <Clock size={16} className="text-slate-400" /> Start Date
+                            <CalendarDays size={16} className="text-slate-400" /> Start Date
                         </span>
                         <span className="font-semibold text-slate-700">{formatDate(holiday.startDate)}</span>
                     </div>
@@ -152,7 +163,7 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
                 {/* Action button */}
                 <button
                     onClick={onClose}
-                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-2xl transition-all shadow-md"
+                    className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-2xl transition-all shadow-md cursor-pointer"
                 >
                     Close Details
                 </button>
@@ -227,13 +238,13 @@ const EmptyState = () => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="col-span-full flex flex-col items-center justify-center py-24 text-center"
+        className="col-span-full flex flex-col items-center justify-center py-24 text-center bg-white rounded-3xl border border-slate-100 p-8"
     >
         <div className="bg-indigo-50 p-5 rounded-full mb-4">
-            <CalendarDays size={32} className="text-indigo-300" />
+            <CalendarDays size={32} className="text-indigo-400" />
         </div>
-        <p className="text-slate-700 font-semibold text-lg">No holidays found</p>
-        <p className="text-slate-400 text-sm mt-1">There are no holidays scheduled at the moment.</p>
+        <p className="text-slate-800 font-bold text-lg">No holidays found</p>
+        <p className="text-slate-400 text-sm mt-1">There are no holidays matching the selected filter.</p>
     </motion.div>
 );
 
@@ -241,20 +252,23 @@ const EmptyState = () => (
 
 const EmployeeHolidays = ({ holidays = [] }) => {
     const [selectedHoliday, setSelectedHoliday] = React.useState(null);
+    const [filter, setFilter] = React.useState('all'); // 'all' | 'upcoming' | 'past'
 
-    const upcoming = useMemo(
-        () => holidays.filter((h) => isUpcoming(h.startDate)),
+    const upcomingCount = useMemo(
+        () => holidays.filter((h) => isUpcoming(h.startDate)).length,
         [holidays]
     );
 
-    const typeCount = useMemo(() => {
-        const counts = {};
-        holidays.forEach((h) => {
-            const t = h.type || 'Public';
-            counts[t] = (counts[t] || 0) + 1;
-        });
-        return counts;
-    }, [holidays]);
+    const pastCount = useMemo(
+        () => holidays.filter((h) => !isUpcoming(h.startDate)).length,
+        [holidays]
+    );
+
+    const filteredHolidays = useMemo(() => {
+        if (filter === 'upcoming') return holidays.filter((h) => isUpcoming(h.startDate));
+        if (filter === 'past') return holidays.filter((h) => !isUpcoming(h.startDate));
+        return holidays;
+    }, [holidays, filter]);
 
     return (
         <motion.div
@@ -266,40 +280,59 @@ const EmployeeHolidays = ({ holidays = [] }) => {
             className="space-y-8"
         >
             {/* ── Page Title ── */}
-            <div className="flex items-center gap-3">
-                <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-100">
-                    <PartyPopper size={22} className="text-white" />
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-100">
+                        <PartyPopper size={22} className="text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">Holiday Calendar</h1>
+                        <p className="text-sm text-slate-400">Official company holidays for the year</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Holiday Calendar</h1>
-                    <p className="text-sm text-slate-400">Official company holidays for the year</p>
-                </div>
+
+                {filter !== 'all' && (
+                    <button
+                        onClick={() => setFilter('all')}
+                        className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Clear Filter"
+                    >
+                        <span>Showing: {filter === 'upcoming' ? 'Upcoming Holidays' : 'Past Holidays'}</span>
+                        <span className="text-amber-900 font-extrabold text-sm">&times;</span>
+                    </button>
+                )}
             </div>
 
-            {/* ── Stat Cards ── */}
+            {/* ── Interactive Stat Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatCard
                     icon={CalendarDays}
                     label="Total Holidays"
                     value={holidays.length}
-                    color="bg-indigo-500"
+                    active={filter === 'all'}
+                    color="bg-indigo-600"
+                    onClick={() => setFilter('all')}
                 />
                 <StatCard
                     icon={Clock}
                     label="Upcoming"
-                    value={upcoming.length}
-                    color="bg-emerald-500"
+                    value={upcomingCount}
+                    active={filter === 'upcoming'}
+                    color="bg-emerald-600"
+                    onClick={() => setFilter('upcoming')}
                 />
                 <StatCard
                     icon={Tag}
-                    label="Holiday Types"
-                    value={Object.keys(typeCount).length}
-                    color="bg-amber-500"
+                    label="Past Holidays"
+                    value={pastCount}
+                    active={filter === 'past'}
+                    color="bg-amber-600"
+                    onClick={() => setFilter('past')}
                 />
             </div>
 
             {/* ── Holiday Grid ── */}
-            {holidays.length === 0 ? (
+            {filteredHolidays.length === 0 ? (
                 <EmptyState />
             ) : (
                 <motion.div
@@ -308,7 +341,7 @@ const EmployeeHolidays = ({ holidays = [] }) => {
                     animate="visible"
                     className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
                 >
-                    {holidays.map((holiday, index) => (
+                    {filteredHolidays.map((holiday) => (
                         <HolidayCard 
                             key={holiday._id} 
                             holiday={holiday} 
