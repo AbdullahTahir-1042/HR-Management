@@ -14,7 +14,7 @@ const { auth, isHR } = require('../middleware/auth');
 // @desc    Register user (HR only)
 // @access  Private (HR)
 router.post('/register', [auth, isHR], async (req, res) => {
-    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead } = req.body;
+    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead, joiningStatus, promotionRank } = req.body;
     if (email) email = email.toLowerCase();
 
     // ── Server-Side Strong Validations ───────────────────────────────────────
@@ -43,6 +43,17 @@ router.post('/register', [auth, isHR], async (req, res) => {
         return res.status(400).json({ msg: 'Annual salary must be a valid number between ₨ 10,000 and ₨ 50,000,000' });
     }
 
+    const validJoiningStatuses = ['Intern', 'Fresh Join'];
+    if (!joiningStatus || !validJoiningStatuses.includes(joiningStatus)) {
+        return res.status(400).json({ msg: 'Employee Joining Status is required and must be either Intern or Fresh Join' });
+    }
+
+    const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+    let initialRank = promotionRank;
+    if (!initialRank || !validRanks.includes(initialRank)) {
+        initialRank = joiningStatus === 'Intern' ? 'Intern' : 'Junior';
+    }
+
     try {
         let user = await User.findOne({ email });
         if (user) {
@@ -63,6 +74,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
             password,
             role: role || 'employee',
             status,
+            joiningStatus,
+            promotionRank: initialRank,
             salary,
             photo,
             department,
@@ -178,7 +191,7 @@ router.get('/colleagues', auth, async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
@@ -203,6 +216,20 @@ router.put('/users/:id', auth, async (req, res) => {
             if (role !== undefined) user.role = role;
             if (status !== undefined) user.status = status;
             if (salary !== undefined) user.salary = salary;
+            if (promotionRank !== undefined) {
+                const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+                if (!validRanks.includes(promotionRank)) {
+                    return res.status(400).json({ msg: 'Invalid Promotion Rank value' });
+                }
+                user.promotionRank = promotionRank;
+            }
+            if (joiningStatus !== undefined) {
+                const validJoiningStatuses = ['Intern', 'Fresh Join'];
+                if (!validJoiningStatuses.includes(joiningStatus)) {
+                    return res.status(400).json({ msg: 'Invalid Joining Status value' });
+                }
+                user.joiningStatus = joiningStatus;
+            }
             if (department !== undefined) {
                 const oldDeptId = user.departmentId;
                 const newDept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
