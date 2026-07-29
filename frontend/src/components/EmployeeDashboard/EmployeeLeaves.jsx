@@ -28,7 +28,13 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
     };
 
     // Selected leave balance lookup & excess/deduction calculation
-    const selectedBalance = leaveBalances.find(b => String(b.leaveType?._id) === String(leaveForm.leaveTypeId));
+    const getLeaveTypeId = (leaveType) => {
+        if (!leaveType) return '';
+        if (typeof leaveType === 'object') return String(leaveType._id || leaveType.id || '');
+        return String(leaveType);
+    };
+
+    const selectedBalance = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === String(leaveForm.leaveTypeId));
 
     const deductionPreview = React.useMemo(() => {
         if (!leaveForm.startDate || !leaveForm.endDate || !selectedBalance) return null;
@@ -120,10 +126,11 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                         >
                                             <option value="">Select Type</option>
                                             {leaveTypes.map(t => {
-                                                const balance = leaveBalances.find(b => String(b.leaveType?._id) === String(t._id));
+                                                const typeId = String(t._id || t.id || '');
+                                                const balance = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeId);
                                                 const remaining = balance !== undefined ? balance.remaining : t.quota;
                                                 return (
-                                                    <option key={t._id} value={t._id}>
+                                                    <option key={typeId} value={typeId}>
                                                         {t.name} ({remaining} {remaining === 1 ? 'day left' : 'days left'})
                                                     </option>
                                                 );
