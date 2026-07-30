@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Mail, Shield, Calendar, UserPlus, Briefcase,
     Building2, UserCheck, Trash2, Crown, Phone, Eye, Pencil,
-    LayoutGrid, List, Search, Filter, AlertCircle, TrendingUp, AlertTriangle
+    LayoutGrid, List, Search, Filter, AlertCircle, TrendingUp, AlertTriangle, UserX
 } from 'lucide-react';
 
 const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, onEdit, onDelete }) => {
     const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
     const [deptFilter, setDeptFilter] = useState('all');
-    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads'
+    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads' | 'inactive'
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
@@ -51,6 +51,8 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
             matchesStatus = emp.status === 'probation' || emp.status === 'internship';
         } else if (statusFilter === 'teamLeads') {
             matchesStatus = !!emp.isTeamLead;
+        } else if (statusFilter === 'inactive') {
+            matchesStatus = emp.status === 'Inactive';
         }
 
         return matchesSearch && matchesDept && matchesStatus;
@@ -61,12 +63,13 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
     const fullTimeCount = employees.filter(e => e.status === 'full time' || !e.status).length;
     const probationCount = employees.filter(e => e.status === 'probation' || e.status === 'internship').length;
     const teamLeadsCount = employees.filter(e => e.isTeamLead).length;
+    const inactiveCount = employees.filter(e => e.status === 'Inactive').length;
 
     return (
         <div className="space-y-8">
 
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Total Staff Card */}
                 <button
                     onClick={() => setStatusFilter('all')}
@@ -138,6 +141,24 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                         <p className="text-2xl font-black text-slate-800">{teamLeadsCount}</p>
                     </div>
                 </button>
+
+                {/* Inactive Card */}
+                <button
+                    onClick={() => setStatusFilter('inactive')}
+                    className={`text-left bg-white p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 group ${statusFilter === 'inactive'
+                            ? 'border-slate-500 ring-2 ring-slate-500/10 shadow-md bg-slate-50'
+                            : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+                        }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${statusFilter === 'inactive' ? 'bg-slate-600 text-white' : 'bg-slate-50 text-slate-500 group-hover:bg-slate-200'
+                        }`}>
+                        <UserX size={22} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Inactive</p>
+                        <p className="text-2xl font-black text-slate-800">{inactiveCount}</p>
+                    </div>
+                </button>
             </div>
 
             {/* Header Controls Bar */}
@@ -154,7 +175,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                             className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                             title="Clear Status Filter"
                         >
-                            <span>Filter: {statusFilter === 'teamLeads' ? 'Team Leads' : statusFilter === 'full time' ? 'Full Time' : 'Probation/Interns'}</span>
+                            <span>Filter: {statusFilter === 'teamLeads' ? 'Team Leads' : statusFilter === 'inactive' ? 'Inactive' : statusFilter === 'full time' ? 'Full Time' : 'Probation/Interns'}</span>
                             <span className="text-amber-900 font-extrabold text-sm">&times;</span>
                         </button>
                     )}
@@ -243,7 +264,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                 <tr
                                     key={emp._id}
                                     onClick={() => onSelect && onSelect(emp)}
-                                    className="table-row"
+                                    className={`table-row ${emp.status === 'Inactive' ? 'opacity-50 hover:opacity-100 grayscale' : ''}`}
                                 >
                                         {/* Employee Name, Photo, Email, Phone & Lead badge */}
                                         <td className="px-3 py-3">

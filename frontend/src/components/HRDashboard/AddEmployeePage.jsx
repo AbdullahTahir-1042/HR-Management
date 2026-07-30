@@ -218,6 +218,14 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         }
     }, [formData.department, departmentsList]);
 
+    // Reset isTeamLead to false if the employee is an Intern
+    useEffect(() => {
+        const isIntern = formData.status === 'internship' || formData.joiningStatus === 'Intern' || formData.promotionRank === 'Intern';
+        if (isIntern && formData.isTeamLead) {
+            setFormData(prev => ({ ...prev, isTeamLead: false }));
+        }
+    }, [formData.status, formData.joiningStatus, formData.promotionRank]);
+
     // ── Validate a single field ───────────────────────────────────────────────
     const validateField = useCallback((fieldName, value) => {
         const validator = validators[fieldName];
@@ -506,17 +514,19 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                 );
                                 const hasExistingLead = selectedDeptObj && selectedDeptObj.teamLead;
                                 const existingLeadName = hasExistingLead ? (selectedDeptObj.teamLead.name || 'Another employee') : '';
+                                
+                                const isIntern = formData.status === 'internship' || formData.joiningStatus === 'Intern' || formData.promotionRank === 'Intern';
 
                                 return (
                                     <div className="space-y-2">
                                         <div
                                             onClick={() => {
-                                                if (!hasExistingLead) {
+                                                if (!hasExistingLead && !isIntern) {
                                                     setFormData({...formData, isTeamLead: !formData.isTeamLead});
                                                 }
                                             }}
                                             className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                                                hasExistingLead
+                                                hasExistingLead || isIntern
                                                     ? 'border-slate-200 bg-slate-100/50 cursor-not-allowed opacity-60'
                                                     : formData.isTeamLead
                                                         ? 'border-amber-300 bg-amber-50 cursor-pointer'
@@ -551,6 +561,14 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                                 <AlertCircle size={14} className="shrink-0" />
                                                 <span>
                                                     {existingLeadName} is already assigned as the Team Lead of this department.
+                                                </span>
+                                            </div>
+                                        )}
+                                        {isIntern && !hasExistingLead && (
+                                            <div className="flex items-center gap-2 text-rose-600 bg-rose-50/50 border border-rose-100 rounded-xl p-3 text-[11px] font-semibold">
+                                                <AlertCircle size={14} className="shrink-0" />
+                                                <span>
+                                                    Interns cannot be assigned as Team Leads.
                                                 </span>
                                             </div>
                                         )}

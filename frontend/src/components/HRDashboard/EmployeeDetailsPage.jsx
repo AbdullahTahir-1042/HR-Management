@@ -208,7 +208,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                         onClick={() => onDelete(employee._id)}
                         className="btn-danger font-bold text-xs uppercase tracking-wider"
                     >
-                        <Trash2 size={14}/> Delete Profile
+                        <Trash2 size={14}/> Mark as Inactive
                     </button>
                 </div>
             </div>

@@ -320,12 +320,11 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
         }
 
-        // Permanently delete user
-        await user.deleteOne();
-        
-        // Clean up leaves, attendance, etc.
-        await LeaveRequest.deleteMany({ employee: req.params.id });
-        await Attendance.deleteMany({ employee: req.params.id });
+        // Shift to Inactive instead of hard delete
+        user.status = 'Inactive';
+        user.isDeleted = false; // Still visible to HR, but blocked from login
+        user.isTeamLead = false; // Remove them from Team Lead if they are one
+        await user.save();
 
         // Clean up conversations and messages for the deleted user
         const userConversations = await Conversation.find({ participants: req.params.id });
@@ -358,7 +357,7 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             }
         }
 
-        res.json({ msg: 'User permanently deleted' });
+        res.json({ msg: 'User marked as Inactive' });
     } catch (err) {
         console.error('Delete Error:', err.message);
         res.status(500).send('Server Error');

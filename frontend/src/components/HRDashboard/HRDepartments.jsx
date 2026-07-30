@@ -76,7 +76,14 @@ const AssignTeamLeadModal = ({ dept, onClose, onSuccess }) => {
                     </p>
                 ) : (
                     <div className="space-y-2 max-h-56 overflow-y-auto mb-4">
-                        {members.map((m) => (
+                        {members.filter(m => m.status !== 'internship' && m.joiningStatus !== 'Intern' && m.promotionRank !== 'Intern').length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-4">
+                                No eligible employees to assign as team lead (Interns cannot be team leads).
+                            </p>
+                        ) : (
+                            members
+                                .filter(m => m.status !== 'internship' && m.joiningStatus !== 'Intern' && m.promotionRank !== 'Intern')
+                                .map((m) => (
                             <label
                                 key={m._id}
                                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
@@ -99,7 +106,7 @@ const AssignTeamLeadModal = ({ dept, onClose, onSuccess }) => {
                                 </div>
                                 {dept.teamLead?._id === m._id && <TeamLeadBadge />}
                             </label>
-                        ))}
+                        )))}
                     </div>
                 )}
 
@@ -144,8 +151,13 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
     // Filter employees who are not assigned to any department
     const eligibleEmployees = allEmployees.filter(emp => !emp.departmentId);
 
-    // Only allow selected members to be eligible team leads
-    const eligibleTeamLeads = eligibleEmployees.filter(emp => selectedEmployeeIds.includes(emp._id));
+    // Only allow selected members to be eligible team leads and exclude interns
+    const eligibleTeamLeads = eligibleEmployees.filter(emp => 
+        selectedEmployeeIds.includes(emp._id) && 
+        emp.status !== 'internship' && 
+        emp.joiningStatus !== 'Intern' && 
+        emp.promotionRank !== 'Intern'
+    );
 
     // Check if typed name matches an existing department
     const nameExact = existingDepartments.find(
@@ -448,8 +460,13 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
         return isCurrentMember || isUnassigned;
     });
 
-    // Only allow selected members to be eligible team leads
-    const eligibleTeamLeads = eligibleEmployees.filter(emp => selectedEmployeeIds.includes(emp._id));
+    // Only allow selected members to be eligible team leads and exclude interns
+    const eligibleTeamLeads = eligibleEmployees.filter(emp => 
+        selectedEmployeeIds.includes(emp._id) && 
+        emp.status !== 'internship' && 
+        emp.joiningStatus !== 'Intern' && 
+        emp.promotionRank !== 'Intern'
+    );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
