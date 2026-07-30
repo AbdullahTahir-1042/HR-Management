@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, Star, Plus, Edit3, Trash2, X, Save, AlertCircle,
     DollarSign, Award, Calendar, User, ChevronRight, BarChart3,
-    CheckCircle2, Clock, XCircle, ArrowUpRight, FileText, Target
+    CheckCircle2, Clock, XCircle, ArrowUpRight, FileText, Target, ShieldCheck
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+import { AuthContext } from '../../context/AuthContext';
 
 // ── Rating Labels ─────────────────────────────────────────────────────────────
 const RATING_LABELS = {
@@ -25,19 +26,19 @@ const RATING_COLORS = {
 };
 
 const RATING_BG = {
-    1: 'bg-rose-50 border-rose-100',
-    2: 'bg-amber-50 border-amber-100',
-    3: 'bg-sky-50 border-sky-100',
-    4: 'bg-emerald-50 border-emerald-100',
-    5: 'bg-indigo-50 border-indigo-100'
+    1: 'bg-rose-50/50 border-rose-100',
+    2: 'bg-amber-50/50 border-amber-100',
+    3: 'bg-sky-50/50 border-sky-100',
+    4: 'bg-emerald-50/50 border-emerald-100',
+    5: 'bg-indigo-50/50 border-indigo-100'
 };
 
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 
 const STATUS_STYLES = {
-    Pending: 'bg-amber-100 text-amber-700',
-    Approved: 'bg-emerald-100 text-emerald-700',
-    Rejected: 'bg-rose-100 text-rose-700'
+    Pending: 'bg-amber-50 text-amber-700 border-amber-200',
+    Approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Rejected: 'bg-rose-50 text-rose-700 border-rose-200'
 };
 
 // ── Star Rating Display ───────────────────────────────────────────────────────
@@ -52,6 +53,50 @@ const StarRating = ({ rating, size = 14 }) => (
         ))}
     </div>
 );
+
+// ── Custom Interactive Star Rating Selector ─────────────────────────────────
+const StarRatingSelector = ({ value, onChange, error }) => {
+    const [hoverValue, setHoverValue] = useState(null);
+    
+    const LABEL_CLASS = "text-[9px] font-bold text-slate-400 uppercase ml-1 tracking-widest";
+    
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className={LABEL_CLASS}>Overall Rating *</label>
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 min-h-[50px] focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
+                <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                            key={star}
+                            type="button"
+                            onClick={() => onChange(star)}
+                              onMouseEnter={() => setHoverValue(star)}
+                              onMouseLeave={() => setHoverValue(null)}
+                            className="focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer"
+                        >
+                            <Star
+                                size={22}
+                                className={`${
+                                    star <= (hoverValue || value)
+                                        ? 'text-amber-400 fill-amber-400'
+                                        : 'text-slate-200'
+                                } transition-colors duration-150`}
+                            />
+                        </button>
+                    ))}
+                </div>
+                {(hoverValue || value) ? (
+                    <span className={`text-xs font-black uppercase tracking-wider ml-1.5 ${RATING_COLORS[hoverValue || value]}`}>
+                        {RATING_LABELS[hoverValue || value]}
+                    </span>
+                ) : (
+                    <span className="text-xs text-slate-400 font-bold ml-1.5">Select a rating</span>
+                )}
+            </div>
+            {error && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{error}</p>}
+        </div>
+    );
+};
 
 // ── Format Helpers ────────────────────────────────────────────────────────────
 const formatSalary = (amount) => {
@@ -82,6 +127,8 @@ const formatDateInput = (dateStr) => {
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
 const IncrementReviewPage = ({ employee }) => {
+    const { user: hrUser } = useContext(AuthContext);
+
     const [activeSubTab, setActiveSubTab] = useState('increments');
     const [increments, setIncrements] = useState([]);
     const [reviews, setReviews] = useState([]);
@@ -102,9 +149,8 @@ const IncrementReviewPage = ({ employee }) => {
     const [showRevForm, setShowRevForm] = useState(false);
     const [editingRev, setEditingRev] = useState(null);
     const [revForm, setRevForm] = useState({
-        reviewDate: '', reviewPeriod: '', reviewer: '',
-        overallRating: '', comments: '', strengths: '',
-        areasForImprovement: '', goals: '', nextReviewDate: ''
+        reviewDate: '', reviewer: '', overallRating: '', 
+        comments: '', strengths: '', areasForImprovement: '', goals: '', nextReviewDate: ''
     });
     const [revErrors, setRevErrors] = useState({});
     const [revSubmitting, setRevSubmitting] = useState(false);
@@ -159,6 +205,7 @@ const IncrementReviewPage = ({ employee }) => {
     // INCREMENT FORM LOGIC
     // ══════════════════════════════════════════════════════════════════════
     const openIncForm = (inc = null) => {
+        const currentHrName = hrUser?.name || 'HR Admin';
         if (inc) {
             setEditingInc(inc);
             setIncForm({
@@ -167,7 +214,7 @@ const IncrementReviewPage = ({ employee }) => {
                 incrementAmount: inc.incrementAmount ?? '',
                 promotionRank: inc.promotionRank || '',
                 reason: inc.reason || '',
-                approvedBy: inc.approvedBy || '',
+                approvedBy: inc.approvedBy || currentHrName,
                 notes: inc.notes || '',
                 status: inc.status || 'Pending'
             });
@@ -179,7 +226,7 @@ const IncrementReviewPage = ({ employee }) => {
                 incrementAmount: '',
                 promotionRank: employee?.promotionRank || '',
                 reason: '',
-                approvedBy: '',
+                approvedBy: currentHrName,
                 notes: '',
                 status: 'Pending'
             });
@@ -228,8 +275,8 @@ const IncrementReviewPage = ({ employee }) => {
         }
         if (incForm.previousSalary === '' || Number(incForm.previousSalary) < 0) errs.previousSalary = 'Previous salary must be 0 or more';
         if (incForm.incrementAmount === '' || Number(incForm.incrementAmount) < 0) errs.incrementAmount = 'Increment amount must be 0 or more';
+        if (incForm.incrementAmount === 0 || incForm.incrementAmount === '0') errs.incrementAmount = 'Increment amount is required and must be greater than 0';
         if (!incForm.reason.trim()) errs.reason = 'Reason is required';
-        if (!incForm.approvedBy.trim()) errs.approvedBy = 'Approved By is required';
         if (incForm.promotionRank && !VALID_RANKS.includes(incForm.promotionRank)) errs.promotionRank = 'Invalid rank';
         setIncErrors(errs);
         return Object.keys(errs).length === 0;
@@ -247,7 +294,6 @@ const IncrementReviewPage = ({ employee }) => {
                 incrementAmount: Number(incForm.incrementAmount),
                 promotionRank: incForm.promotionRank || null,
                 reason: incForm.reason,
-                approvedBy: incForm.approvedBy,
                 notes: incForm.notes,
                 status: incForm.status
             };
@@ -280,31 +326,28 @@ const IncrementReviewPage = ({ employee }) => {
     // REVIEW FORM LOGIC
     // ══════════════════════════════════════════════════════════════════════
     const openRevForm = (rev = null) => {
+        const currentHrName = hrUser?.name || 'HR Admin';
         if (rev) {
             setEditingRev(rev);
             setRevForm({
                 reviewDate: formatDateInput(rev.reviewDate),
-                reviewPeriod: rev.reviewPeriod || '',
-                reviewer: rev.reviewer || '',
+                reviewer: rev.reviewer || currentHrName,
                 overallRating: rev.overallRating ?? '',
                 comments: rev.comments || '',
                 strengths: rev.strengths || '',
                 areasForImprovement: rev.areasForImprovement || '',
-                goals: rev.goals || '',
-                nextReviewDate: formatDateInput(rev.nextReviewDate)
+                goals: rev.goals || ''
             });
         } else {
             setEditingRev(null);
             setRevForm({
                 reviewDate: new Date().toISOString().split('T')[0],
-                reviewPeriod: '',
-                reviewer: '',
+                reviewer: currentHrName,
                 overallRating: '',
                 comments: '',
                 strengths: '',
                 areasForImprovement: '',
-                goals: '',
-                nextReviewDate: ''
+                goals: ''
             });
         }
         setRevErrors({});
@@ -320,11 +363,10 @@ const IncrementReviewPage = ({ employee }) => {
     const validateRevForm = () => {
         const errs = {};
         if (!revForm.reviewDate) errs.reviewDate = 'Review date is required';
-        if (!revForm.reviewPeriod.trim()) errs.reviewPeriod = 'Review period is required';
-        if (!revForm.reviewer.trim()) errs.reviewer = 'Reviewer name is required';
         const rating = Number(revForm.overallRating);
-        if (!revForm.overallRating || isNaN(rating) || rating < 1 || rating > 5) errs.overallRating = 'Rating must be between 1 and 5';
+        if (!revForm.overallRating || isNaN(rating) || rating < 1 || rating > 5) errs.overallRating = 'Rating is required';
         if (!revForm.comments.trim()) errs.comments = 'Comments are required';
+        if (!revForm.goals.trim()) errs.goals = 'Goals are required';
         setRevErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -337,14 +379,11 @@ const IncrementReviewPage = ({ employee }) => {
             const payload = {
                 employee: employee._id,
                 reviewDate: revForm.reviewDate,
-                reviewPeriod: revForm.reviewPeriod,
-                reviewer: revForm.reviewer,
                 overallRating: Number(revForm.overallRating),
                 comments: revForm.comments,
                 strengths: revForm.strengths,
                 areasForImprovement: revForm.areasForImprovement,
-                goals: revForm.goals,
-                nextReviewDate: revForm.nextReviewDate || null
+                goals: revForm.goals
             };
 
             if (editingRev) {
@@ -372,9 +411,10 @@ const IncrementReviewPage = ({ employee }) => {
     };
 
     // ── Shared Input Classes ─────────────────────────────────────────────
-    const INPUT_CLASS = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm";
-    const INPUT_ERR = "w-full px-4 py-3 bg-rose-50/30 border border-rose-300 rounded-2xl outline-none focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all text-sm";
-    const LABEL_CLASS = "text-[10px] font-bold text-slate-400 uppercase ml-1 tracking-widest";
+    const INPUT_CLASS = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm font-semibold text-slate-700";
+    const INPUT_ERR = "w-full px-4 py-3 bg-rose-50/30 border border-rose-300 rounded-2xl outline-none focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all text-sm font-semibold text-slate-700";
+    const LABEL_CLASS = "text-[9px] font-bold text-slate-400 uppercase ml-1 tracking-widest";
+    const READONLY_INPUT = "w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl outline-none text-slate-500 text-sm font-semibold cursor-default select-none pointer-events-none";
 
     // ══════════════════════════════════════════════════════════════════════
     // RENDER
@@ -382,9 +422,9 @@ const IncrementReviewPage = ({ employee }) => {
     return (
         <div className="space-y-6">
             {/* ── Career Summary Strip ───────────────────────────────────── */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-                <h3 className="text-sm font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
-                    <BarChart3 size={18} /> Career Summary
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
+                <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
+                    <BarChart3 size={16} /> Career Summary
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     {[
@@ -401,16 +441,16 @@ const IncrementReviewPage = ({ employee }) => {
                         },
                         { label: 'Last Review', value: careerSummary.lastRevDate, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' }
                     ].map((kpi, i) => (
-                        <div key={i} className={`${kpi.bg} p-3 rounded-2xl flex flex-col items-center text-center gap-1.5 border border-slate-100/50`}>
+                        <div key={i} className={`${kpi.bg} p-3.5 rounded-2xl flex flex-col items-center text-center gap-1 border border-slate-100/50`}>
                             <kpi.icon size={16} className={kpi.color} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{kpi.label}</span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
                             <span className={`text-[11px] font-bold ${kpi.color} leading-tight`}>{kpi.value}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* ── Sub-Tab Switcher ────────────────────────────────────────── */}
+            {/* ── Sub-Tab Switcher ── */}
             <div className="flex gap-2">
                 {[
                     { key: 'increments', label: 'Salary Increments', icon: TrendingUp },
@@ -419,13 +459,13 @@ const IncrementReviewPage = ({ employee }) => {
                     <button
                         key={tab.key}
                         onClick={() => setActiveSubTab(tab.key)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
                             activeSubTab === tab.key
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
                                 : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
                         }`}
                     >
-                        <tab.icon size={16} />
+                        <tab.icon size={14} />
                         {tab.label}
                     </button>
                 ))}
@@ -436,17 +476,20 @@ const IncrementReviewPage = ({ employee }) => {
                ══════════════════════════════════════════════════════════════ */}
             {activeSubTab === 'increments' && (
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="p-6 sm:p-8">
+                    <div className="p-6">
                         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                            <h3 className="text-sm font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest">
-                                <TrendingUp size={18} /> Salary Increment History
+                            <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-2">
+                                <TrendingUp size={16} /> Salary Increment History
                             </h3>
-                            <button
-                                onClick={() => openIncForm()}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-200 transition-all cursor-pointer"
-                            >
-                                <Plus size={16} /> Add Increment
-                            </button>
+                            {/* Hide Add Increment button when form is currently open */}
+                            {!showIncForm && (
+                                <button
+                                    onClick={() => openIncForm()}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-200 transition-all cursor-pointer"
+                                >
+                                    <Plus size={14} /> Add Increment
+                                </button>
+                            )}
                         </div>
 
                         {/* Increment Form Modal */}
@@ -458,19 +501,19 @@ const IncrementReviewPage = ({ employee }) => {
                                     exit={{ opacity: 0, height: 0 }}
                                     className="mb-8 overflow-hidden"
                                 >
-                                    <div className="bg-slate-50/80 border border-slate-200 rounded-3xl p-6 sm:p-8">
+                                    <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h4 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                                                <TrendingUp size={18} className="text-indigo-600" />
+                                            <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                                                <TrendingUp size={16} className="text-indigo-600" />
                                                 {editingInc ? 'Edit Increment Record' : 'New Increment Record'}
                                             </h4>
                                             <button onClick={closeIncForm} className="p-2 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer">
-                                                <X size={18} className="text-slate-400" />
+                                                <X size={16} className="text-slate-400" />
                                             </button>
                                         </div>
 
                                         {incErrors._server && (
-                                            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold rounded-2xl flex items-center gap-2">
+                                            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl flex items-center gap-2">
                                                 <AlertCircle size={16} /> {incErrors._server}
                                             </div>
                                         )}
@@ -481,6 +524,7 @@ const IncrementReviewPage = ({ employee }) => {
                                                 <label className={LABEL_CLASS}>Increment Date *</label>
                                                 <input
                                                     type="date"
+                                                    min={new Date().toISOString().split('T')[0]}
                                                     value={incForm.incrementDate}
                                                     onChange={e => setIncForm(p => ({ ...p, incrementDate: e.target.value }))}
                                                     className={incErrors.incrementDate ? INPUT_ERR : INPUT_CLASS}
@@ -496,15 +540,13 @@ const IncrementReviewPage = ({ employee }) => {
 
                                             {/* Previous Salary */}
                                             <div>
-                                                <label className={LABEL_CLASS}>Previous Salary (₨) *</label>
+                                                <label className={LABEL_CLASS}>Previous Salary (₨) (Read-only)</label>
                                                 <input
                                                     type="number"
-                                                    min="0"
                                                     value={incForm.previousSalary}
-                                                    onChange={e => setIncForm(p => ({ ...p, previousSalary: e.target.value }))}
-                                                    className={incErrors.previousSalary ? INPUT_ERR : INPUT_CLASS}
+                                                    readOnly
+                                                    className={READONLY_INPUT}
                                                 />
-                                                {incErrors.previousSalary && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{incErrors.previousSalary}</p>}
                                             </div>
 
                                             {/* Increment Amount */}
@@ -516,6 +558,7 @@ const IncrementReviewPage = ({ employee }) => {
                                                     value={incForm.incrementAmount}
                                                     onChange={e => setIncForm(p => ({ ...p, incrementAmount: e.target.value }))}
                                                     className={incErrors.incrementAmount ? INPUT_ERR : INPUT_CLASS}
+                                                    placeholder="Enter salary increase amount"
                                                 />
                                                 {incErrors.incrementAmount && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{incErrors.incrementAmount}</p>}
                                             </div>
@@ -542,7 +585,7 @@ const IncrementReviewPage = ({ employee }) => {
                                                 <select
                                                     value={incForm.promotionRank}
                                                     onChange={e => setIncForm(p => ({ ...p, promotionRank: e.target.value }))}
-                                                    className={`${incErrors.promotionRank ? INPUT_ERR : INPUT_CLASS} appearance-none`}
+                                                    className={`${incErrors.promotionRank ? INPUT_ERR : INPUT_CLASS} appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M7%209l3%203%203-3%22%20stroke%3D%22%252394a3b8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat`}
                                                 >
                                                     <option value="">— Keep Current —</option>
                                                     {VALID_RANKS.map(r => <option key={r} value={r}>{r}</option>)}
@@ -556,7 +599,7 @@ const IncrementReviewPage = ({ employee }) => {
                                                 <select
                                                     value={incForm.status}
                                                     onChange={e => setIncForm(p => ({ ...p, status: e.target.value }))}
-                                                    className={`${INPUT_CLASS} appearance-none`}
+                                                    className={`${INPUT_CLASS} appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M7%209l3%203%203-3%22%20stroke%3D%22%252394a3b8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat`}
                                                 >
                                                     <option value="Pending">Pending</option>
                                                     <option value="Approved">Approved</option>
@@ -577,17 +620,15 @@ const IncrementReviewPage = ({ employee }) => {
                                                 {incErrors.reason && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{incErrors.reason}</p>}
                                             </div>
 
-                                            {/* Approved By */}
+                                            {/* Approved By (Auto-populated, Read-only) */}
                                             <div>
-                                                <label className={LABEL_CLASS}>Approved By *</label>
+                                                <label className={LABEL_CLASS}>Approved By (Auto)</label>
                                                 <input
                                                     type="text"
                                                     value={incForm.approvedBy}
-                                                    onChange={e => setIncForm(p => ({ ...p, approvedBy: e.target.value }))}
-                                                    className={incErrors.approvedBy ? INPUT_ERR : INPUT_CLASS}
-                                                    placeholder="e.g. CEO / HR Manager"
+                                                    readOnly
+                                                    className={READONLY_INPUT}
                                                 />
-                                                {incErrors.approvedBy && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{incErrors.approvedBy}</p>}
                                             </div>
 
                                             {/* Notes */}
@@ -607,9 +648,9 @@ const IncrementReviewPage = ({ employee }) => {
                                                 <button
                                                     type="submit"
                                                     disabled={incSubmitting}
-                                                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                                                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer"
                                                 >
-                                                    {incSubmitting ? 'Saving...' : <><Save size={18} /> {editingInc ? 'Update Increment' : 'Save Increment'}</>}
+                                                    {incSubmitting ? 'Saving...' : <><Save size={16} /> {editingInc ? 'Update Increment' : 'Save Increment'}</>}
                                                 </button>
                                             </div>
                                         </form>
@@ -618,73 +659,73 @@ const IncrementReviewPage = ({ employee }) => {
                             )}
                         </AnimatePresence>
 
-                        {/* Increment History Table */}
+                        {/* Redesigned Premium Timeline-styled Increment Table */}
                         {loadingInc ? (
                             <div className="flex items-center justify-center py-12">
                                 <div className="w-8 h-8 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
                             </div>
                         ) : increments.length === 0 ? (
                             <div className="text-center py-12">
-                                <TrendingUp size={40} className="mx-auto text-slate-200 mb-3" />
-                                <p className="text-sm text-slate-400 font-bold">No increment records found for this employee.</p>
-                                <p className="text-xs text-slate-300 mt-1">Click "Add Increment" to create the first record.</p>
+                                <TrendingUp size={36} className="mx-auto text-slate-200 mb-3" />
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">No increment history found.</p>
+                                <p className="text-[11px] text-slate-300 mt-1">Add a new record to begin tracking.</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto border border-slate-100 rounded-2xl shadow-2xs">
                                 <table className="w-full text-left text-xs">
                                     <thead>
-                                        <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold tracking-wider">
-                                            <th className="py-2.5">Date</th>
-                                            <th className="py-2.5">Previous</th>
-                                            <th className="py-2.5">Increment</th>
-                                            <th className="py-2.5">%</th>
-                                            <th className="py-2.5">New Salary</th>
-                                            <th className="py-2.5">Rank</th>
-                                            <th className="py-2.5">Approved By</th>
-                                            <th className="py-2.5">Status</th>
-                                            <th className="py-2.5 text-right">Actions</th>
+                                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 uppercase font-black tracking-wider text-[9px]">
+                                            <th className="py-3 px-4">Date</th>
+                                            <th className="py-3 px-2">Previous Salary</th>
+                                            <th className="py-3 px-2">Increment Amount</th>
+                                            <th className="py-3 px-2">%</th>
+                                            <th className="py-3 px-2">New Salary</th>
+                                            <th className="py-3 px-2">Rank</th>
+                                            <th className="py-3 px-2">Approved By</th>
+                                            <th className="py-3 px-2">Status</th>
+                                            <th className="py-3 px-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-100">
                                         {increments.map(inc => (
                                             <tr key={inc._id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="py-3 pr-2 font-medium text-slate-700">{formatDate(inc.incrementDate)}</td>
-                                                <td className="py-3 pr-2 text-slate-500">{formatSalary(inc.previousSalary)}</td>
-                                                <td className="py-3 pr-2 font-bold text-emerald-600">+{formatSalary(inc.incrementAmount)}</td>
-                                                <td className="py-3 pr-2">
-                                                    <span className="bg-sky-50 text-sky-600 border border-sky-100 px-2 py-0.5 rounded-lg font-bold text-[10px]">
+                                                <td className="py-3.5 px-4 font-bold text-slate-700">{formatDate(inc.incrementDate)}</td>
+                                                <td className="py-3.5 px-2 text-slate-400 font-semibold">{formatSalary(inc.previousSalary)}</td>
+                                                <td className="py-3.5 px-2 font-bold text-emerald-600">+{formatSalary(inc.incrementAmount)}</td>
+                                                <td className="py-3.5 px-2">
+                                                    <span className="bg-sky-50 text-sky-600 border border-sky-100 px-2 py-0.5 rounded-lg font-black text-[9px]">
                                                         {inc.incrementPercentage}%
                                                     </span>
                                                 </td>
-                                                <td className="py-3 pr-2 font-bold text-slate-800">{formatSalary(inc.newSalary)}</td>
-                                                <td className="py-3 pr-2">
+                                                <td className="py-3.5 px-2 font-black text-slate-800">{formatSalary(inc.newSalary)}</td>
+                                                <td className="py-3.5 px-2">
                                                     {inc.promotionRank ? (
-                                                        <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-lg font-bold text-[10px]">
+                                                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider">
                                                             {inc.promotionRank}
                                                         </span>
-                                                    ) : '-'}
+                                                    ) : <span className="text-slate-300">-</span>}
                                                 </td>
-                                                <td className="py-3 pr-2 text-slate-500">{inc.approvedBy}</td>
-                                                <td className="py-3 pr-2">
-                                                    <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${STATUS_STYLES[inc.status] || ''}`}>
+                                                <td className="py-3.5 px-2 text-slate-500 font-bold">{inc.approvedBy}</td>
+                                                <td className="py-3.5 px-2">
+                                                    <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] border ${STATUS_STYLES[inc.status] || ''}`}>
                                                         {inc.status}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 text-right">
-                                                    <div className="flex items-center justify-end gap-1.5">
+                                                <td className="py-3.5 px-4 text-right">
+                                                    <div className="flex items-center justify-end gap-1">
                                                         <button
                                                             onClick={() => openIncForm(inc)}
-                                                            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
                                                             title="Edit"
                                                         >
-                                                            <Edit3 size={14} />
+                                                            <Edit3 size={13} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteInc(inc._id)}
                                                             className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                                                             title="Delete"
                                                         >
-                                                            <Trash2 size={14} />
+                                                            <Trash2 size={13} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -703,17 +744,20 @@ const IncrementReviewPage = ({ employee }) => {
                ══════════════════════════════════════════════════════════════ */}
             {activeSubTab === 'reviews' && (
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="p-6 sm:p-8">
+                    <div className="p-6">
                         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                            <h3 className="text-sm font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest">
-                                <Star size={18} /> Performance Review History
+                            <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-2">
+                                <Star size={16} /> Performance Review History
                             </h3>
-                            <button
-                                onClick={() => openRevForm()}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-200 transition-all cursor-pointer"
-                            >
-                                <Plus size={16} /> Add Review
-                            </button>
+                            {/* Hide Add Review button when form is currently open */}
+                            {!showRevForm && (
+                                <button
+                                    onClick={() => openRevForm()}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-200 transition-all cursor-pointer"
+                                >
+                                    <Plus size={14} /> Add Review
+                                </button>
+                            )}
                         </div>
 
                         {/* Review Form */}
@@ -725,76 +769,51 @@ const IncrementReviewPage = ({ employee }) => {
                                     exit={{ opacity: 0, height: 0 }}
                                     className="mb-8 overflow-hidden"
                                 >
-                                    <div className="bg-slate-50/80 border border-slate-200 rounded-3xl p-6 sm:p-8">
+                                    <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h4 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                                                <Star size={18} className="text-amber-500" />
+                                            <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                                                <Star size={16} className="text-amber-500 fill-amber-500" />
                                                 {editingRev ? 'Edit Performance Review' : 'New Performance Review'}
                                             </h4>
                                             <button onClick={closeRevForm} className="p-2 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer">
-                                                <X size={18} className="text-slate-400" />
+                                                <X size={16} className="text-slate-400" />
                                             </button>
                                         </div>
 
                                         {revErrors._server && (
-                                            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-bold rounded-2xl flex items-center gap-2">
+                                            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl flex items-center gap-2">
                                                 <AlertCircle size={16} /> {revErrors._server}
                                             </div>
                                         )}
 
                                         <form onSubmit={handleRevSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Review Date */}
+                                            {/* Review Date (Read-only) */}
                                             <div>
-                                                <label className={LABEL_CLASS}>Review Date *</label>
-                                                <input
-                                                    type="date"
-                                                    value={revForm.reviewDate}
-                                                    onChange={e => setRevForm(p => ({ ...p, reviewDate: e.target.value }))}
-                                                    className={revErrors.reviewDate ? INPUT_ERR : INPUT_CLASS}
-                                                />
-                                                {revErrors.reviewDate && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.reviewDate}</p>}
-                                            </div>
-
-                                            {/* Review Period */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Review Period *</label>
+                                                <label className={LABEL_CLASS}>Review Date (Auto Today)</label>
                                                 <input
                                                     type="text"
-                                                    value={revForm.reviewPeriod}
-                                                    onChange={e => setRevForm(p => ({ ...p, reviewPeriod: e.target.value }))}
-                                                    className={revErrors.reviewPeriod ? INPUT_ERR : INPUT_CLASS}
-                                                    placeholder="e.g. Jan 2026 – Jun 2026"
+                                                    value={formatDate(revForm.reviewDate)}
+                                                    readOnly
+                                                    className={READONLY_INPUT}
                                                 />
-                                                {revErrors.reviewPeriod && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.reviewPeriod}</p>}
                                             </div>
 
-                                            {/* Reviewer */}
+                                            {/* Custom Star Rating Selector (Redesigned rating dropdown) */}
+                                            <StarRatingSelector
+                                                value={revForm.overallRating}
+                                                onChange={val => setRevForm(p => ({ ...p, overallRating: val }))}
+                                                error={revErrors.overallRating}
+                                            />
+
+                                            {/* Reviewer (Auto-populated, Read-only) */}
                                             <div>
-                                                <label className={LABEL_CLASS}>Reviewer *</label>
+                                                <label className={LABEL_CLASS}>Reviewer (Auto)</label>
                                                 <input
                                                     type="text"
                                                     value={revForm.reviewer}
-                                                    onChange={e => setRevForm(p => ({ ...p, reviewer: e.target.value }))}
-                                                    className={revErrors.reviewer ? INPUT_ERR : INPUT_CLASS}
-                                                    placeholder="e.g. Team Lead / HR Manager"
+                                                    readOnly
+                                                    className={READONLY_INPUT}
                                                 />
-                                                {revErrors.reviewer && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.reviewer}</p>}
-                                            </div>
-
-                                            {/* Rating */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Overall Rating *</label>
-                                                <select
-                                                    value={revForm.overallRating}
-                                                    onChange={e => setRevForm(p => ({ ...p, overallRating: e.target.value }))}
-                                                    className={`${revErrors.overallRating ? INPUT_ERR : INPUT_CLASS} appearance-none`}
-                                                >
-                                                    <option value="">— Select Rating —</option>
-                                                    {[5, 4, 3, 2, 1].map(r => (
-                                                        <option key={r} value={r}>{'★'.repeat(r)}{'☆'.repeat(5 - r)} — {RATING_LABELS[r]}</option>
-                                                    ))}
-                                                </select>
-                                                {revErrors.overallRating && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.overallRating}</p>}
                                             </div>
 
                                             {/* Comments */}
@@ -805,56 +824,48 @@ const IncrementReviewPage = ({ employee }) => {
                                                     value={revForm.comments}
                                                     onChange={e => setRevForm(p => ({ ...p, comments: e.target.value }))}
                                                     className={revErrors.comments ? INPUT_ERR : INPUT_CLASS}
-                                                    placeholder="Overall performance summary..."
+                                                    placeholder="Provide general notes, evaluation, and feedback..."
                                                 />
                                                 {revErrors.comments && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.comments}</p>}
                                             </div>
 
                                             {/* Strengths */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Strengths</label>
-                                                <textarea
-                                                    rows={2}
-                                                    value={revForm.strengths}
-                                                    onChange={e => setRevForm(p => ({ ...p, strengths: e.target.value }))}
-                                                    className={INPUT_CLASS}
-                                                    placeholder="Key strengths observed..."
-                                                />
-                                            </div>
+                                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className={LABEL_CLASS}>Strengths</label>
+                                                    <textarea
+                                                        rows={2}
+                                                        value={revForm.strengths}
+                                                        onChange={e => setRevForm(p => ({ ...p, strengths: e.target.value }))}
+                                                        className={INPUT_CLASS}
+                                                        placeholder="Key strengths observed..."
+                                                    />
+                                                </div>
 
-                                            {/* Areas for Improvement */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Areas for Improvement</label>
-                                                <textarea
-                                                    rows={2}
-                                                    value={revForm.areasForImprovement}
-                                                    onChange={e => setRevForm(p => ({ ...p, areasForImprovement: e.target.value }))}
-                                                    className={INPUT_CLASS}
-                                                    placeholder="Areas needing development..."
-                                                />
-                                            </div>
+                                                {/* Areas for Improvement */}
+                                                <div>
+                                                    <label className={LABEL_CLASS}>Areas for Improvement</label>
+                                                    <textarea
+                                                        rows={2}
+                                                        value={revForm.areasForImprovement}
+                                                        onChange={e => setRevForm(p => ({ ...p, areasForImprovement: e.target.value }))}
+                                                        className={INPUT_CLASS}
+                                                        placeholder="Skills/areas needing development..."
+                                                    />
+                                                </div>
 
-                                            {/* Goals */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Goals</label>
-                                                <textarea
-                                                    rows={2}
-                                                    value={revForm.goals}
-                                                    onChange={e => setRevForm(p => ({ ...p, goals: e.target.value }))}
-                                                    className={INPUT_CLASS}
-                                                    placeholder="Goals for next review period..."
-                                                />
-                                            </div>
-
-                                            {/* Next Review Date */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Next Review Date</label>
-                                                <input
-                                                    type="date"
-                                                    value={revForm.nextReviewDate}
-                                                    onChange={e => setRevForm(p => ({ ...p, nextReviewDate: e.target.value }))}
-                                                    className={INPUT_CLASS}
-                                                />
+                                                {/* Goals */}
+                                                <div>
+                                                    <label className={LABEL_CLASS}>Goals *</label>
+                                                    <textarea
+                                                        rows={2}
+                                                        value={revForm.goals}
+                                                        onChange={e => setRevForm(p => ({ ...p, goals: e.target.value }))}
+                                                        className={revErrors.goals ? INPUT_ERR : INPUT_CLASS}
+                                                        placeholder="Review goals & targets for next period..."
+                                                    />
+                                                    {revErrors.goals && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.goals}</p>}
+                                                </div>
                                             </div>
 
                                             {/* Submit */}
@@ -862,9 +873,9 @@ const IncrementReviewPage = ({ employee }) => {
                                                 <button
                                                     type="submit"
                                                     disabled={revSubmitting}
-                                                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                                                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer"
                                                 >
-                                                    {revSubmitting ? 'Saving...' : <><Save size={18} /> {editingRev ? 'Update Review' : 'Save Review'}</>}
+                                                    {revSubmitting ? 'Saving...' : <><Save size={16} /> {editingRev ? 'Update Review' : 'Save Review'}</>}
                                                 </button>
                                             </div>
                                         </form>
@@ -873,16 +884,16 @@ const IncrementReviewPage = ({ employee }) => {
                             )}
                         </AnimatePresence>
 
-                        {/* Review History Cards */}
+                        {/* Redesigned Premium Performance Review History Cards */}
                         {loadingRev ? (
                             <div className="flex items-center justify-center py-12">
                                 <div className="w-8 h-8 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
                             </div>
                         ) : reviews.length === 0 ? (
                             <div className="text-center py-12">
-                                <Star size={40} className="mx-auto text-slate-200 mb-3" />
-                                <p className="text-sm text-slate-400 font-bold">No performance reviews found for this employee.</p>
-                                <p className="text-xs text-slate-300 mt-1">Click "Add Review" to create the first review.</p>
+                                <Star size={36} className="mx-auto text-slate-200 mb-3" />
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">No performance reviews found.</p>
+                                <p className="text-[11px] text-slate-300 mt-1">Review the employee's work to create the first record.</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -891,64 +902,70 @@ const IncrementReviewPage = ({ employee }) => {
                                         key={rev._id}
                                         initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className={`border rounded-2xl p-5 hover:shadow-md transition-all ${RATING_BG[rev.overallRating] || 'bg-slate-50 border-slate-100'}`}
+                                        className={`border rounded-2xl p-5 hover:shadow-xs transition-all bg-white border-slate-200`}
                                     >
                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                             <div className="flex-1 min-w-0">
+                                                {/* Header Details */}
                                                 <div className="flex flex-wrap items-center gap-3 mb-2">
-                                                    <StarRating rating={rev.overallRating} size={16} />
-                                                    <span className={`text-xs font-bold ${RATING_COLORS[rev.overallRating]}`}>
+                                                    <StarRating rating={rev.overallRating} size={15} />
+                                                    <span className={`text-[10px] font-black uppercase tracking-wider bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-md ${RATING_COLORS[rev.overallRating]}`}>
                                                         {RATING_LABELS[rev.overallRating]}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 font-bold bg-white/60 px-2 py-0.5 rounded-lg border border-slate-200/50">
-                                                        {rev.reviewPeriod}
-                                                    </span>
                                                 </div>
-                                                <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-3">
-                                                    <span className="flex items-center gap-1"><Calendar size={11} /> {formatDate(rev.reviewDate)}</span>
-                                                    <span className="flex items-center gap-1"><User size={11} /> {rev.reviewer}</span>
-                                                    {rev.nextReviewDate && (
-                                                        <span className="flex items-center gap-1"><Clock size={11} /> Next: {formatDate(rev.nextReviewDate)}</span>
-                                                    )}
+
+                                                {/* Review Metadata */}
+                                                <div className="flex flex-wrap items-center gap-4 text-[9px] text-slate-400 font-black uppercase tracking-widest mb-3">
+                                                    <span className="flex items-center gap-1.5"><Calendar size={11} className="text-indigo-500" /> Date: {formatDate(rev.reviewDate)}</span>
+                                                    <span className="flex items-center gap-1.5"><User size={11} className="text-indigo-500" /> Reviewer: {rev.reviewer}</span>
+                                                    <span className="flex items-center gap-1.5"><ShieldCheck size={11} className="text-indigo-500" /> Created: {formatDate(rev.createdAt)}</span>
                                                 </div>
-                                                <p className="text-sm text-slate-600 mb-2">{rev.comments}</p>
+
+                                                {/* Comments Block */}
+                                                <p className="text-sm font-semibold text-slate-700 leading-relaxed mb-3 bg-slate-50 border border-slate-100 p-3 rounded-xl italic">
+                                                    "{rev.comments}"
+                                                </p>
+
+                                                {/* Details Sub-Grid (Strengths, Improvements, Goals) */}
                                                 {(rev.strengths || rev.areasForImprovement || rev.goals) && (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-4">
                                                         {rev.strengths && (
-                                                            <div className="bg-white/50 rounded-xl p-2.5 border border-slate-100/50">
-                                                                <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1 flex items-center gap-1"><CheckCircle2 size={10} /> Strengths</p>
-                                                                <p className="text-xs text-slate-500">{rev.strengths}</p>
+                                                            <div className="bg-emerald-50/20 rounded-xl p-3 border border-emerald-100/50">
+                                                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><CheckCircle2 size={11} /> Strengths</p>
+                                                                <p className="text-xs font-semibold text-slate-600 leading-normal">{rev.strengths}</p>
                                                             </div>
                                                         )}
                                                         {rev.areasForImprovement && (
-                                                            <div className="bg-white/50 rounded-xl p-2.5 border border-slate-100/50">
-                                                                <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1"><Target size={10} /> Improve</p>
-                                                                <p className="text-xs text-slate-500">{rev.areasForImprovement}</p>
+                                                            <div className="bg-amber-50/20 rounded-xl p-3 border border-amber-100/50">
+                                                                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Target size={11} /> Areas to Improve</p>
+                                                                <p className="text-xs font-semibold text-slate-600 leading-normal">{rev.areasForImprovement}</p>
                                                             </div>
                                                         )}
                                                         {rev.goals && (
-                                                            <div className="bg-white/50 rounded-xl p-2.5 border border-slate-100/50">
-                                                                <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mb-1 flex items-center gap-1"><FileText size={10} /> Goals</p>
-                                                                <p className="text-xs text-slate-500">{rev.goals}</p>
+                                                            <div className="bg-indigo-50/20 rounded-xl p-3 border border-indigo-100/50">
+                                                                <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><FileText size={11} /> Review Goals</p>
+                                                                <p className="text-xs font-semibold text-slate-600 leading-normal">{rev.goals}</p>
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-1.5 shrink-0">
+
+                                            {/* Action Buttons */}
+                                            <div className="flex items-center gap-1 shrink-0">
                                                 <button
                                                     onClick={() => openRevForm(rev)}
-                                                    className="p-2 rounded-xl hover:bg-white text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
                                                     title="Edit"
                                                 >
-                                                    <Edit3 size={14} />
+                                                    <Edit3 size={13} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteRev(rev._id)}
-                                                    className="p-2 rounded-xl hover:bg-white text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                                    className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                                                     title="Delete"
                                                 >
-                                                    <Trash2 size={14} />
+                                                    <Trash2 size={13} />
                                                 </button>
                                             </div>
                                         </div>

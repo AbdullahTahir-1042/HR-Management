@@ -227,7 +227,7 @@ const HRReports = ({ employees }) => {
     }, [leaveRecords, filters.department, filters.employeeId, filters.startDate, filters.endDate]);
 
     const filteredEmployees = useMemo(() => {
-        let list = employees.filter(e => e.role === 'employee');
+        let list = employees;
         if (filters.department) {
             list = list.filter(e => e.department?.toLowerCase() === filters.department.toLowerCase());
         }
@@ -788,7 +788,7 @@ const HRReports = ({ employees }) => {
 
     // ── Cascading Staff list (filtered by selected Department) ─────────────────────────────────
     const availableStaff = useMemo(() => {
-        let list = employees.filter(e => e.role === 'employee');
+        let list = employees;
         if (filters.department) {
             list = list.filter(e => e.department?.toLowerCase() === filters.department.toLowerCase());
         }

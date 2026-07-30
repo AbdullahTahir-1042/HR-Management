@@ -20,6 +20,12 @@ const validators = {
         if (!['Intern', 'Fresh Join'].includes(val)) return 'Invalid joining status selected';
         return '';
     },
+    promotionRank: (val) => {
+        if (!val) return 'Promotion Rank is required';
+        const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+        if (!validRanks.includes(val)) return 'Invalid promotion rank selected';
+        return '';
+    },
     email: (val) => {
         if (!val.trim()) return 'Email address is required';
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -168,6 +174,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         role: 'employee',
         status: 'full time',
         joiningStatus: 'Fresh Join',
+        promotionRank: 'Junior',
         department: 'development',
         reportingTo: '',
         salary: '',
@@ -237,7 +244,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
 
     // ── Validate all fields before submit ─────────────────────────────────────
     const validateAll = () => {
-        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary', 'joiningStatus'];
+        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary', 'joiningStatus', 'promotionRank'];
         const newErrors = {};
         const newTouched = {};
         let hasError = false;
@@ -541,6 +548,28 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                         <option value="internship">Internship</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Promotion Rank (Career Level) *</label>
+                                <div className="relative mt-1 group">
+                                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <select 
+                                        value={formData.promotionRank} 
+                                        onChange={e => handleChange('promotionRank', e.target.value)} 
+                                        onBlur={() => handleBlur('promotionRank')}
+                                        className={getInputBorderClass('promotionRank', touched, fieldErrors, "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none font-bold text-indigo-600")}
+                                    >
+                                        <option value="Intern">Intern</option>
+                                        <option value="Junior">Junior</option>
+                                        <option value="Associate">Associate</option>
+                                        <option value="Mid-Level">Mid-Level</option>
+                                        <option value="Senior">Senior</option>
+                                        <option value="Lead">Lead</option>
+                                        <option value="Manager">Manager</option>
+                                    </select>
+                                    {touched.promotionRank && !fieldErrors.promotionRank && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                </div>
+                                <FieldError message={touched.promotionRank ? fieldErrors.promotionRank : ''} />
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Employee Joining Status *</label>

@@ -4,6 +4,18 @@ const PerformanceReview = require('../models/PerformanceReview');
 const User = require('../models/User');
 const { auth, isHR } = require('../middleware/auth');
 
+// Helper to compare dates ignoring times timezone-insensitively
+const getStartOfDay = (d) => {
+    if (typeof d === 'string' && d.includes('-')) {
+        const parts = d.split('-');
+        if (parts.length === 3) {
+            return new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
+        }
+    }
+    const date = new Date(d);
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+};
+
 // ─────────────────────────────────────────────
 // GET /api/performance-reviews/:employeeId
 // Get all reviews for an employee
@@ -28,10 +40,17 @@ router.get('/:employeeId', [auth, isHR], async (req, res) => {
 router.post('/', [auth, isHR], async (req, res) => {
     try {
         const {
-            employee, reviewDate, reviewPeriod, reviewer,
+            employee, reviewDate,
             overallRating, comments, strengths, areasForImprovement,
             goals, nextReviewDate
         } = req.body;
+
+        // Fetch logged-in HR/Admin name from database
+        const hrUser = await User.findById(req.user.id).select('name');
+        if (!hrUser) {
+            return res.status(404).json({ msg: 'HR/Admin user not found' });
+        }
+        const resolvedReviewer = hrUser.name;
 
         // ── Validation ──────────────────────────────────────────────────
         if (!employee) {
@@ -44,12 +63,14 @@ router.post('/', [auth, isHR], async (req, res) => {
         if (!reviewDate || isNaN(new Date(reviewDate).getTime())) {
             return res.status(400).json({ msg: 'Valid review date is required' });
         }
-        if (!reviewPeriod || !reviewPeriod.trim()) {
-            return res.status(400).json({ msg: 'Review period is required (e.g. "Jan 2026 – Jun 2026")' });
+
+        // Validate date is not in the past
+        const targetDate = getStartOfDay(reviewDate);
+        const todayDate = getStartOfDay(new Date());
+        if (targetDate < todayDate) {
+            return res.status(400).json({ msg: 'Review date cannot be a past date' });
         }
-        if (!reviewer || !reviewer.trim()) {
-            return res.status(400).json({ msg: 'Reviewer name is required' });
-        }
+
         const rating = Number(overallRating);
         if (!overallRating || isNaN(rating) || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
             return res.status(400).json({ msg: 'Overall rating must be an integer between 1 and 5' });
@@ -63,15 +84,15 @@ router.post('/', [auth, isHR], async (req, res) => {
 
         const review = new PerformanceReview({
             employee,
-            reviewDate: new Date(reviewDate),
-            reviewPeriod: reviewPeriod.trim(),
-            reviewer: reviewer.trim(),
+            reviewDate: targetDate,
+            reviewPeriod: '',
+            reviewer: resolvedReviewer,
             overallRating: rating,
             comments: comments.trim(),
             strengths: strengths || '',
             areasForImprovement: areasForImprovement || '',
             goals: goals || '',
-            nextReviewDate: nextReviewDate ? new Date(nextReviewDate) : null,
+            nextReviewDate: nextReviewDate ? getStartOfDay(nextReviewDate) : null,
             createdBy: req.user.id
         });
 
@@ -100,23 +121,28 @@ router.put('/:id', [auth, isHR], async (req, res) => {
         }
 
         const {
-            reviewDate, reviewPeriod, reviewer, overallRating,
+            reviewDate, overallRating,
             comments, strengths, areasForImprovement, goals, nextReviewDate
         } = req.body;
+
+        // Fetch logged-in HR/Admin name from database
+        const hrUser = await User.findById(req.user.id).select('name');
+        if (!hrUser) {
+            return res.status(404).json({ msg: 'HR/Admin user not found' });
+        }
+        review.reviewer = hrUser.name;
+        review.reviewPeriod = '';
 
         if (reviewDate !== undefined) {
             if (isNaN(new Date(reviewDate).getTime())) {
                 return res.status(400).json({ msg: 'Valid review date is required' });
             }
-            review.reviewDate = new Date(reviewDate);
-        }
-        if (reviewPeriod !== undefined) {
-            if (!reviewPeriod.trim()) return res.status(400).json({ msg: 'Review period is required' });
-            review.reviewPeriod = reviewPeriod.trim();
-        }
-        if (reviewer !== undefined) {
-            if (!reviewer.trim()) return res.status(400).json({ msg: 'Reviewer name is required' });
-            review.reviewer = reviewer.trim();
+            const targetDate = getStartOfDay(reviewDate);
+            const todayDate = getStartOfDay(new Date());
+            if (targetDate < todayDate) {
+                return res.status(400).json({ msg: 'Review date cannot be a past date' });
+            }
+            review.reviewDate = targetDate;
         }
         if (overallRating !== undefined) {
             const rating = Number(overallRating);
@@ -136,7 +162,7 @@ router.put('/:id', [auth, isHR], async (req, res) => {
             if (nextReviewDate && isNaN(new Date(nextReviewDate).getTime())) {
                 return res.status(400).json({ msg: 'Next review date must be a valid date' });
             }
-            review.nextReviewDate = nextReviewDate ? new Date(nextReviewDate) : null;
+            review.nextReviewDate = nextReviewDate ? getStartOfDay(nextReviewDate) : null;
         }
 
         review.updatedBy = req.user.id;
