@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
-    Sparkles, GraduationCap, BookOpen, X
+    Sparkles, GraduationCap, BookOpen, X, MessageCircle
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -11,10 +11,11 @@ const NAV_ITEMS = [
     { id: 'leaves',       label: 'Request Leave',     icon: Calendar },
     { id: 'holidays',     label: 'Holiday Calendar',  icon: PartyPopper },
     { id: 'hr-requests',  label: 'HR Requests',       icon: MessageSquare },
+    { id: 'messages',     label: 'Messages',          icon: MessageCircle },
     { id: 'announcements',label: 'Announcements',     icon: Bell },
 ];
 
-const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen }) => {
+const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             {/* Logo / Home Button */}
@@ -60,6 +61,11 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                     >
                         <Icon size={20} />
                         <span className="text-sm">{label}</span>
+                        {id === 'messages' && unreadMessages > 0 && (
+                            <span className="ml-auto bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                {unreadMessages}
+                            </span>
+                        )}
                     </button>
                 ))}
 
