@@ -53,17 +53,6 @@ router.post('/register', [auth, isHR], async (req, res) => {
         initialRank = joiningStatus === 'Intern' ? 'Intern' : 'Junior';
     }
 
-    const validJoiningStatuses = ['Intern', 'Fresh Join'];
-    if (!joiningStatus || !validJoiningStatuses.includes(joiningStatus)) {
-        return res.status(400).json({ msg: 'Employee Joining Status is required and must be either Intern or Fresh Join' });
-    }
-
-    const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
-    let initialRank = promotionRank;
-    if (!initialRank || !validRanks.includes(initialRank)) {
-        initialRank = joiningStatus === 'Intern' ? 'Intern' : 'Junior';
-    }
-
     try {
         let user = await User.findOne({ email });
         if (user) {
