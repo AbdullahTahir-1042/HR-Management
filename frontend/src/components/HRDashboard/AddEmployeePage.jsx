@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2, Award } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -13,6 +13,11 @@ const validators = {
         if (!/^[a-zA-Z\s.'\-]+$/.test(trimmed)) return 'Name can only contain letters, spaces, and hyphens';
         const words = trimmed.split(/\s+/);
         if (words.length < 2) return 'Please enter both first and last name (e.g. John Doe)';
+        return '';
+    },
+    joiningStatus: (val) => {
+        if (!val) return 'Employee Joining Status is required';
+        if (!['Intern', 'Fresh Join'].includes(val)) return 'Invalid joining status selected';
         return '';
     },
     email: (val) => {
@@ -162,6 +167,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         phone: '',
         role: 'employee',
         status: 'full time',
+        joiningStatus: 'Fresh Join',
         department: 'development',
         reportingTo: '',
         salary: '',
@@ -231,7 +237,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
 
     // ── Validate all fields before submit ─────────────────────────────────────
     const validateAll = () => {
-        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary'];
+        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary', 'joiningStatus'];
         const newErrors = {};
         const newTouched = {};
         let hasError = false;
@@ -535,6 +541,23 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                         <option value="internship">Internship</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Employee Joining Status *</label>
+                                <div className="relative mt-1 group">
+                                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <select 
+                                        value={formData.joiningStatus} 
+                                        onChange={e => handleChange('joiningStatus', e.target.value)} 
+                                        onBlur={() => handleBlur('joiningStatus')}
+                                        className={getInputBorderClass('joiningStatus', touched, fieldErrors, "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none")}
+                                    >
+                                        <option value="Fresh Join">Fresh Join</option>
+                                        <option value="Intern">Intern</option>
+                                    </select>
+                                    {touched.joiningStatus && !fieldErrors.joiningStatus && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                </div>
+                                <FieldError message={touched.joiningStatus ? fieldErrors.joiningStatus : ''} />
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Role</label>

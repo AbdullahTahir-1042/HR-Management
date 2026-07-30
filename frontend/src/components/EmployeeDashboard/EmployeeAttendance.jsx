@@ -61,21 +61,21 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                                        <th className="px-6 py-4">Date</th>
-                                        <th className="px-6 py-4">Check In</th>
-                                        <th className="px-6 py-4">Check Out</th>
+                                        <th className="px-3 py-3">Date</th>
+                                        <th className="px-3 py-3">Check In</th>
+                                        <th className="px-3 py-3">Check Out</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {history.map(record => (
                                         <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-4 text-slate-700 font-medium text-sm">
+                                            <td className="px-3 py-3 text-slate-700 font-medium text-sm">
                                                 {formatDate(record.date)}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-600 text-sm">
+                                            <td className="px-3 py-3 text-slate-600 text-sm">
                                                 {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-600 text-sm">
+                                            <td className="px-3 py-3 text-slate-600 text-sm">
                                                 {record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                             </td>
                                         </tr>

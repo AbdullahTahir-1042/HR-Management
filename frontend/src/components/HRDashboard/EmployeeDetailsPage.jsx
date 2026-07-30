@@ -1,8 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck, Calendar, DollarSign, User, Phone, Edit3, Wallet, AlertCircle, Trash2, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck, Calendar, DollarSign, User, Phone, Edit3, Wallet, AlertCircle, Trash2, ClipboardList, TrendingUp, Star } from 'lucide-react';
+import IncrementReviewPage from './IncrementReviewPage';
 
 const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+    const [activeDetailTab, setActiveDetailTab] = useState('profile');
+
     // Safety check for employee
     if (!employee) return (
         <div className="p-16 text-center text-slate-400">
@@ -226,6 +229,31 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
 
                 {/* Right Column: Detailed Info */}
                 <div className="lg:col-span-2 space-y-6">
+                    {/* ── Detail Tabs ──────────────────────────────── */}
+                    <div className="flex gap-2 border-b border-slate-100 pb-3">
+                        {[
+                            { key: 'profile', label: 'Profile & Salary', icon: User },
+                            { key: 'increment-review', label: 'Increment & Review', icon: TrendingUp }
+                        ].map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveDetailTab(tab.key)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                                    activeDetailTab === tab.key
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                        : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
+                                }`}
+                            >
+                                <tab.icon size={15} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {activeDetailTab === 'increment-review' ? (
+                        <IncrementReviewPage employee={employee} />
+                    ) : (
+                    <>
                     {/* Salary Calculation Card - MEDIUM WHITE THEME */}
                     <motion.div 
                         key={`${employee._id}-${salaryData.totalLeaveDays}`}
@@ -380,6 +408,8 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                             )}
                         </div>
                     </div>
+                    </>
+                    )}
                 </div>
             </div>
         </motion.div>

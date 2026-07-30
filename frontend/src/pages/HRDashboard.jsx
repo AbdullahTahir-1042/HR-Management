@@ -25,6 +25,7 @@ import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
 import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
 import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
 import LatecomersPage from '../components/HRDashboard/LatecomersPage';
+import MessagesPage from '../components/MessagesPage';
 
 const SHIFT_START_HOUR = 12;
 const SHIFT_START_MINUTE = 0;
@@ -343,6 +344,7 @@ const HRDashboard = () => {
                 logout={logout}
                 isOpen={isSidebarOpen}
                 setIsOpen={setSidebarOpen}
+                unreadMessages={unreadMessages}
             />
             {isSidebarOpen && (
                 <div 
@@ -364,7 +366,7 @@ const HRDashboard = () => {
                     setSidebarOpen={setSidebarOpen}
                 />
 
-                <div className="p-8 max-w-7xl mx-auto">
+                <div className="p-4 lg:p-6 max-w-full mx-auto">
                     {activeTab !== 'dashboard' && !selectedEmployee && !isAddingEmployee && !isEditingEmployee && (
                         <div className="mb-6">
                             <button 
@@ -522,6 +524,10 @@ const HRDashboard = () => {
                                 initialEmployees={employees}
                                 onRefreshAnnouncements={fetchAllAnnouncements}
                             />
+                        )}
+
+                        {activeTab === 'messages' && (
+                            <MessagesPage />
                         )}
                     </AnimatePresence>
                 </div>

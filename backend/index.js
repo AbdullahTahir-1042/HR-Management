@@ -52,6 +52,8 @@ app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/mistake-reports', require('./routes/mistakeReports')); // ✅ NEW
 app.use('/api/conversations', require('./routes/conversations'));
+app.use('/api/increments', require('./routes/increments'));
+app.use('/api/performance-reviews', require('./routes/performanceReviews'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

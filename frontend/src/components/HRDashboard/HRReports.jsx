@@ -34,6 +34,45 @@ const HRReports = ({ employees }) => {
         department: ''
     });
 
+    // ── Attendance Log Controls & Date Presets ─────────────
+    const [attendanceSearch, setAttendanceSearch] = useState('');
+    const [attendanceStatusFilter, setAttendanceStatusFilter] = useState('all'); // 'all' | 'present' | 'late' | 'active'
+    const [datePreset, setDatePreset] = useState('thisMonth'); // 'today' | 'yesterday' | 'thisWeek' | 'thisMonth' | 'all' | 'custom'
+    const [showAnalytics, setShowAnalytics] = useState(true);
+
+    // ── Tab Specific Interactive Filters ─────────────────────────
+    const [leaveStatusFilter, setLeaveStatusFilter] = useState('all'); // 'all' | 'approved' | 'pending' | 'rejected'
+    const [leaveSearch, setLeaveSearch] = useState('');
+    const [leaveTypeFilter, setLeaveTypeFilter] = useState('all');
+
+    const [payrollSearch, setPayrollSearch] = useState('');
+    
+    const [directorySearch, setDirectorySearch] = useState('');
+    const [directoryStatusFilter, setDirectoryStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'internship'
+
+    const handleApplyDatePreset = (presetKey) => {
+        setDatePreset(presetKey);
+        const today = new Date();
+        const todayStr = today.toISOString().slice(0, 10);
+
+        if (presetKey === 'today') {
+            setFilters(prev => ({ ...prev, startDate: todayStr, endDate: todayStr }));
+        } else if (presetKey === 'yesterday') {
+            const yest = new Date();
+            yest.setDate(today.getDate() - 1);
+            const yestStr = yest.toISOString().slice(0, 10);
+            setFilters(prev => ({ ...prev, startDate: yestStr, endDate: yestStr }));
+        } else if (presetKey === 'thisWeek') {
+            const start = new Date();
+            start.setDate(today.getDate() - 6);
+            setFilters(prev => ({ ...prev, startDate: start.toISOString().slice(0, 10), endDate: todayStr }));
+        } else if (presetKey === 'thisMonth') {
+            setFilters(prev => ({ ...prev, startDate: defaultDateRange.firstDay, endDate: defaultDateRange.lastDay }));
+        } else if (presetKey === 'all') {
+            setFilters(prev => ({ ...prev, startDate: '', endDate: '' }));
+        }
+    };
+
     // ── Fetch attendance report (date-filtered) ─────────────
     const fetchAttendanceReport = async (params) => {
         const res = await apiClient.get('/attendance/report', { params: { ...params, type: 'attendance' } });
@@ -52,8 +91,12 @@ const HRReports = ({ employees }) => {
     };
 
     // ── Fetch data depending on active report ────────────────
-    const fetchReportData = async () => {
-        setLoading(true);
+    const [fetching, setFetching] = useState(false);
+    const isInitialMount = React.useRef(true);
+
+    const fetchReportData = async (isInitial = false) => {
+        if (isInitial) setLoading(true);
+        setFetching(true);
         try {
             const params = {};
             if (filters.startDate) params.startDate = filters.startDate;
@@ -68,7 +111,8 @@ const HRReports = ({ employees }) => {
         } catch (err) {
             console.error('Error fetching report data:', err);
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
+            setFetching(false);
         }
     };
 
@@ -93,8 +137,13 @@ const HRReports = ({ employees }) => {
     };
 
     useEffect(() => {
-        fetchReportData();
-    }, [filters.startDate, filters.endDate, filters.employeeId]); // Refetch on core filter change
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            fetchReportData(true);
+        } else {
+            fetchReportData(false);
+        }
+    }, [filters.startDate, filters.endDate, filters.employeeId]); // Refetch in background on core filter change
 
     // ── BroadcastChannel listener ─ same pattern as announcements_channel ────
     // When HR approves/rejects a leave anywhere in the app, 'leaves_channel'
@@ -138,8 +187,44 @@ const HRReports = ({ employees }) => {
     }, [records, filters.department]);
 
     const filteredLeaves = useMemo(() => {
-        return filterByDept(leaveRecords, 'employee');
-    }, [leaveRecords, filters.department]);
+        let list = filterByDept(leaveRecords, 'employee');
+        
+        if (filters.employeeId) {
+            const empIdStr = String(filters.employeeId);
+            list = list.filter(l => String(l.employee?._id || l.employee || '') === empIdStr);
+        }
+
+        const fStart = filters.startDate || '';
+        const fEnd = filters.endDate || '';
+
+        if (fStart || fEnd) {
+            list = list.filter(l => {
+                const lStart = l.startDate ? String(l.startDate).slice(0, 10) : '';
+                const lEnd = l.endDate ? String(l.endDate).slice(0, 10) : '';
+                const lCreated = l.createdAt ? String(l.createdAt).slice(0, 10) : (l.appliedAt ? String(l.appliedAt).slice(0, 10) : '');
+
+                // Condition 1: Leave duration overlaps with selected range
+                let overlaps = true;
+                if (fStart && lEnd && lEnd < fStart) overlaps = false;
+                if (fEnd && lStart && lStart > fEnd) overlaps = false;
+
+                // Condition 2: Application submitted within selected range
+                let createdInRange = false;
+                if (lCreated) {
+                    if (fStart && fEnd) {
+                        createdInRange = lCreated >= fStart && lCreated <= fEnd;
+                    } else if (fStart) {
+                        createdInRange = lCreated >= fStart;
+                    } else if (fEnd) {
+                        createdInRange = lCreated <= fEnd;
+                    }
+                }
+
+                return overlaps || createdInRange;
+            });
+        }
+        return list;
+    }, [leaveRecords, filters.department, filters.employeeId, filters.startDate, filters.endDate]);
 
     const filteredEmployees = useMemo(() => {
         let list = employees.filter(e => e.role === 'employee');
@@ -151,6 +236,51 @@ const HRReports = ({ employees }) => {
         }
         return list;
     }, [employees, filters.department, filters.employeeId]);
+
+    // ── Interactive Displayed Lists for Leave & Directory ────────
+    const displayedLeaves = useMemo(() => {
+        let list = filteredLeaves;
+
+        if (leaveStatusFilter !== 'all') {
+            list = list.filter(l => l.status === leaveStatusFilter);
+        }
+
+        if (leaveTypeFilter !== 'all') {
+            list = list.filter(l => l.leaveType?.toLowerCase() === leaveTypeFilter.toLowerCase());
+        }
+
+        if (leaveSearch.trim()) {
+            const q = leaveSearch.toLowerCase();
+            list = list.filter(l => 
+                l.employee?.name?.toLowerCase().includes(q) ||
+                l.employee?.email?.toLowerCase().includes(q) ||
+                l.reason?.toLowerCase().includes(q)
+            );
+        }
+
+        return list;
+    }, [filteredLeaves, leaveStatusFilter, leaveTypeFilter, leaveSearch]);
+
+    const displayedEmployees = useMemo(() => {
+        let list = filteredEmployees;
+
+        if (directoryStatusFilter !== 'all') {
+            list = list.filter(e => e.status?.toLowerCase() === directoryStatusFilter.toLowerCase());
+        }
+
+        if (directorySearch.trim()) {
+            const q = directorySearch.toLowerCase();
+            list = list.filter(e =>
+                e.name?.toLowerCase().includes(q) ||
+                e.email?.toLowerCase().includes(q) ||
+                e.department?.toLowerCase().includes(q) ||
+                e.role?.toLowerCase().includes(q) ||
+                (e.phone && e.phone.includes(q))
+            );
+        }
+
+        return list;
+    }, [filteredEmployees, directoryStatusFilter, directorySearch]);
 
     // ── 1. Attendance Calculations ─────────────────────────
     const attendanceSummary = useMemo(() => {
@@ -227,61 +357,47 @@ const HRReports = ({ employees }) => {
             // Late penalty: 0.25 * dailyRate per late check-in
             const lateDeduction = Math.round(lateCount * (dailyRate * 0.25));
 
-            // 2. Find approved leaves for this employee within the selected date range
-            const empLeaves = filteredLeaves.filter(l => {
+            // 2. Find approved leaves for this employee (decoupled from Leave tab date presets)
+            const empLeaves = leaveRecords.filter(l => {
                 const lEmpId = String(l.employee?._id || l.employee || '');
                 return lEmpId === empIdStr && (l.status?.toLowerCase() === 'approved');
             });
 
-            // 3. Compute total leave days taken per leave type (within the filter period)
-            const rangeStart = filters.startDate ? new Date(filters.startDate) : null;
-            const rangeEnd = filters.endDate ? new Date(filters.endDate) : null;
-
-            // Group leave days used per leaveType
-            const leaveUsedByType = {}; // { leaveTypeId: { days, quota } }
+            // 3. Compute total leave days taken per leave type
+            const leaveUsedByType = {};
             let totalLeaveDays = 0;
 
             empLeaves.forEach(l => {
                 const leaveStart = new Date(l.startDate);
                 const leaveEnd = new Date(l.endDate);
+                const diffTime = Math.abs(leaveEnd - leaveStart);
+                const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                totalLeaveDays += days;
 
-                // Find intersection of leave range and filter date range
-                const start = rangeStart && leaveStart < rangeStart ? rangeStart : leaveStart;
-                const end = rangeEnd && leaveEnd > rangeEnd ? rangeEnd : leaveEnd;
+                const typeObj = l.leaveType;
+                const typeId = typeObj?._id || typeObj?.name || 'general';
+                const typeQuota = Number(typeObj?.maxDays) || 12;
 
-                if (start <= end) {
-                    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-                    const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-                    const diffTime = e - s;
-                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                    const days = Math.max(1, diffDays);
-                    totalLeaveDays += days;
-
-                    // Track per leave type for quota comparison
-                    const typeId = String(l.leaveType?._id || l.leaveType || 'unknown');
-                    const quota = Number(l.leaveType?.quota) || 0;
-                    if (!leaveUsedByType[typeId]) {
-                        leaveUsedByType[typeId] = { days: 0, quota };
-                    }
-                    leaveUsedByType[typeId].days += days;
+                if (!leaveUsedByType[typeId]) {
+                    leaveUsedByType[typeId] = { days: 0, quota: typeQuota };
                 }
+                leaveUsedByType[typeId].days += days;
             });
 
-            // 4. Only deduct salary for EXCESS days beyond quota (unpaid leave)
-            //    Leaves within quota are PAID — no deduction.
+            // Calculate unpaid days (excess over quota per type)
             let unpaidLeaveDays = 0;
             Object.values(leaveUsedByType).forEach(({ days, quota }) => {
-                const excess = Math.max(0, days - quota);
-                unpaidLeaveDays += excess;
+                if (days > quota) unpaidLeaveDays += (days - quota);
             });
 
-            const leaveDeduction = Math.round(dailyRate * unpaidLeaveDays);
-            const totalDeduction = leaveDeduction + lateDeduction;
+            const leaveDeduction = Math.round(unpaidLeaveDays * dailyRate);
+            const totalDeduction = lateDeduction + leaveDeduction;
             const netSalary = Math.max(0, baseSalary - totalDeduction);
 
             return {
                 employee: emp,
                 baseSalary,
+                dailyRate,
                 presentDays,
                 lateCount,
                 lateDeduction,
@@ -292,7 +408,7 @@ const HRReports = ({ employees }) => {
                 netSalary
             };
         });
-    }, [filteredEmployees, filteredAttendance, filteredLeaves, filters.startDate, filters.endDate]);
+    }, [filteredEmployees, filteredAttendance, leaveRecords]);
 
     const payrollSummary = useMemo(() => {
         const totalBase = payrollData.reduce((acc, curr) => acc + curr.baseSalary, 0);
@@ -329,42 +445,7 @@ const HRReports = ({ employees }) => {
         return { total, fullTime, probation, internship, deptCount };
     }, [filteredEmployees]);
 
-    // ── Attendance Chart (last 14 days dynamic counts) ──────
-    const chartData = useMemo(() => {
-        const grouped = {};
-        filteredAttendance.forEach(r => {
-            grouped[r.date] = (grouped[r.date] || 0) + 1;
-        });
-
-        const sorted = Object.entries(grouped)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-14);
-
-        const maxCount = Math.max(...sorted.map(([, c]) => c), 1);
-
-        return sorted.map(([date, count]) => ({
-            date: date.slice(5), // MM-DD
-            count,
-            heightPercent: Math.round((count / maxCount) * 100)
-        }));
-    }, [filteredAttendance]);
-
-    // ── Formatter Helpers ───────────────────────────────────
-    const formatTime = (dateStr) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleTimeString([], {
-            hour: '2-digit', minute: '2-digit'
-        });
-    };
-
-    const calcHours = (checkIn, checkOut) => {
-        if (!checkIn || !checkOut) return '—';
-        const diff = new Date(checkOut) - new Date(checkIn);
-        const h = Math.floor(diff / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        return `${h}h ${m}m`;
-    };
-
+    // ── Formatter & Helper Functions ─────────────────────────
     const SHIFT_START_HOUR = 9;
     const SHIFT_START_MIN = 15;
     const isLate = (checkIn) => {
@@ -375,8 +456,157 @@ const HRReports = ({ employees }) => {
         return h > SHIFT_START_HOUR || (h === SHIFT_START_HOUR && m > SHIFT_START_MIN);
     };
 
+    const formatTime = (dateStr) => {
+        if (!dateStr) return '—';
+        return new Date(dateStr).toLocaleTimeString([], {
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
+    const calcHours = (checkIn, checkOut) => {
+        if (!checkIn) return '—';
+        if (!checkOut) return 'Active Now';
+        const diff = new Date(checkOut) - new Date(checkIn);
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        return `${h}h ${m}m`;
+    };
+
+    const getDecimalHours = (checkIn, checkOut) => {
+        if (!checkIn || !checkOut) return 0;
+        const diff = new Date(checkOut) - new Date(checkIn);
+        return parseFloat((diff / (1000 * 60 * 60)).toFixed(1));
+    };
+
     const formatCurrency = (val) => {
         return `₨ ${Number(val).toLocaleString()}`;
+    };
+
+    // ── Attendance Chart (dynamic continuous timeline) ──────
+    const chartData = useMemo(() => {
+        const dateMap = {};
+        filteredAttendance.forEach(r => {
+            if (!r.date) return;
+            if (!dateMap[r.date]) {
+                dateMap[r.date] = { count: 0, lateCount: 0, activeCount: 0 };
+            }
+            dateMap[r.date].count += 1;
+            if (isLate(r.checkIn)) dateMap[r.date].lateCount += 1;
+            if (r.checkIn && !r.checkOut) dateMap[r.date].activeCount += 1;
+        });
+
+        let dates = [];
+        if (filters.startDate && filters.endDate) {
+            const start = new Date(filters.startDate);
+            const end = new Date(filters.endDate);
+            let curr = new Date(start);
+            let countLimit = 0;
+            while (curr <= end && countLimit < 31) {
+                const dStr = curr.toISOString().split('T')[0];
+                dates.push(dStr);
+                curr.setDate(curr.getDate() + 1);
+                countLimit++;
+            }
+        }
+
+        if (dates.length === 0) {
+            const today = new Date();
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+        }
+
+        const maxCount = Math.max(...dates.map(d => dateMap[d]?.count || 0), 1);
+
+        return dates.map(dStr => {
+            const data = dateMap[dStr] || { count: 0, lateCount: 0, activeCount: 0 };
+            const dateObj = new Date(dStr + 'T00:00:00');
+            const dayName = dateObj.toLocaleDateString([], { weekday: 'short' });
+            const monthDay = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            return {
+                rawDate: dStr,
+                dateLabel: monthDay,
+                dayName,
+                count: data.count,
+                lateCount: data.lateCount,
+                activeCount: data.activeCount,
+                heightPercent: Math.round((data.count / maxCount) * 100)
+            };
+        });
+    }, [filteredAttendance, filters.startDate, filters.endDate]);
+
+    // ── Safe Metric Calculations for Below Chart ─────────────
+    const chartSummary = useMemo(() => {
+        if (!chartData || chartData.length === 0) {
+            return { peakCount: 0, peakDate: 'N/A', dailyAvg: '0', totalCheckIns: 0, onTimeRate: 100, lateCount: 0 };
+        }
+        let peakCount = 0;
+        let peakDate = 'N/A';
+        let totalCheckIns = 0;
+
+        chartData.forEach(d => {
+            totalCheckIns += d.count;
+            if (d.count >= peakCount && d.count > 0) {
+                peakCount = d.count;
+                peakDate = `${d.dateLabel} (${d.dayName})`;
+            }
+        });
+
+        const dailyAvg = (totalCheckIns / chartData.length).toFixed(1);
+        const lateCount = filteredAttendance.filter(r => isLate(r.checkIn)).length;
+        const totalLogs = filteredAttendance.length;
+        const onTimeRate = totalLogs > 0 ? Math.round(((totalLogs - lateCount) / totalLogs) * 100) : 100;
+
+        return { peakCount, peakDate, dailyAvg, totalCheckIns, onTimeRate, lateCount };
+    }, [chartData, filteredAttendance]);
+
+    // ── Filtered Attendance Log (Search & Status Filters) ───
+    const displayedAttendance = useMemo(() => {
+        return filteredAttendance.filter(record => {
+            const name = record.employee?.name || '';
+            const email = record.employee?.email || '';
+            const dept = record.employee?.department || '';
+            const q = attendanceSearch.toLowerCase();
+            const matchesSearch = !q || name.toLowerCase().includes(q) || email.toLowerCase().includes(q) || dept.toLowerCase().includes(q);
+
+            let matchesStatus = true;
+            if (attendanceStatusFilter === 'present') {
+                matchesStatus = record.checkIn && !isLate(record.checkIn);
+            } else if (attendanceStatusFilter === 'late') {
+                matchesStatus = isLate(record.checkIn);
+            } else if (attendanceStatusFilter === 'active') {
+                matchesStatus = record.checkIn && !record.checkOut;
+            }
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [filteredAttendance, attendanceSearch, attendanceStatusFilter]);
+
+    // ── Export Attendance Log to CSV ────────────────────────
+    const exportAttendanceCSV = () => {
+        if (!displayedAttendance.length) return alert('No attendance records to export.');
+        const headers = ['Employee Name', 'Email', 'Department', 'Date', 'Check In', 'Check Out', 'Hours Worked', 'Status'];
+        const rows = displayedAttendance.map(r => [
+            `"${r.employee?.name || ''}"`,
+            `"${r.employee?.email || ''}"`,
+            `"${r.employee?.department || ''}"`,
+            `"${r.date || ''}"`,
+            `"${formatTime(r.checkIn)}"`,
+            `"${formatTime(r.checkOut)}"`,
+            `"${calcHours(r.checkIn, r.checkOut)}"`,
+            `"${!r.checkIn ? 'Absent' : isLate(r.checkIn) ? 'Late Entry' : !r.checkOut ? 'Active Session' : 'Present'}"`
+        ]);
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `Attendance_Log_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // ── Export Report to PDF ───────────────────────────────
@@ -556,6 +786,15 @@ const HRReports = ({ employees }) => {
         return Array.from(deptSet).sort();
     }, [employees]);
 
+    // ── Cascading Staff list (filtered by selected Department) ─────────────────────────────────
+    const availableStaff = useMemo(() => {
+        let list = employees.filter(e => e.role === 'employee');
+        if (filters.department) {
+            list = list.filter(e => e.department?.toLowerCase() === filters.department.toLowerCase());
+        }
+        return list;
+    }, [employees, filters.department]);
+
     // ── Report Type Metadata ───────────────────────────────
     const reportTypesMeta = [
         { id: 'attendance', label: 'Attendance', icon: ClipboardList },
@@ -570,105 +809,155 @@ const HRReports = ({ employees }) => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
         >
-            {/* ── Heading ── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">Reports Dashboard</h1>
-                    <p className="text-sm text-slate-400">Generate, analyze, and export HR and employee reports</p>
-                </div>
-                <button
-                    onClick={exportToPDF}
-                    disabled={loading}
-                    className="self-start md:self-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-2xl text-sm transition-all duration-200 shadow-lg shadow-indigo-100 flex items-center gap-2 hover:shadow-indigo-200 active:scale-95 disabled:opacity-50"
-                >
-                    <Download size={16} /> Export to PDF
-                </button>
-            </div>
-
-            {/* ── Report Type Switcher ── */}
-            <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1.5 gap-1 shadow-sm">
-                {reportTypesMeta.map((type) => {
-                    const Icon = type.icon;
-                    const isActive = reportType === type.id;
-                    return (
-                        <button
-                            key={type.id}
-                            onClick={() => setReportType(type.id)}
-                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${isActive
-                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                                }`}
-                        >
-                            <Icon size={16} />
-                            {type.label}
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* ── Filter Bar ── */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Filter size={15} className="text-slate-400" />
-                        <span className="text-xs font-semibold text-slate-500">Filters</span>
+            {/* ── EXECUTIVE HERO CONTROL & FILTER PANEL (UI Expert Design) ── */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                {/* Header & Export Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h1 className="text-xl font-black text-slate-800 tracking-tight">Reports &amp; Analytics Console</h1>
+                        <p className="text-xs text-slate-400">Live attendance, leave, payroll &amp; directory controls</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Refresh Button */}
                         <button
                             onClick={handleRefresh}
                             disabled={refreshing}
                             title="Refresh report data"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all disabled:opacity-60"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all disabled:opacity-60 cursor-pointer"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={refreshing ? 'animate-spin' : ''}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={refreshing ? 'animate-spin' : ''}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
                             {refreshing ? 'Syncing...' : 'Refresh'}
                         </button>
+                        <button
+                            onClick={exportToPDF}
+                            disabled={loading}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-xl text-xs transition-all shadow-md shadow-indigo-100 flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+                        >
+                            <Download size={14} /> Export PDF
+                        </button>
+                    </div>
+                </div>
+
+                {/* Report Type Tabs */}
+                <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 overflow-x-auto">
+                    {reportTypesMeta.map((type) => {
+                        const Icon = type.icon;
+                        const isActive = reportType === type.id;
+                        return (
+                            <button
+                                key={type.id}
+                                onClick={() => setReportType(type.id)}
+                                className={`flex-1 min-w-[110px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                                    isActive
+                                        ? 'bg-white text-indigo-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+                                }`}
+                            >
+                                <Icon size={14} />
+                                {type.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Quick Date Selector Presets (Shown for Attendance & Leave reports) */}
+                {(reportType === 'attendance' || reportType === 'leave') && (
+                    <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
+                                <Filter size={11} /> Quick Range:
+                            </span>
+                            <button
+                                onClick={() => handleApplyDatePreset('today')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
+                                    datePreset === 'today' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+                                }`}
+                            >
+                                <span>📍 Today's Entry</span>
+                            </button>
+                            <button
+                                onClick={() => handleApplyDatePreset('yesterday')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                    datePreset === 'yesterday' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+                                }`}
+                            >
+                                Yesterday
+                            </button>
+                            <button
+                                onClick={() => handleApplyDatePreset('thisWeek')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                    datePreset === 'thisWeek' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+                                }`}
+                            >
+                                This Week
+                            </button>
+                            <button
+                                onClick={() => handleApplyDatePreset('thisMonth')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                    datePreset === 'thisMonth' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+                                }`}
+                            >
+                                This Month
+                            </button>
+                            <button
+                                onClick={() => handleApplyDatePreset('all')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                                    datePreset === 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+                                }`}
+                            >
+                                All Records
+                            </button>
+                        </div>
+
                         {(filters.startDate || filters.endDate || filters.employeeId || filters.department) && (
                             <button
-                                onClick={() => setFilters({ startDate: defaultDateRange.firstDay, endDate: defaultDateRange.lastDay, employeeId: '', department: '' })}
-                                className="text-xs text-slate-400 hover:text-rose-500 font-semibold transition-colors"
+                                onClick={() => {
+                                    setDatePreset('thisMonth');
+                                    setFilters({ startDate: defaultDateRange.firstDay, endDate: defaultDateRange.lastDay, employeeId: '', department: '' });
+                                }}
+                                className="text-xs text-rose-500 hover:text-rose-700 font-bold transition-colors underline cursor-pointer"
                             >
                                 Reset
                             </button>
                         )}
                     </div>
-                </div>
+                )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Start Date */}
+                {/* Filter Inputs Grid (Visible across ALL tabs: Attendance, Leave, Payroll, Staff Directory) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-100">
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block tracking-wider">From Date</label>
-                        <div className="relative">
-                            <input
-                                type="date"
-                                value={filters.startDate}
-                                onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-                                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50/50"
-                            />
-                        </div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">From Date</label>
+                        <input
+                            type="date"
+                            value={filters.startDate}
+                            onChange={e => { setDatePreset('custom'); setFilters({ ...filters, startDate: e.target.value }); }}
+                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50"
+                        />
                     </div>
-
-                    {/* End Date */}
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block tracking-wider">To Date</label>
-                        <div className="relative">
-                            <input
-                                type="date"
-                                value={filters.endDate}
-                                onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-                                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50/50"
-                            />
-                        </div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">To Date</label>
+                        <input
+                            type="date"
+                            value={filters.endDate}
+                            onChange={e => { setDatePreset('custom'); setFilters({ ...filters, endDate: e.target.value }); }}
+                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50"
+                        />
                     </div>
-
-                    {/* Department Dropdown */}
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block tracking-wider">Department</label>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">Department</label>
                         <select
                             value={filters.department}
-                            onChange={e => setFilters({ ...filters, department: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50/50 capitalize"
+                            onChange={e => {
+                                const newDept = e.target.value;
+                                let newEmpId = filters.employeeId;
+                                if (newDept && newEmpId) {
+                                    const emp = employees.find(emp => emp._id === newEmpId);
+                                    if (emp && emp.department?.toLowerCase() !== newDept.toLowerCase()) {
+                                        newEmpId = '';
+                                    }
+                                }
+                                setFilters({ ...filters, department: newDept, employeeId: newEmpId });
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 capitalize"
                         >
                             <option value="">All Departments</option>
                             {departments.map(dept => (
@@ -676,17 +965,15 @@ const HRReports = ({ employees }) => {
                             ))}
                         </select>
                     </div>
-
-                    {/* Employee Dropdown */}
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block tracking-wider">Employee Name</label>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">Employee Name</label>
                         <select
                             value={filters.employeeId}
                             onChange={e => setFilters({ ...filters, employeeId: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all bg-slate-50/50"
+                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50"
                         >
-                            <option value="">All Employees</option>
-                            {employees.filter(e => e.role === 'employee').map(emp => (
+                            <option value="">All Employees ({availableStaff.length})</option>
+                            {availableStaff.map(emp => (
                                 <option key={emp._id} value={emp._id}>{emp.name}</option>
                             ))}
                         </select>
@@ -704,154 +991,255 @@ const HRReports = ({ employees }) => {
                     {/* ── ATTENDANCE REPORT VIEW ── */}
                     {reportType === 'attendance' && (
                         <div className="space-y-6">
-                            {/* Summary Cards */}
+                            {/* Summary Cards (Interactive Filters) */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <SummaryCard icon={Users} label="Total Attendance" value={attendanceSummary.total} color="indigo" />
-                                <SummaryCard icon={Clock} label="Avg Active Hours" value={`${attendanceSummary.avgHours} hrs`} color="emerald" />
-                                <SummaryCard icon={AlertTriangle} label="Late Arrivals" value={attendanceSummary.lateArrivals} color="amber" />
-                                <SummaryCard icon={UserCheck} label="Active Work Sessions" value={attendanceSummary.activeSessions} color="rose" />
+                                <SummaryCard
+                                    icon={Users}
+                                    label="Total Attendance"
+                                    value={attendanceSummary.total}
+                                    color="indigo"
+                                    isActive={attendanceStatusFilter === 'all'}
+                                    onClick={() => setAttendanceStatusFilter('all')}
+                                />
+                                <SummaryCard
+                                    icon={Clock}
+                                    label="Avg Active Hours"
+                                    value={`${attendanceSummary.avgHours} hrs`}
+                                    color="emerald"
+                                    isActive={attendanceStatusFilter === 'present'}
+                                    onClick={() => setAttendanceStatusFilter('present')}
+                                />
+                                <SummaryCard
+                                    icon={AlertTriangle}
+                                    label="Late Arrivals"
+                                    value={attendanceSummary.lateArrivals}
+                                    color="amber"
+                                    isActive={attendanceStatusFilter === 'late'}
+                                    onClick={() => setAttendanceStatusFilter('late')}
+                                />
+                                <SummaryCard
+                                    icon={UserCheck}
+                                    label="Active Work Sessions"
+                                    value={attendanceSummary.activeSessions}
+                                    color="rose"
+                                    isActive={attendanceStatusFilter === 'active'}
+                                    onClick={() => setAttendanceStatusFilter('active')}
+                                />
                             </div>
 
-                            {/* Chart (Visual presence history) */}
-                            {chartData.length > 0 && (
-                                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                                    {/* Chart Header */}
-                                    <div className="flex items-center justify-between mb-5">
-                                        <div className="flex items-center gap-2">
-                                            <BarChart2 size={15} className="text-indigo-500" />
-                                            <h2 className="text-sm font-semibold text-slate-700">Daily Attendance</h2>
-                                            <span className="text-xs text-slate-400 font-medium">— last {chartData.length} days</span>
+                            {/* ── PROFESSIONAL ATTENDANCE LOG SECTION ── */}
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden space-y-0">
+                                {/* Header Controls & Search */}
+                                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+                                            <ClipboardList size={18} />
                                         </div>
-                                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> High</span>
-                                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-indigo-300 inline-block" /> Low</span>
+                                        <div>
+                                            <h2 className="text-base font-black text-slate-800">Attendance Log &amp; Time Tracking</h2>
+                                            <p className="text-xs text-slate-400">Showing {displayedAttendance.length} of {filteredAttendance.length} attendance logs</p>
                                         </div>
                                     </div>
 
-                                    {/* Chart Body */}
-                                    <div className="overflow-x-auto pt-8 pb-2">
-                                        <div className="relative min-w-[500px]">
-                                            {/* Y-axis grid lines */}
-                                            <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none" style={{ bottom: '24px', top: 0 }}>
-                                                {[100, 75, 50, 25, 0].map(pct => (
-                                                    <div key={pct} className="flex items-center gap-2">
-                                                        <span className="text-[9px] text-slate-300 w-4 text-right shrink-0">{Math.round((pct / 100) * Math.max(...chartData.map(d => d.count), 1))}</span>
-                                                        <div className="flex-1 border-t border-dashed border-slate-100" />
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Bars */}
-                                            <div className="flex items-end gap-1.5 ml-7" style={{ height: '160px' }}>
-                                                {chartData.map((item, i) => {
-                                                    const isHigh = item.heightPercent >= 60;
-                                                    return (
-                                                        <div key={i} className="flex-1 flex flex-col items-center gap-0 group relative" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                                                            {/* Bar with nested tooltip */}
-                                                            <div
-                                                                className={`w-full rounded-t-md transition-all duration-300 cursor-default relative ${isHigh ? 'bg-indigo-500 group-hover:bg-indigo-600' : 'bg-indigo-200 group-hover:bg-indigo-300'}`}
-                                                                style={{ height: `${item.heightPercent}%`, minHeight: '3px' }}
-                                                            >
-                                                                {/* Hover tooltip */}
-                                                                <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-20">
-                                                                    <div className="bg-slate-800 text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap shadow-lg">
-                                                                        {item.count} present
-                                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            {/* X-axis labels */}
-                                            <div className="flex gap-1.5 mt-2 ml-7">
-                                                {chartData.map((item, i) => (
-                                                    <div key={i} className="flex-1 text-center">
-                                                        <span className="text-[9px] text-slate-400">{item.date}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Summary Row */}
-                                    <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-3 gap-4">
-                                        <div className="text-center">
-                                            <p className="text-lg font-bold text-slate-800">{Math.max(...chartData.map(d => d.count))}</p>
-                                            <p className="text-[10px] text-slate-400 mt-0.5">Peak Day</p>
-                                        </div>
-                                        <div className="text-center border-x border-slate-100">
-                                            <p className="text-lg font-bold text-slate-800">
-                                                {Math.round(chartData.reduce((s, d) => s + d.count, 0) / chartData.length)}
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 mt-0.5">Daily Avg</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-lg font-bold text-slate-800">{chartData.reduce((s, d) => s + d.count, 0)}</p>
-                                            <p className="text-[10px] text-slate-400 mt-0.5">Total Check-ins</p>
-                                        </div>
+                                    {/* Action Buttons & Export */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            onClick={exportAttendanceCSV}
+                                            className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <Download size={14} className="text-indigo-600" /> Export CSV
+                                        </button>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Detail Table */}
-                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                    <h2 className="text-sm font-black text-slate-800">Attendance Log</h2>
-                                    <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-lg">
-                                        {filteredAttendance.length} records
-                                    </span>
+                                {/* Filters & Search Sub-Bar */}
+                                <div className="px-4 py-3 border-b border-slate-100 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                    {/* Status Filter Pills */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <button
+                                            onClick={() => setAttendanceStatusFilter('all')}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                attendanceStatusFilter === 'all'
+                                                    ? 'bg-slate-900 text-white shadow-xs'
+                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            }`}
+                                        >
+                                            All Logs ({filteredAttendance.length})
+                                        </button>
+                                        <button
+                                            onClick={() => setAttendanceStatusFilter('present')}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                attendanceStatusFilter === 'present'
+                                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                            }`}
+                                        >
+                                            On Time ({filteredAttendance.filter(r => r.checkIn && !isLate(r.checkIn)).length})
+                                        </button>
+                                        <button
+                                            onClick={() => setAttendanceStatusFilter('late')}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                attendanceStatusFilter === 'late'
+                                                    ? 'bg-amber-600 text-white shadow-xs'
+                                                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                            }`}
+                                        >
+                                            Late Entry ({filteredAttendance.filter(r => isLate(r.checkIn)).length})
+                                        </button>
+                                        <button
+                                            onClick={() => setAttendanceStatusFilter('active')}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                attendanceStatusFilter === 'active'
+                                                    ? 'bg-rose-600 text-white shadow-xs'
+                                                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                                            }`}
+                                        >
+                                            Active Now ({filteredAttendance.filter(r => r.checkIn && !r.checkOut).length})
+                                        </button>
+                                    </div>
+
+                                    {/* Log Search Box */}
+                                    <div className="relative w-full md:w-64">
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search staff, email, dept..."
+                                            value={attendanceSearch}
+                                            onChange={e => setAttendanceSearch(e.target.value)}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                        />
+                                        {attendanceSearch && (
+                                            <button onClick={() => setAttendanceSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold">
+                                                &times;
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                                {filteredAttendance.length === 0 ? (
-                                    <EmptyState msg="No attendance logs matches the selected filters." />
+
+                                {/* Table Display */}
+                                {displayedAttendance.length === 0 ? (
+                                    <EmptyState msg="No attendance logs match the active filter or search keyword." />
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
+                                        <table className="w-full text-left border-collapse table-fixed">
+                                            <colgroup>
+                                                <col className="w-[26%]" />
+                                                <col className="w-[14%]" />
+                                                <col className="w-[14%]" />
+                                                <col className="w-[15%]" />
+                                                <col className="w-[14%]" />
+                                                <col className="w-[17%]" />
+                                            </colgroup>
                                             <thead>
-                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[9px] font-bold tracking-widest">
-                                                    <th className="px-6 py-4">Employee</th>
-                                                    <th className="px-6 py-4">Department</th>
-                                                    <th className="px-6 py-4">Date</th>
-                                                    <th className="px-6 py-4 text-emerald-600">Check In</th>
-                                                    <th className="px-6 py-4 text-amber-600">Check Out</th>
-                                                    <th className="px-6 py-4">Hours</th>
-                                                    <th className="px-6 py-4">Status</th>
+                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase text-[9px] font-extrabold tracking-wider">
+                                                    <th className="px-4 py-3">Employee</th>
+                                                    <th className="px-3 py-3">Department</th>
+                                                    <th className="px-3 py-3">Date</th>
+                                                    <th className="px-3 py-3 text-emerald-600">Check In</th>
+                                                    <th className="px-3 py-3 text-slate-500">Check Out</th>
+                                                    <th className="px-3 py-3">Duration &amp; Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
-                                                {filteredAttendance.map(record => (
-                                                    <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-col">
-                                                                <span className="font-bold text-slate-800 text-sm">{record.employee?.name}</span>
-                                                                <span className="text-[10px] text-slate-400">{record.employee?.email}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm capitalize">{record.employee?.department || '—'}</td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm">{record.date}</td>
-                                                        <td className="px-6 py-4">
-                                                            <span className={`text-sm font-bold flex items-center gap-1.5 ${isLate(record.checkIn) ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${isLate(record.checkIn) ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                                                                {formatTime(record.checkIn)}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm font-semibold">{formatTime(record.checkOut)}</td>
-                                                        <td className="px-6 py-4 text-slate-700 text-sm font-bold">{calcHours(record.checkIn, record.checkOut)}</td>
-                                                        <td className="px-6 py-4">
-                                                            {!record.checkIn ? (
-                                                                <Badge color="slate" label="Absent" />
-                                                            ) : isLate(record.checkIn) ? (
-                                                                <Badge color="amber" label="Late Entry" />
-                                                            ) : !record.checkOut ? (
-                                                                <Badge color="rose" label="Active" />
-                                                            ) : (
-                                                                <Badge color="emerald" label="Present" />
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {displayedAttendance.map(record => {
+                                                    const late = isLate(record.checkIn);
+                                                    const active = record.checkIn && !record.checkOut;
+                                                    const hoursVal = getDecimalHours(record.checkIn, record.checkOut);
+                                                    const formattedDate = record.date ? new Date(record.date + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                                                    return (
+                                                        <tr key={record._id} className="hover:bg-slate-50/60 transition-colors group">
+                                                            {/* Employee Info */}
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex items-center gap-2.5">
+                                                                    {record.employee?.photo ? (
+                                                                        <img src={record.employee.photo} alt={record.employee.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0" />
+                                                                    ) : (
+                                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs shrink-0 border border-indigo-200">
+                                                                            {record.employee?.name?.[0]?.toUpperCase() || 'U'}
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="flex flex-col min-w-0">
+                                                                        <span className="font-bold text-slate-800 text-xs truncate group-hover:text-indigo-600 transition-colors">
+                                                                            {record.employee?.name || 'Unknown Staff'}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-slate-400 truncate">{record.employee?.email}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+
+                                                            {/* Department */}
+                                                            <td className="px-3 py-3">
+                                                                <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded-lg truncate inline-block">
+                                                                    {record.employee?.department || 'General'}
+                                                                </span>
+                                                            </td>
+
+                                                            {/* Date */}
+                                                            <td className="px-3 py-3">
+                                                                <span className="text-xs text-slate-700 font-semibold truncate block">
+                                                                    {formattedDate}
+                                                                </span>
+                                                            </td>
+
+                                                            {/* Check In */}
+                                                            <td className="px-3 py-3">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${late ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                                                    <span className={`text-xs font-bold tabular-nums ${late ? 'text-amber-700' : 'text-emerald-700'}`}>
+                                                                        {formatTime(record.checkIn)}
+                                                                    </span>
+                                                                    {late && (
+                                                                        <span className="text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded uppercase">
+                                                                            Late
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+
+                                                            {/* Check Out */}
+                                                            <td className="px-3 py-3">
+                                                                {active ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-full text-[10px] font-bold">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" /> Active Now
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-xs text-slate-600 font-semibold tabular-nums">
+                                                                        {formatTime(record.checkOut)}
+                                                                    </span>
+                                                                )}
+                                                            </td>
+
+                                                            {/* Duration & Status */}
+                                                            <td className="px-3 py-3">
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center justify-between text-xs">
+                                                                        <span className="font-black text-slate-800 tabular-nums">
+                                                                            {calcHours(record.checkIn, record.checkOut)}
+                                                                        </span>
+                                                                        {!record.checkIn ? (
+                                                                            <Badge color="slate" label="Absent" />
+                                                                        ) : late ? (
+                                                                            <Badge color="amber" label="Late Entry" />
+                                                                        ) : active ? (
+                                                                            <Badge color="rose" label="Active" />
+                                                                        ) : (
+                                                                            <Badge color="emerald" label="Present" />
+                                                                        )}
+                                                                    </div>
+                                                                    {/* Mini Progress Bar vs 8h target */}
+                                                                    {record.checkIn && record.checkOut && (
+                                                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                            <div
+                                                                                className={`h-full rounded-full ${hoursVal >= 8 ? 'bg-emerald-500' : hoursVal >= 6 ? 'bg-indigo-500' : 'bg-amber-500'}`}
+                                                                                style={{ width: `${Math.min((hoursVal / 8) * 100, 100)}%` }}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -863,12 +1251,40 @@ const HRReports = ({ employees }) => {
                     {/* ── LEAVE REPORT VIEW ── */}
                     {reportType === 'leave' && (
                         <div className="space-y-6">
-                            {/* Summary Cards */}
+                            {/* Summary Cards (Interactive Filters) */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <SummaryCard icon={Calendar} label="Total Requests" value={leaveSummary.total} color="indigo" />
-                                <SummaryCard icon={CheckCircle} label="Approved Leaves" value={leaveSummary.approved} color="emerald" />
-                                <SummaryCard icon={Clock} label="Pending Requests" value={leaveSummary.pending} color="amber" />
-                                <SummaryCard icon={XCircle} label="Rejected Leaves" value={leaveSummary.rejected} color="rose" />
+                                <SummaryCard
+                                    icon={Calendar}
+                                    label="Total Requests"
+                                    value={leaveSummary.total}
+                                    color="indigo"
+                                    isActive={leaveStatusFilter === 'all'}
+                                    onClick={() => setLeaveStatusFilter('all')}
+                                />
+                                <SummaryCard
+                                    icon={CheckCircle}
+                                    label="Approved Leaves"
+                                    value={leaveSummary.approved}
+                                    color="emerald"
+                                    isActive={leaveStatusFilter === 'approved'}
+                                    onClick={() => setLeaveStatusFilter('approved')}
+                                />
+                                <SummaryCard
+                                    icon={Clock}
+                                    label="Pending Requests"
+                                    value={leaveSummary.pending}
+                                    color="amber"
+                                    isActive={leaveStatusFilter === 'pending'}
+                                    onClick={() => setLeaveStatusFilter('pending')}
+                                />
+                                <SummaryCard
+                                    icon={XCircle}
+                                    label="Rejected Leaves"
+                                    value={leaveSummary.rejected}
+                                    color="rose"
+                                    isActive={leaveStatusFilter === 'rejected'}
+                                    onClick={() => setLeaveStatusFilter('rejected')}
+                                />
                             </div>
 
                             {/* Leaves by Department Visualization */}
@@ -897,43 +1313,100 @@ const HRReports = ({ employees }) => {
                                 </div>
                             )}
 
-                            {/* Detailed Records Table */}
-                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                    <h2 className="text-sm font-black text-slate-800">Leave Logs</h2>
-                                    <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-lg">
-                                        {filteredLeaves.length} logs
-                                    </span>
+                            {/* Detailed Leave Records Table */}
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden space-y-0">
+                                {/* Header Controls & Search Bar */}
+                                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+                                            <Calendar size={18} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-sm font-black text-slate-800">Leave Applications &amp; History</h2>
+                                            <p className="text-xs text-slate-400">Showing {displayedLeaves.length} of {leaveRecords.length} total applications</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Filters & Search */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {/* Status Pills */}
+                                        <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-2xs">
+                                            {[
+                                                { id: 'all', label: 'All' },
+                                                { id: 'approved', label: 'Approved' },
+                                                { id: 'pending', label: 'Pending' },
+                                                { id: 'rejected', label: 'Rejected' },
+                                            ].map(pill => (
+                                                <button
+                                                    key={pill.id}
+                                                    onClick={() => setLeaveStatusFilter(pill.id)}
+                                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                                        leaveStatusFilter === pill.id
+                                                            ? 'bg-indigo-600 text-white shadow-2xs'
+                                                            : 'text-slate-600 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    {pill.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Search Input */}
+                                        <div className="relative min-w-[200px]">
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search applicant, reason..."
+                                                value={leaveSearch}
+                                                onChange={e => setLeaveSearch(e.target.value)}
+                                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                {filteredLeaves.length === 0 ? (
-                                    <EmptyState msg="No leave requests matches the filters." />
+
+                                {displayedLeaves.length === 0 ? (
+                                    <EmptyState msg="No leave requests match your search or filters." />
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
+                                        <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[9px] font-bold tracking-widest">
-                                                    <th className="px-6 py-4">Employee</th>
-                                                    <th className="px-6 py-4">Department</th>
-                                                    <th className="px-6 py-4">Start Date</th>
-                                                    <th className="px-6 py-4">End Date</th>
-                                                    <th className="px-6 py-4">Reason</th>
-                                                    <th className="px-6 py-4">Status</th>
+                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase text-[9px] font-extrabold tracking-wider">
+                                                    <th className="px-4 py-3">Employee</th>
+                                                    <th className="px-3 py-3">Department</th>
+                                                    <th className="px-3 py-3">Start Date</th>
+                                                    <th className="px-3 py-3">End Date</th>
+                                                    <th className="px-3 py-3">Reason</th>
+                                                    <th className="px-3 py-3">Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
-                                                {filteredLeaves.map(log => (
-                                                    <tr key={log._id} className="hover:bg-slate-50/50 transition-colors">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-col">
-                                                                <span className="font-bold text-slate-800 text-sm">{log.employee?.name}</span>
-                                                                <span className="text-[10px] text-slate-400">{log.employee?.email}</span>
+                                                {displayedLeaves.map(log => (
+                                                    <tr key={log._id} className="hover:bg-slate-50/60 transition-colors">
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-2.5">
+                                                                {log.employee?.photo ? (
+                                                                    <img src={log.employee.photo} alt={log.employee.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0" />
+                                                                ) : (
+                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs shrink-0 border border-indigo-200">
+                                                                        {log.employee?.name?.[0]?.toUpperCase() || 'U'}
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <span className="font-bold text-slate-800 text-xs truncate">{log.employee?.name || 'Staff Member'}</span>
+                                                                    <span className="text-[10px] text-slate-400 truncate">{log.employee?.email}</span>
+                                                                </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm capitalize">{log.employee?.department || '—'}</td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm font-semibold">{new Date(log.startDate).toLocaleDateString()}</td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm font-semibold">{new Date(log.endDate).toLocaleDateString()}</td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm italic max-w-xs truncate" title={log.reason}>{log.reason}</td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-3 py-3">
+                                                            <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded-lg truncate inline-block">
+                                                                {log.employee?.department || 'General'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 py-3 text-slate-700 text-xs font-semibold">{new Date(log.startDate).toLocaleDateString()}</td>
+                                                        <td className="px-3 py-3 text-slate-700 text-xs font-semibold">{new Date(log.endDate).toLocaleDateString()}</td>
+                                                        <td className="px-3 py-3 text-slate-600 text-xs italic max-w-[180px] truncate" title={log.reason}>{log.reason}</td>
+                                                        <td className="px-3 py-3">
                                                             {log.status === 'approved' ? (
                                                                 <Badge color="emerald" label="Approved" />
                                                             ) : log.status === 'rejected' ? (
@@ -965,12 +1438,40 @@ const HRReports = ({ employees }) => {
                     {/* ── EMPLOYEE DIRECTORY REPORT VIEW ── */}
                     {reportType === 'employee' && (
                         <div className="space-y-6">
-                            {/* Summary Cards */}
+                            {/* Summary Cards (Interactive Filters) */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <SummaryCard icon={Users} label="Total Headcount" value={employeeSummary.total} color="indigo" />
-                                <SummaryCard icon={UserCheck} label="Full Time Staff" value={employeeSummary.fullTime} color="emerald" />
-                                <SummaryCard icon={Clock} label="Probation Status" value={employeeSummary.probation} color="amber" />
-                                <SummaryCard icon={Briefcase} label="Internships" value={employeeSummary.internship} color="rose" />
+                                <SummaryCard
+                                    icon={Users}
+                                    label="Total Headcount"
+                                    value={employeeSummary.total}
+                                    color="indigo"
+                                    isActive={directoryStatusFilter === 'all'}
+                                    onClick={() => setDirectoryStatusFilter('all')}
+                                />
+                                <SummaryCard
+                                    icon={UserCheck}
+                                    label="Full Time Staff"
+                                    value={employeeSummary.fullTime}
+                                    color="emerald"
+                                    isActive={directoryStatusFilter === 'full time'}
+                                    onClick={() => setDirectoryStatusFilter('full time')}
+                                />
+                                <SummaryCard
+                                    icon={Clock}
+                                    label="Probation Status"
+                                    value={employeeSummary.probation}
+                                    color="amber"
+                                    isActive={directoryStatusFilter === 'probation'}
+                                    onClick={() => setDirectoryStatusFilter('probation')}
+                                />
+                                <SummaryCard
+                                    icon={Briefcase}
+                                    label="Internships"
+                                    value={employeeSummary.internship}
+                                    color="rose"
+                                    isActive={directoryStatusFilter === 'internship'}
+                                    onClick={() => setDirectoryStatusFilter('internship')}
+                                />
                             </div>
 
                             {/* Department Breakdown Visual */}
@@ -999,56 +1500,104 @@ const HRReports = ({ employees }) => {
                                 </div>
                             )}
 
-                            {/* Directory Listing */}
-                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                    <h2 className="text-sm font-black text-slate-800">Staff Records Index</h2>
-                                    <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-0.5 rounded-lg">
-                                        {filteredEmployees.length} profiles
-                                    </span>
+                            {/* Directory Listing Table */}
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden space-y-0">
+                                {/* Header Controls & Search Bar */}
+                                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+                                            <Users size={18} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-sm font-black text-slate-800">Staff Directory Index</h2>
+                                            <p className="text-xs text-slate-400">Showing {displayedEmployees.length} of {employees.length} total staff profiles</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Filters & Search */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {/* Status Pills */}
+                                        <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-2xs">
+                                            {[
+                                                { id: 'all', label: 'All' },
+                                                { id: 'full time', label: 'Full Time' },
+                                                { id: 'probation', label: 'Probation' },
+                                                { id: 'internship', label: 'Internship' },
+                                            ].map(pill => (
+                                                <button
+                                                    key={pill.id}
+                                                    onClick={() => setDirectoryStatusFilter(pill.id)}
+                                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                                        directoryStatusFilter === pill.id
+                                                            ? 'bg-indigo-600 text-white shadow-2xs'
+                                                            : 'text-slate-600 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    {pill.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Search Input */}
+                                        <div className="relative min-w-[200px]">
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search staff, email, phone..."
+                                                value={directorySearch}
+                                                onChange={e => setDirectorySearch(e.target.value)}
+                                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                {filteredEmployees.length === 0 ? (
-                                    <EmptyState msg="No staff members match the filters." />
+
+                                {displayedEmployees.length === 0 ? (
+                                    <EmptyState msg="No staff members match your search or filters." />
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
+                                        <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[9px] font-bold tracking-widest">
-                                                    <th className="px-6 py-4">Employee</th>
-                                                    <th className="px-6 py-4">Department</th>
-                                                    <th className="px-6 py-4">Contact Info</th>
-                                                    <th className="px-6 py-4 text-indigo-600">Base Salary</th>
-                                                    <th className="px-6 py-4">Status</th>
-                                                    <th className="px-6 py-4">Hired Date</th>
+                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase text-[9px] font-extrabold tracking-wider">
+                                                    <th className="px-4 py-3">Employee</th>
+                                                    <th className="px-3 py-3">Department</th>
+                                                    <th className="px-3 py-3">Contact Info</th>
+                                                    <th className="px-3 py-3 text-indigo-600">Base Salary</th>
+                                                    <th className="px-3 py-3">Status</th>
+                                                    <th className="px-3 py-3">Hired Date</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
-                                                {filteredEmployees.map(emp => (
-                                                    <tr key={emp._id} className="hover:bg-slate-50/50 transition-colors">
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
+                                                {displayedEmployees.map(emp => (
+                                                    <tr key={emp._id} className="hover:bg-slate-50/60 transition-colors">
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-2.5">
                                                                 {emp.photo ? (
-                                                                    <img src={emp.photo} alt={emp.name} className="w-9 h-9 rounded-full object-cover border border-slate-200" />
+                                                                    <img src={emp.photo} alt={emp.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0" />
                                                                 ) : (
-                                                                    <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center font-black text-indigo-600 text-sm border border-indigo-100">
-                                                                        {emp.name?.[0]}
+                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs shrink-0 border border-indigo-200">
+                                                                        {emp.name?.[0]?.toUpperCase() || 'U'}
                                                                     </div>
                                                                 )}
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-bold text-slate-800 text-sm">{emp.name}</span>
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <span className="font-bold text-slate-800 text-xs truncate">{emp.name}</span>
                                                                     <span className="text-[10px] text-slate-400 capitalize">{emp.role}</span>
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-slate-600 text-sm capitalize font-medium">{emp.department}</td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-col text-slate-600 text-xs leading-normal">
-                                                                <span className="font-medium">{emp.email}</span>
-                                                                <span>{emp.phone || 'No phone'}</span>
+                                                        <td className="px-3 py-3">
+                                                            <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded-lg truncate inline-block">
+                                                                {emp.department || 'General'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 py-3">
+                                                            <div className="flex flex-col text-slate-600 text-[11px] leading-normal min-w-0">
+                                                                <span className="font-medium truncate">{emp.email}</span>
+                                                                <span className="truncate">{emp.phone || 'No phone'}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-slate-800 text-sm font-bold">{formatCurrency(emp.salary)}</td>
-                                                        <td className="px-6 py-4">
+                                                        <td className="px-3 py-3 text-slate-800 text-xs font-bold tabular-nums">{formatCurrency(emp.salary)}</td>
+                                                        <td className="px-3 py-3">
                                                             {emp.status === 'full time' ? (
                                                                 <Badge color="emerald" label="Full Time" />
                                                             ) : emp.status === 'probation' ? (
@@ -1057,7 +1606,7 @@ const HRReports = ({ employees }) => {
                                                                 <Badge color="slate" label="Internship" />
                                                             )}
                                                         </td>
-                                                        <td className="px-6 py-4 text-slate-500 text-xs font-semibold">
+                                                        <td className="px-3 py-3 text-slate-500 text-[11px] font-semibold">
                                                             {emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : '—'}
                                                         </td>
                                                     </tr>
@@ -1076,25 +1625,29 @@ const HRReports = ({ employees }) => {
 };
 
 // ── Summary Card Component ───────────────────────────────
-const SummaryCard = ({ icon: Icon, label, value, color }) => {
+const SummaryCard = ({ icon: Icon, label, value, color, isActive = false, onClick }) => {
     const colors = {
-        indigo: { bg: 'bg-indigo-50/50', text: 'text-indigo-600', icon: 'text-indigo-500', border: 'border-indigo-100/50' },
-        emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-600', icon: 'text-emerald-500', border: 'border-emerald-100/50' },
-        amber: { bg: 'bg-amber-50/50', text: 'text-amber-600', icon: 'text-amber-500', border: 'border-amber-100/50' },
-        rose: { bg: 'bg-rose-50/50', text: 'text-rose-600', icon: 'text-rose-500', border: 'border-rose-100/50' },
-        slate: { bg: 'bg-slate-50/50', text: 'text-slate-600', icon: 'text-slate-500', border: 'border-slate-100/50' },
+        indigo: { bg: 'bg-indigo-50/50', text: 'text-indigo-600', icon: 'text-indigo-500', border: 'border-indigo-100/50', activeBorder: 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md bg-indigo-50/20' },
+        emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-600', icon: 'text-emerald-500', border: 'border-emerald-100/50', activeBorder: 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/20' },
+        amber: { bg: 'bg-amber-50/50', text: 'text-amber-600', icon: 'text-amber-500', border: 'border-amber-100/50', activeBorder: 'border-amber-500 ring-2 ring-amber-500/20 shadow-md bg-amber-50/20' },
+        rose: { bg: 'bg-rose-50/50', text: 'text-rose-600', icon: 'text-rose-500', border: 'border-rose-100/50', activeBorder: 'border-rose-500 ring-2 ring-rose-500/20 shadow-md bg-rose-50/20' },
+        slate: { bg: 'bg-slate-50/50', text: 'text-slate-600', icon: 'text-slate-500', border: 'border-slate-100/50', activeBorder: 'border-slate-500 ring-2 ring-slate-500/20 shadow-md bg-slate-50/20' },
     };
     const c = colors[color] || colors.slate;
+    const Component = onClick ? 'button' : 'div';
     return (
-        <div className={`bg-white border ${c.border} rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 flex items-center gap-4`}>
-            <div className={`w-11 h-11 ${c.bg} rounded-2xl flex items-center justify-center`}>
+        <Component
+            onClick={onClick}
+            className={`w-full text-left bg-white border ${isActive ? c.activeBorder : c.border} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 ${onClick ? 'cursor-pointer group' : ''}`}
+        >
+            <div className={`w-11 h-11 ${c.bg} rounded-2xl flex items-center justify-center shrink-0`}>
                 <Icon size={20} className={c.icon} />
             </div>
             <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
                 <p className={`text-xl font-black mt-0.5 tracking-tight ${c.text}`}>{value}</p>
             </div>
-        </div>
+        </Component>
     );
 };
 
@@ -1129,123 +1682,129 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
     const dailyRate = Math.round(baseSalary / 30);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden z-10 space-y-6 p-6"
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                className="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden z-10 p-5 sm:p-6"
             >
-                {/* Close Button */}
-                <button onClick={onClose} className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-                    <XCircle size={20} />
-                </button>
-
-                {/* Header */}
-                <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                    <div className="bg-indigo-600 text-white p-3 rounded-2xl shadow-md shadow-indigo-100">
-                        <Banknote size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-black text-slate-800">Official Payslip Voucher</h2>
-                        <p className="text-xs text-slate-400">Itemized Monthly Salary Statement</p>
-                    </div>
-                </div>
-
-                {/* Employee Profile Header */}
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
+                {/* Header (Pinned) */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
                     <div className="flex items-center gap-3">
-                        {employee.photo ? (
-                            <img src={employee.photo} alt={employee.name} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
-                        ) : (
-                            <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-base border-2 border-white shadow-sm">
-                                {employee.name?.[0]}
-                            </div>
-                        )}
+                        <div className="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-md shadow-indigo-100">
+                            <Banknote size={22} />
+                        </div>
                         <div>
-                            <p className="font-black text-slate-800 text-base">{employee.name}</p>
-                            <p className="text-xs text-slate-400">{employee.email}</p>
-                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full capitalize mt-1 inline-block">
-                                {employee.department || 'General'} &nbsp;·&nbsp; {employee.status || 'Full Time'}
-                            </span>
+                            <h2 className="text-lg font-black text-slate-800 leading-snug">Official Payslip Voucher</h2>
+                            <p className="text-[11px] text-slate-400">Itemized Monthly Salary Statement</p>
                         </div>
                     </div>
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
+                        <XCircle size={20} />
+                    </button>
                 </div>
 
-                {/* Breakdown Sheet */}
-                <div className="space-y-3">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">Earnings &amp; Allowances</h3>
-                    <div className="bg-indigo-50/40 rounded-2xl p-3.5 border border-indigo-100/60 space-y-2 text-xs">
-                        <div className="flex justify-between font-bold text-slate-700">
-                            <span>Monthly Base Salary</span>
-                            <span className="text-slate-900 font-black">{formatCurrency(baseSalary)}</span>
-                        </div>
-                        <div className="flex justify-between text-slate-500 text-[11px] pt-1 border-t border-indigo-100/40">
-                            <span>Calculated Daily Rate (Base / 30)</span>
-                            <span>{formatCurrency(dailyRate)} / day</span>
-                        </div>
-                    </div>
-
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider pt-2">Deductions Breakdown</h3>
-                    <div className="bg-rose-50/40 rounded-2xl p-3.5 border border-rose-100/60 space-y-2 text-xs">
-                        {/* Leave Deduction */}
-                        <div className="flex justify-between items-center">
+                {/* Scrollable Modal Body */}
+                <div className="flex-1 overflow-y-auto space-y-3.5 py-3 pr-1">
+                    {/* Employee Profile Header */}
+                    <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            {employee.photo ? (
+                                <img src={employee.photo} alt={employee.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-xs" />
+                            ) : (
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-sm border-2 border-white shadow-xs">
+                                    {employee.name?.[0]}
+                                </div>
+                            )}
                             <div>
-                                <p className="font-bold text-slate-700">Leave Deduction</p>
-                                <p className="text-[10px] text-slate-400">
-                                    {leaveDays} approved leave {leaveDays === 1 ? 'day' : 'days'} taken
-                                    {unpaidLeaveDays > 0
-                                        ? ` · ${unpaidLeaveDays} excess day${unpaidLeaveDays > 1 ? 's' : ''} beyond quota × ${formatCurrency(dailyRate)}`
-                                        : ' · All within allocated quota (Paid Leave)'}
-                                </p>
+                                <p className="font-black text-slate-800 text-sm">{employee.name}</p>
+                                <p className="text-[11px] text-slate-400">{employee.email}</p>
+                                <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full capitalize mt-0.5 inline-block">
+                                    {employee.department || 'General'} &nbsp;·&nbsp; {employee.status || 'Full Time'}
+                                </span>
                             </div>
-                            <span className={`font-bold tabular-nums ${unpaidLeaveDays > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                {unpaidLeaveDays > 0 ? `-${formatCurrency(leaveDeduction)}` : '₨ 0'}
-                            </span>
                         </div>
+                    </div>
 
-                        {/* Late Deduction */}
-                        <div className="flex justify-between items-center pt-2 border-t border-rose-100/40">
-                            <div>
-                                <p className="font-bold text-slate-700">Late Arrival Penalty</p>
-                                <p className="text-[10px] text-slate-400">{lateCount} late check-in {lateCount === 1 ? 'entry' : 'entries'} × 0.25 day rate</p>
+                    {/* Earnings & Allowances */}
+                    <div className="space-y-1.5">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Earnings &amp; Allowances</h3>
+                        <div className="bg-indigo-50/40 rounded-xl p-3 border border-indigo-100/60 space-y-1.5 text-xs">
+                            <div className="flex justify-between font-bold text-slate-700">
+                                <span>Monthly Base Salary</span>
+                                <span className="text-slate-900 font-black">{formatCurrency(baseSalary)}</span>
                             </div>
-                            <span className="font-bold text-rose-600 tabular-nums">
-                                {lateCount > 0 ? `-${formatCurrency(lateDeduction)}` : '₨ 0'}
-                            </span>
+                            <div className="flex justify-between text-slate-500 text-[11px] pt-1 border-t border-indigo-100/40">
+                                <span>Calculated Daily Rate (Base / 30)</span>
+                                <span>{formatCurrency(dailyRate)} / day</span>
+                            </div>
                         </div>
+                    </div>
 
-                        {/* Total Deductions */}
-                        <div className="flex justify-between items-center pt-2 border-t border-rose-200/60 font-black text-rose-700 text-xs">
-                            <span>Total Deductions</span>
-                            <span className="tabular-nums">-{formatCurrency(deduction)}</span>
+                    {/* Deductions Breakdown */}
+                    <div className="space-y-1.5">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Deductions Breakdown</h3>
+                        <div className="bg-rose-50/40 rounded-xl p-3 border border-rose-100/60 space-y-2 text-xs">
+                            {/* Leave Deduction */}
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="font-bold text-slate-700">Leave Deduction</p>
+                                    <p className="text-[10px] text-slate-400">
+                                        {leaveDays} approved leave {leaveDays === 1 ? 'day' : 'days'} taken
+                                        {unpaidLeaveDays > 0
+                                            ? ` · ${unpaidLeaveDays} excess day${unpaidLeaveDays > 1 ? 's' : ''} beyond quota × ${formatCurrency(dailyRate)}`
+                                            : ' · All within allocated quota (Paid Leave)'}
+                                    </p>
+                                </div>
+                                <span className={`font-bold tabular-nums ${unpaidLeaveDays > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                    {unpaidLeaveDays > 0 ? `-${formatCurrency(leaveDeduction)}` : '₨ 0'}
+                                </span>
+                            </div>
+
+                            {/* Late Deduction */}
+                            <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40">
+                                <div>
+                                    <p className="font-bold text-slate-700">Late Arrival Penalty</p>
+                                    <p className="text-[10px] text-slate-400">{lateCount} late check-in {lateCount === 1 ? 'entry' : 'entries'} × 0.25 day rate</p>
+                                </div>
+                                <span className="font-bold text-rose-600 tabular-nums">
+                                    {lateCount > 0 ? `-${formatCurrency(lateDeduction)}` : '₨ 0'}
+                                </span>
+                            </div>
+
+                            {/* Total Deductions */}
+                            <div className="flex justify-between items-center pt-1.5 border-t border-rose-200/60 font-black text-rose-700 text-xs">
+                                <span>Total Deductions</span>
+                                <span className="tabular-nums">-{formatCurrency(deduction)}</span>
+                            </div>
                         </div>
+                    </div>
+
+                    {/* Net Payout Banner */}
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl p-3.5 flex items-center justify-between shadow-md shadow-emerald-100">
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-100">Net Disbursed Salary</p>
+                            <p className="text-xl font-black">{formatCurrency(netSalary)}</p>
+                        </div>
+                        <span className="px-2.5 py-1 bg-white/20 rounded-xl text-[11px] font-bold border border-white/30 backdrop-blur-sm">
+                            Paid Out
+                        </span>
                     </div>
                 </div>
 
-                {/* Net Payout Banner */}
-                <div className="bg-emerald-600 text-white rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-emerald-100">
-                    <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-100">Net Disbursed Salary</p>
-                        <p className="text-2xl font-black">{formatCurrency(netSalary)}</p>
-                    </div>
-                    <span className="px-3 py-1 bg-white/20 rounded-xl text-xs font-bold border border-white/30 backdrop-blur-sm">
-                        Paid Out
-                    </span>
-                </div>
-
-                {/* Action Footer */}
-                <div className="flex items-center gap-3 pt-2">
+                {/* Action Footer (Pinned) */}
+                <div className="flex items-center gap-3 pt-3 border-t border-slate-100 shrink-0 mt-auto">
                     <button
                         onClick={() => window.print()}
-                        className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                        className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
-                        <Download size={15} /> Print Payslip
+                        <Download size={14} /> Print Payslip
                     </button>
                     <button
                         onClick={onClose}
-                        className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-all cursor-pointer"
+                        className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
                     >
                         Close
                     </button>
@@ -1259,6 +1818,7 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
 const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters }) => {
     const [view, setView] = useState('table'); // 'table' | 'cards'
     const [deductionFilter, setDeductionFilter] = useState('all'); // 'all' | 'leave' | 'late' | 'deduction'
+    const [payrollSearch, setPayrollSearch] = useState('');
     const [selectedPayslip, setSelectedPayslip] = useState(null);
 
     const deductionRate = payrollSummary.totalBase > 0
@@ -1275,6 +1835,19 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
         if (deductionFilter === 'deduction') return payrollData.filter(p => p.deduction > 0);
         return payrollData;
     }, [payrollData, deductionFilter]);
+
+    const searchedPayroll = useMemo(() => {
+        let list = filteredPayroll;
+        if (payrollSearch.trim()) {
+            const q = payrollSearch.toLowerCase();
+            list = list.filter(p => 
+                p.employee?.name?.toLowerCase().includes(q) ||
+                p.employee?.email?.toLowerCase().includes(q) ||
+                p.employee?.department?.toLowerCase().includes(q)
+            );
+        }
+        return list;
+    }, [filteredPayroll, payrollSearch]);
 
     const totalLeaveDays = payrollData.reduce((acc, curr) => acc + curr.leaveDays, 0);
     const totalLateEntries = payrollData.reduce((acc, curr) => acc + curr.lateCount, 0);
@@ -1526,21 +2099,35 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                 )}
             </div>
 
-            {/* ── View Switcher & Counter Bar ── */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+            {/* ── View Switcher & Counter & Search Bar ── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-base font-black text-slate-800">Employee Salary Sheet</h3>
-                    <p className="text-xs text-slate-400">Showing {filteredPayroll.length} of {payrollData.length} records</p>
+                    <p className="text-xs text-slate-400">Showing {searchedPayroll.length} of {payrollData.length} records</p>
                 </div>
-                <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
-                    <button
-                        onClick={() => setView('table')}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'table' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >Table View</button>
-                    <button
-                        onClick={() => setView('cards')}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'cards' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >Cards View</button>
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Search Input */}
+                    <div className="relative min-w-[200px]">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search employee, dept..."
+                            value={payrollSearch}
+                            onChange={e => setPayrollSearch(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
+                        />
+                    </div>
+                    {/* View Switcher */}
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+                        <button
+                            onClick={() => setView('table')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'table' ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500 hover:text-slate-700'}`}
+                        >Table View</button>
+                        <button
+                            onClick={() => setView('cards')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'cards' ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500 hover:text-slate-700'}`}
+                        >Cards View</button>
+                    </div>
                 </div>
             </div>
 
@@ -1552,9 +2139,9 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                     className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
                 >
-                    {filteredPayroll.length === 0 ? (
+                    {searchedPayroll.length === 0 ? (
                         <div className="col-span-full"><EmptyState msg="No employee payroll records match the selected filter." /></div>
-                    ) : filteredPayroll.map((p, i) => {
+                    ) : searchedPayroll.map((p, i) => {
                         const col = DEPT_COLORS[i % DEPT_COLORS.length];
                         return (
                             <motion.div
@@ -1633,64 +2220,64 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                     className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
                 >
-                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <ClipboardList size={15} className="text-indigo-500" />
+                            <ClipboardList size={14} className="text-indigo-500" />
                             <h3 className="text-sm font-black text-slate-800">Monthly Salary Audit Sheet</h3>
                         </div>
-                        <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-100">
-                            {filteredPayroll.length} entries
+                        <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100">
+                            {searchedPayroll.length} entries
                         </span>
                     </div>
 
-                    {filteredPayroll.length === 0 ? (
+                    {searchedPayroll.length === 0 ? (
                         <EmptyState msg="No payroll records match the selected filter." />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[9px] font-bold uppercase tracking-widest">
-                                        <th className="px-6 py-4">Employee</th>
-                                        <th className="px-6 py-4">Department</th>
-                                        <th className="px-6 py-4 text-right">Gross Base</th>
-                                        <th className="px-6 py-4 text-center text-amber-600">Leave Deductions</th>
-                                        <th className="px-6 py-4 text-center text-rose-500">Late Deductions</th>
-                                        <th className="px-6 py-4 text-right text-rose-600">Total Deductions</th>
-                                        <th className="px-6 py-4 text-right text-emerald-600">Net Payout</th>
-                                        <th className="px-6 py-4 text-center">Payslip</th>
+                                        <th className="px-3 py-3">Employee</th>
+                                        <th className="px-3 py-3">Dept</th>
+                                        <th className="px-3 py-3 text-right">Gross Base</th>
+                                        <th className="px-3 py-3 text-center text-amber-600">Leave Ded.</th>
+                                        <th className="px-3 py-3 text-center text-rose-500">Late Ded.</th>
+                                        <th className="px-3 py-3 text-right text-rose-600">Total Ded.</th>
+                                        <th className="px-3 py-3 text-right text-emerald-600">Net Payout</th>
+                                        <th className="px-3 py-3 text-center">Payslip</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredPayroll.map((p) => (
+                                    {searchedPayroll.map((p) => (
                                         <tr
                                             key={p.employee._id}
                                             className="hover:bg-slate-50/60 transition-colors cursor-pointer"
                                             onClick={() => setSelectedPayslip(p)}
                                         >
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
+                                            <td className="px-3 py-3">
+                                                <div className="flex items-center gap-2">
                                                     {p.employee.photo ? (
-                                                        <img src={p.employee.photo} alt={p.employee.name} className="w-9 h-9 rounded-full object-cover border border-slate-200 flex-shrink-0" />
+                                                        <img src={p.employee.photo} alt={p.employee.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 flex-shrink-0" />
                                                     ) : (
-                                                        <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs flex-shrink-0">
+                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs flex-shrink-0">
                                                             {getInitials(p.employee.name)}
                                                         </div>
                                                     )}
-                                                    <div>
-                                                        <p className="font-bold text-slate-800 text-sm">{p.employee.name}</p>
-                                                        <p className="text-[10px] text-slate-400">{p.employee.email}</p>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-800 text-xs truncate">{p.employee.name}</p>
+                                                        <p className="text-[10px] text-slate-400 truncate">{p.employee.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-xs font-semibold text-slate-600 capitalize bg-slate-100 px-2.5 py-1 rounded-lg">
+                                            <td className="px-3 py-3">
+                                                <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded-lg">
                                                     {p.employee.department || '—'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className="font-bold text-slate-800 text-sm tabular-nums">{formatCurrency(p.baseSalary)}</span>
+                                            <td className="px-3 py-3 text-right">
+                                                <span className="font-bold text-slate-800 text-xs tabular-nums">{formatCurrency(p.baseSalary)}</span>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-3 py-3 text-center">
                                                 {p.leaveDays > 0 ? (
                                                     <div className="flex flex-col items-center">
                                                         <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-bold text-[10px] rounded-md border border-amber-100">
@@ -1702,7 +2289,7 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                                     <span className="text-slate-300 font-bold text-xs">—</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-3 py-3 text-center">
                                                 {p.lateCount > 0 ? (
                                                     <div className="flex flex-col items-center">
                                                         <span className="px-2 py-0.5 bg-rose-50 text-rose-700 font-bold text-[10px] rounded-md border border-rose-100">
@@ -1714,18 +2301,18 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                                     <span className="text-slate-300 font-bold text-xs">—</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className={`font-bold text-sm tabular-nums ${p.deduction > 0 ? 'text-rose-600' : 'text-slate-300'}`}>
+                                            <td className="px-3 py-3 text-right">
+                                                <span className={`font-bold text-xs tabular-nums ${p.deduction > 0 ? 'text-rose-600' : 'text-slate-300'}`}>
                                                     {p.deduction > 0 ? `-${formatCurrency(p.deduction)}` : '—'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className="font-black text-emerald-600 text-sm tabular-nums">{formatCurrency(p.netSalary)}</span>
+                                            <td className="px-3 py-3 text-right">
+                                                <span className="font-black text-emerald-600 text-xs tabular-nums">{formatCurrency(p.netSalary)}</span>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-3 py-3 text-center">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setSelectedPayslip(p); }}
-                                                    className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-xs rounded-xl border border-indigo-100 transition-colors cursor-pointer"
+                                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-[11px] rounded-lg border border-indigo-100 transition-colors cursor-pointer"
                                                 >
                                                     Payslip
                                                 </button>
@@ -1735,13 +2322,13 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                 </tbody>
                                 <tfoot className="bg-slate-50 border-t-2 border-slate-200">
                                     <tr>
-                                        <td className="px-6 py-4 font-black text-slate-800 text-sm" colSpan={2}>Totals &amp; Averages</td>
-                                        <td className="px-6 py-4 text-right font-black text-slate-800 tabular-nums">{formatCurrency(payrollSummary.totalBase)}</td>
-                                        <td className="px-6 py-4 text-center font-bold text-amber-600 text-xs tabular-nums">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</td>
-                                        <td className="px-6 py-4 text-center font-bold text-rose-600 text-xs tabular-nums">-{formatCurrency(payrollSummary.totalLateDeductions)}</td>
-                                        <td className="px-6 py-4 text-right font-black text-rose-600 tabular-nums">-{formatCurrency(payrollSummary.totalDeductions)}</td>
-                                        <td className="px-6 py-4 text-right font-black text-emerald-600 tabular-nums">{formatCurrency(payrollSummary.totalNet)}</td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-3 py-3 font-black text-slate-800 text-xs" colSpan={2}>Totals & Averages</td>
+                                        <td className="px-3 py-3 text-right font-black text-slate-800 text-xs tabular-nums">{formatCurrency(payrollSummary.totalBase)}</td>
+                                        <td className="px-3 py-3 text-center font-bold text-amber-600 text-[11px] tabular-nums">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</td>
+                                        <td className="px-3 py-3 text-center font-bold text-rose-600 text-[11px] tabular-nums">-{formatCurrency(payrollSummary.totalLateDeductions)}</td>
+                                        <td className="px-3 py-3 text-right font-black text-rose-600 text-xs tabular-nums">-{formatCurrency(payrollSummary.totalDeductions)}</td>
+                                        <td className="px-3 py-3 text-right font-black text-emerald-600 text-xs tabular-nums">{formatCurrency(payrollSummary.totalNet)}</td>
+                                        <td className="px-3 py-3 text-center">
                                             <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
                                                 {efficiencyRate}%
                                             </span>

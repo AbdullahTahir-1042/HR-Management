@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Mail, Lock, User, Shield } from 'lucide-react';
+import { X, UserPlus, Mail, Lock, User, Shield, Award } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
 const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
@@ -8,7 +8,8 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
         name: '',
         email: '',
         password: '',
-        role: 'employee'
+        role: 'employee',
+        joiningStatus: 'Fresh Join'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -23,7 +24,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
         try {
             await apiClient.post('/auth/register', formData);
             onEmployeeAdded();
-            setFormData({ name: '', email: '', password: '', role: 'employee' });
+            setFormData({ name: '', email: '', password: '', role: 'employee', joiningStatus: 'Fresh Join' });
             onClose();
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to add employee');
@@ -114,6 +115,21 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm"
                                 />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Joining Status *</label>
+                            <div className="relative mt-1 group">
+                                <Award className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                <select 
+                                    value={formData.joiningStatus}
+                                    onChange={(e) => setFormData({...formData, joiningStatus: e.target.value})}
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none"
+                                >
+                                    <option value="Fresh Join">Fresh Join</option>
+                                    <option value="Intern">Intern</option>
+                                </select>
                             </div>
                         </div>
 

@@ -1,7 +1,123 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2, UserCheck, Image as ImageIcon, Phone, Crown, AlertCircle } from 'lucide-react';
+import {
+    ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2,
+    UserCheck, Image as ImageIcon, Phone, Crown, AlertCircle,
+    TrendingUp, Award, CheckCircle2
+} from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+
+// ── Validation Helpers ────────────────────────────────────────────────────────
+const validators = {
+    name: (val) => {
+        if (!val || !val.trim()) return 'Full name is required';
+        const trimmed = val.trim();
+        if (trimmed.length < 3) return 'Name must be at least 3 characters';
+        if (trimmed.length > 50) return 'Name cannot exceed 50 characters';
+        if (!/^[a-zA-Z\s.'\-]+$/.test(trimmed)) return 'Name can only contain letters, spaces, and hyphens';
+        const words = trimmed.split(/\s+/);
+        if (words.length < 2) return 'Please enter both first and last name (e.g. John Doe)';
+        return '';
+    },
+    email: (val) => {
+        if (!val || !val.trim()) return 'Email address is required';
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(val.trim())) return 'Please enter a valid work email (e.g. john@company.com)';
+        return '';
+    },
+    phone: (val) => {
+        if (!val || !val.trim()) return 'Phone number is required';
+        const trimmed = val.trim();
+        const digits = trimmed.replace(/\D/g, '');
+
+        if (/^(\d)\1{8,}$/.test(digits)) {
+            return 'Please enter a valid phone number (repetitive dummy digits are not allowed)';
+        }
+        if (digits === '1234567890' || digits === '0123456789' || digits === '9876543210') {
+            return 'Please enter a valid phone number (sequential dummy digits are not allowed)';
+        }
+
+        if (digits.length < 10) return 'Phone number must contain at least 10 digits';
+        if (digits.length > 15) return 'Phone number cannot exceed 15 digits';
+
+        if (trimmed.startsWith('03') || trimmed.startsWith('+923') || trimmed.startsWith('923')) {
+            const pkDigits = trimmed.startsWith('+92') ? '0' + trimmed.slice(3).replace(/\D/g, '') :
+                             trimmed.startsWith('92') ? '0' + trimmed.slice(2).replace(/\D/g, '') :
+                             trimmed.replace(/\D/g, '');
+
+            if (pkDigits.length !== 11) {
+                return 'Pakistani mobile number must be exactly 11 digits (e.g. 0300 1234567 or +92 300 1234567)';
+            }
+            const prefix = pkDigits.slice(0, 4);
+            const validPrefixes = [
+                '0300','0301','0302','0303','0304','0305','0306','0307','0308','0309',
+                '0310','0311','0312','0313','0314','0315','0316','0317','0318',
+                '0320','0321','0322','0323','0324','0325',
+                '0330','0331','0332','0333','0334','0335','0336','0337',
+                '0340','0341','0342','0343','0344','0345','0346','0347','0348','0349',
+                '0355','0370'
+            ];
+            if (!validPrefixes.includes(prefix)) {
+                return 'Invalid mobile network prefix (must start with valid code like 0300, 0312, 0333, 0345)';
+            }
+            return '';
+        }
+
+        if (!/^\+?[1-9]\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}$/.test(trimmed)) {
+            return 'Please enter a valid phone number (e.g. +92 300 1234567)';
+        }
+
+        return '';
+    },
+    salary: (val) => {
+        if (val === '' || val === null || val === undefined) return 'Salary is required';
+        const num = Number(val);
+        if (isNaN(num) || num <= 0) return 'Salary must be a positive number';
+        if (num < 10000) return 'Salary must be at least ₨ 10,000';
+        if (num > 50000000) return 'Salary exceeds maximum limit';
+        return '';
+    },
+    reportingTo: (val) => {
+        if (val && val.trim()) {
+            if (!/^[a-zA-Z\s.'\-]+$/.test(val.trim())) return 'Manager name can only contain letters and spaces';
+        }
+        return '';
+    },
+    promotionRank: (val) => {
+        if (!val) return 'Promotion Rank is required';
+        const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+        if (!validRanks.includes(val)) return 'Invalid promotion rank selected';
+        return '';
+    },
+    joiningStatus: (val) => {
+        if (!val) return 'Joining Status is required';
+        if (!['Intern', 'Fresh Join'].includes(val)) return 'Invalid joining status selected';
+        return '';
+    }
+};
+
+// ── Inline Field Error Component ──────────────────────────────────────────────
+const FieldError = ({ message }) => {
+    if (!message) return null;
+    return (
+        <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="text-rose-500 text-[11px] font-semibold mt-1.5 ml-1 flex items-center gap-1"
+        >
+            <AlertCircle size={12} className="shrink-0" />
+            {message}
+        </motion.p>
+    );
+};
+
+// ── Compute Input Border Styling ──────────────────────────────────────────────
+const getInputBorderClass = (fieldName, touched, errors, baseClass) => {
+    if (!touched[fieldName]) return baseClass;
+    if (errors[fieldName]) return baseClass.replace('border-slate-200', 'border-rose-300').replace('focus:border-indigo-500', 'focus:border-rose-500').replace('focus:ring-indigo-500/10', 'focus:ring-rose-500/10');
+    return baseClass.replace('border-slate-200', 'border-emerald-300').replace('focus:border-indigo-500', 'focus:border-emerald-500').replace('focus:ring-indigo-500/10', 'focus:ring-emerald-500/10');
+};
 
 const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     const [formData, setFormData] = useState({
@@ -10,6 +126,8 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         phone: '',
         role: 'employee',
         status: 'full time',
+        joiningStatus: 'Fresh Join',
+        promotionRank: 'Junior',
         department: 'development',
         reportingTo: '',
         salary: '',
@@ -20,6 +138,11 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(null);
+
+    // ── Validation State ──────────────────────────────────────────────────────
+    const [touched, setTouched] = useState({});
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [submitShake, setSubmitShake] = useState(false);
 
     useEffect(() => {
         const fetchDepts = async () => {
@@ -41,6 +164,8 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                 phone: employee.phone || '',
                 role: employee.role || 'employee',
                 status: employee.status || 'full time',
+                joiningStatus: employee.joiningStatus || 'Fresh Join',
+                promotionRank: employee.promotionRank || 'Junior',
                 department: employee.department || 'development',
                 reportingTo: employee.reportingTo || '',
                 salary: employee.salary || '',
@@ -66,6 +191,48 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         }
     }, [formData.department, departmentsList, employee]);
 
+    // ── Validate single field ────────────────────────────────────────────────
+    const validateField = useCallback((fieldName, value) => {
+        const validator = validators[fieldName];
+        if (!validator) return '';
+        return validator(value);
+    }, []);
+
+    // ── Handle field blur ────────────────────────────────────────────────────
+    const handleBlur = (fieldName) => {
+        setTouched(prev => ({ ...prev, [fieldName]: true }));
+        const err = validateField(fieldName, formData[fieldName]);
+        setFieldErrors(prev => ({ ...prev, [fieldName]: err }));
+    };
+
+    // ── Handle field change ──────────────────────────────────────────────────
+    const handleChange = (fieldName, value) => {
+        setFormData(prev => ({ ...prev, [fieldName]: value }));
+        if (touched[fieldName]) {
+            const err = validateField(fieldName, value);
+            setFieldErrors(prev => ({ ...prev, [fieldName]: err }));
+        }
+    };
+
+    // ── Validate all fields before submission ───────────────────────────────
+    const validateAll = () => {
+        const fieldsToValidate = ['name', 'email', 'phone', 'salary', 'reportingTo', 'promotionRank', 'joiningStatus'];
+        const newErrors = {};
+        const newTouched = {};
+        let hasError = false;
+
+        fieldsToValidate.forEach(field => {
+            newTouched[field] = true;
+            const err = validateField(field, formData[field]);
+            newErrors[field] = err;
+            if (err) hasError = true;
+        });
+
+        setTouched(prev => ({ ...prev, ...newTouched }));
+        setFieldErrors(prev => ({ ...prev, ...newErrors }));
+        return !hasError;
+    };
+
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -80,6 +247,13 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateAll()) {
+            setSubmitShake(true);
+            setTimeout(() => setSubmitShake(false), 600);
+            return;
+        }
+
         setLoading(true);
         setError('');
 
@@ -93,6 +267,8 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
             setLoading(false);
         }
     };
+
+    const BASE_INPUT = "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm";
 
     return (
         <motion.div 
@@ -142,26 +318,56 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                         {/* Basic Info */}
                         <div className="space-y-4">
                             <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2">Basic Information</h3>
+                            
+                            {/* Full Name */}
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Full Name</label>
-                                <div className="relative mt-1">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Full Name *</label>
+                                <div className="relative mt-1 group">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input 
+                                        type="text" 
+                                        value={formData.name} 
+                                        onChange={e => handleChange('name', e.target.value)} 
+                                        onBlur={() => handleBlur('name')}
+                                        className={getInputBorderClass('name', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.name && !fieldErrors.name && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.name ? fieldErrors.name : ''} />
                             </div>
+
+                            {/* Email */}
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email Address</label>
-                                <div className="relative mt-1">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email Address *</label>
+                                <div className="relative mt-1 group">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input 
+                                        type="email" 
+                                        value={formData.email} 
+                                        onChange={e => handleChange('email', e.target.value)} 
+                                        onBlur={() => handleBlur('email')}
+                                        className={getInputBorderClass('email', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.email && !fieldErrors.email && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.email ? fieldErrors.email : ''} />
                             </div>
+
+                            {/* Phone */}
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Phone Number</label>
-                                <div className="relative mt-1">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Phone Number *</label>
+                                <div className="relative mt-1 group">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input 
+                                        type="tel" 
+                                        value={formData.phone} 
+                                        onChange={e => handleChange('phone', e.target.value)} 
+                                        onBlur={() => handleBlur('phone')}
+                                        className={getInputBorderClass('phone', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.phone && !fieldErrors.phone && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
+                                <FieldError message={touched.phone ? fieldErrors.phone : ''} />
                             </div>
                         </div>
 
@@ -169,10 +375,12 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                         <div className="space-y-4">
                             <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2">Employment Details</h3>
                             <div className="grid grid-cols-1 gap-4">
+                                
+                                {/* Department */}
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Department</label>
-                                    <div className="relative mt-1">
-                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <div className="relative mt-1 group">
+                                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                         <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
                                             {departmentsList.map(dept => (
                                                 <option key={dept._id} value={dept.name}>
@@ -190,6 +398,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         </select>
                                     </div>
                                 </div>
+
                                 {/* Assign as Team Lead Toggle */}
                                 {formData.role === 'employee' && (() => {
                                     const selectedDeptObj = departmentsList.find(
@@ -252,17 +461,29 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         </div>
                                     );
                                 })()}
+
+                                {/* Reporting To */}
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Reporting To</label>
-                                    <div className="relative mt-1">
-                                        <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                        <input type="text" value={formData.reportingTo} onChange={e => setFormData({...formData, reportingTo: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                    <div className="relative mt-1 group">
+                                        <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="text" 
+                                            value={formData.reportingTo} 
+                                            onChange={e => handleChange('reportingTo', e.target.value)} 
+                                            onBlur={() => handleBlur('reportingTo')}
+                                            className={getInputBorderClass('reportingTo', touched, fieldErrors, BASE_INPUT)} 
+                                        />
+                                        {touched.reportingTo && !fieldErrors.reportingTo && formData.reportingTo && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                     </div>
+                                    <FieldError message={touched.reportingTo ? fieldErrors.reportingTo : ''} />
                                 </div>
+
+                                {/* Status */}
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Status</label>
-                                    <div className="relative mt-1">
-                                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <div className="relative mt-1 group">
+                                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                         <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
                                             <option value="full time">Full Time</option>
                                             <option value="probation">Probation</option>
@@ -270,17 +491,72 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         </select>
                                     </div>
                                 </div>
+
+                                {/* Promotion Rank */}
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monthly Salary (₨)</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Promotion Rank (Career Level) *</label>
+                                    <div className="relative mt-1 group">
+                                        <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <select 
+                                            value={formData.promotionRank} 
+                                            onChange={e => handleChange('promotionRank', e.target.value)} 
+                                            onBlur={() => handleBlur('promotionRank')}
+                                            className={getInputBorderClass('promotionRank', touched, fieldErrors, "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none font-bold text-indigo-600")}
+                                        >
+                                            <option value="Intern">Intern</option>
+                                            <option value="Junior">Junior</option>
+                                            <option value="Associate">Associate</option>
+                                            <option value="Mid-Level">Mid-Level</option>
+                                            <option value="Senior">Senior</option>
+                                            <option value="Lead">Lead</option>
+                                            <option value="Manager">Manager</option>
+                                        </select>
+                                        {touched.promotionRank && !fieldErrors.promotionRank && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                    </div>
+                                    <FieldError message={touched.promotionRank ? fieldErrors.promotionRank : ''} />
+                                </div>
+
+                                {/* Joining Status */}
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Joining Status *</label>
+                                    <div className="relative mt-1 group">
+                                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <select 
+                                            value={formData.joiningStatus} 
+                                            onChange={e => handleChange('joiningStatus', e.target.value)} 
+                                            onBlur={() => handleBlur('joiningStatus')}
+                                            className={getInputBorderClass('joiningStatus', touched, fieldErrors, "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none")}
+                                        >
+                                            <option value="Fresh Join">Fresh Join</option>
+                                            <option value="Intern">Intern</option>
+                                        </select>
+                                        {touched.joiningStatus && !fieldErrors.joiningStatus && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                    </div>
+                                    <FieldError message={touched.joiningStatus ? fieldErrors.joiningStatus : ''} />
+                                </div>
+
+                                {/* Monthly Salary */}
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Monthly Salary (₨) *</label>
                                     <div className="relative mt-1 group">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₨</div>
-                                        <input required type="number" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm" />
+                                        <input 
+                                            type="number" 
+                                            value={formData.salary} 
+                                            onChange={e => handleChange('salary', e.target.value)} 
+                                            onBlur={() => handleBlur('salary')}
+                                            className={getInputBorderClass('salary', touched, fieldErrors, BASE_INPUT)} 
+                                        />
+                                        {touched.salary && !fieldErrors.salary && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                     </div>
+                                    <FieldError message={touched.salary ? fieldErrors.salary : ''} />
                                 </div>
+
+                                {/* Account Role */}
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Role</label>
-                                    <div className="relative mt-1">
-                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <div className="relative mt-1 group">
+                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                         <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
                                             <option value="employee">Employee</option>
                                             <option value="hr">HR Admin</option>
@@ -290,14 +566,17 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                             </div>
                         </div>
 
+                        {/* Submit Action */}
                         <div className="md:col-span-2 pt-6">
-                            <button 
+                            <motion.button 
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-base"
+                                animate={submitShake ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : {}}
+                                transition={{ duration: 0.5 }}
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
                             >
                                 {loading ? 'Saving Changes...' : <><Save size={20} /> Update Employee Profile</>}
-                            </button>
+                            </motion.button>
                         </div>
                     </form>
                 </div>

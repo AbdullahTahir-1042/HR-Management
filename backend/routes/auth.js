@@ -42,6 +42,16 @@ router.post('/register', [auth, isHR], async (req, res) => {
     if (salary === undefined || salary === null || isNaN(salary) || Number(salary) < 10000 || Number(salary) > 50000000) {
         return res.status(400).json({ msg: 'Annual salary must be a valid number between ₨ 10,000 and ₨ 50,000,000' });
     }
+    const validJoiningStatuses = ['Intern', 'Fresh Join'];
+    if (!joiningStatus || !validJoiningStatuses.includes(joiningStatus)) {
+        return res.status(400).json({ msg: 'Employee Joining Status is required and must be either Intern or Fresh Join' });
+    }
+
+    const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+    let initialRank = promotionRank;
+    if (!initialRank || !validRanks.includes(initialRank)) {
+        initialRank = joiningStatus === 'Intern' ? 'Intern' : 'Junior';
+    }
 
     const validJoiningStatuses = ['Intern', 'Fresh Join'];
     if (!joiningStatus || !validJoiningStatuses.includes(joiningStatus)) {
@@ -105,15 +115,15 @@ router.post('/register', [auth, isHR], async (req, res) => {
         const payload = { user: { id: user.id } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
-            res.json({ 
-                token, 
-                user: { 
-                    id: user.id, 
-                    name: user.name, 
-                    email: user.email, 
+            res.json({
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
                     role: user.role,
                     isTeamLead: user.isTeamLead
-                } 
+                }
             });
         });
     } catch (err) {
@@ -233,7 +243,7 @@ router.put('/users/:id', auth, async (req, res) => {
             if (department !== undefined) {
                 const oldDeptId = user.departmentId;
                 const newDept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
-                
+
                 user.department = department;
                 user.departmentId = newDept ? newDept._id : null;
 

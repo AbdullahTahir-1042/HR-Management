@@ -18,10 +18,11 @@ import {
     Bell,
     BookOpen,
     AlertTriangle,
-    X
+    X,
+    MessageCircle
 } from 'lucide-react';
 
-const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen }) => {
+const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
     const navigate = useNavigate();
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -130,6 +131,32 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen })
                     </div>
                 </div>
 
+                {/* ── SECTION: COMMUNICATIONS ── */}
+                <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Communication</p>
+                    <div className="space-y-0.5">
+                        <button
+                            onClick={() => setActiveTab('messages')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'messages' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <MessageCircle size={18} />
+                            <span>Messages</span>
+                            {unreadMessages > 0 && (
+                                <span className="ml-auto bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                    {unreadMessages}
+                                </span>
+                            )}
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('announcements')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <Bell size={18} />
+                            <span>Announcements</span>
+                        </button>
+                    </div>
+                </div>
+
                 {/* ── SECTION: SYSTEM & REPORTS ── */}
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">System & Reports</p>
@@ -154,13 +181,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen })
                         >
                             <CalendarDays size={18} />
                             <span>Holidays</span>
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('announcements')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                        >
-                            <Bell size={18} />
-                            <span>Announcements</span>
                         </button>
                     </div>
                 </div>

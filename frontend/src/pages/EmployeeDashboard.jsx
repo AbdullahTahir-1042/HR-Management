@@ -504,7 +504,7 @@ const EmployeeDashboard = () => {
                 />
             )}
 
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <EmployeeHeader
                     activeTab={activeTab}
                     setActiveTab={handleTabChange}
@@ -513,7 +513,7 @@ const EmployeeDashboard = () => {
                     setSidebarOpen={setSidebarOpen}
                 />
 
-                <div className="p-4 md:p-8 max-w-7xl mx-auto">
+                <div className="p-4 lg:p-6 max-w-full mx-auto">
                     {/* Inline Body Back Button */}
                     {activeTab !== 'dashboard' && canGoBack && (
                         <div className="mb-6">
