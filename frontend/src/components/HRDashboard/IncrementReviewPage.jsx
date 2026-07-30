@@ -194,6 +194,15 @@ const IncrementReviewPage = ({ employee }) => {
         setIncErrors({});
     };
 
+    const isFutureDateSelected = useMemo(() => {
+        if (!incForm.incrementDate) return false;
+        const targetDate = new Date(incForm.incrementDate);
+        const today = new Date();
+        const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+        const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        return targetDay > todayDay;
+    }, [incForm.incrementDate]);
+
     const autoCalcNewSalary = Number(incForm.previousSalary || 0) + Number(incForm.incrementAmount || 0);
     const autoCalcPercentage = Number(incForm.previousSalary) > 0
         ? ((Number(incForm.incrementAmount || 0) / Number(incForm.previousSalary)) * 100).toFixed(2)
@@ -201,7 +210,17 @@ const IncrementReviewPage = ({ employee }) => {
 
     const validateIncForm = () => {
         const errs = {};
-        if (!incForm.incrementDate) errs.incrementDate = 'Increment date is required';
+        if (!incForm.incrementDate) {
+            errs.incrementDate = 'Increment date is required';
+        } else {
+            const targetDate = new Date(incForm.incrementDate);
+            const today = new Date();
+            const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            if (targetDay < todayDay) {
+                errs.incrementDate = 'Increment date cannot be in the past';
+            }
+        }
         if (incForm.previousSalary === '' || Number(incForm.previousSalary) < 0) errs.previousSalary = 'Previous salary must be 0 or more';
         if (incForm.incrementAmount === '' || Number(incForm.incrementAmount) < 0) errs.incrementAmount = 'Increment amount must be 0 or more';
         if (!incForm.reason.trim()) errs.reason = 'Reason is required';
@@ -462,6 +481,12 @@ const IncrementReviewPage = ({ employee }) => {
                                                     className={incErrors.incrementDate ? INPUT_ERR : INPUT_CLASS}
                                                 />
                                                 {incErrors.incrementDate && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{incErrors.incrementDate}</p>}
+                                                {isFutureDateSelected && incForm.status === 'Approved' && (
+                                                    <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-[11px] font-semibold mt-2">
+                                                        <Clock size={14} className="shrink-0 text-indigo-500 animate-pulse" />
+                                                        <span>Future Increment: This raise will automatically update the employee's active profile salary on {formatDate(incForm.incrementDate)}.</span>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Previous Salary */}

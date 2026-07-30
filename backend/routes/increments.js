@@ -3,9 +3,16 @@ const router = express.Router();
 const Increment = require('../models/Increment');
 const User = require('../models/User');
 const { auth, isHR } = require('../middleware/auth');
+const { syncDueIncrements } = require('../utils/incrementHelper');
 
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 const VALID_STATUSES = ['Pending', 'Approved', 'Rejected'];
+
+// Helper to compare dates ignoring times
+const getStartOfDay = (d) => {
+    const date = new Date(d);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
 
 // ─────────────────────────────────────────────
 // GET /api/increments/:employeeId
@@ -13,6 +20,9 @@ const VALID_STATUSES = ['Pending', 'Approved', 'Rejected'];
 // ─────────────────────────────────────────────
 router.get('/:employeeId', [auth, isHR], async (req, res) => {
     try {
+        // Run date sync to catch any increments that have become due today
+        await syncDueIncrements(req.params.employeeId);
+
         const increments = await Increment.find({ employee: req.params.employeeId })
             .populate('createdBy', 'name email')
             .populate('updatedBy', 'name email')
@@ -46,6 +56,14 @@ router.post('/', [auth, isHR], async (req, res) => {
         if (!incrementDate || isNaN(new Date(incrementDate).getTime())) {
             return res.status(400).json({ msg: 'Valid increment date is required' });
         }
+
+        // Validate date is not in the past
+        const targetDate = getStartOfDay(incrementDate);
+        const todayDate = getStartOfDay(new Date());
+        if (targetDate < todayDate) {
+            return res.status(400).json({ msg: 'Increment date cannot be a past date' });
+        }
+
         if (previousSalary === undefined || previousSalary === null || isNaN(previousSalary) || Number(previousSalary) < 0) {
             return res.status(400).json({ msg: 'Previous salary must be a non-negative number' });
         }
@@ -73,7 +91,7 @@ router.post('/', [auth, isHR], async (req, res) => {
 
         const increment = new Increment({
             employee,
-            incrementDate: new Date(incrementDate),
+            incrementDate: targetDate,
             previousSalary: prevSal,
             incrementAmount: incAmt,
             newSalary,
@@ -88,8 +106,8 @@ router.post('/', [auth, isHR], async (req, res) => {
 
         await increment.save();
 
-        // If status is Approved, auto-update employee salary & rank
-        if (increment.status === 'Approved') {
+        // ONLY apply immediately to active employee profile if status is Approved AND the increment date is today or has passed
+        if (increment.status === 'Approved' && targetDate <= todayDate) {
             emp.salary = newSalary;
             if (promotionRank && VALID_RANKS.includes(promotionRank)) {
                 emp.promotionRank = promotionRank;
@@ -129,7 +147,12 @@ router.put('/:id', [auth, isHR], async (req, res) => {
             if (isNaN(new Date(incrementDate).getTime())) {
                 return res.status(400).json({ msg: 'Valid increment date is required' });
             }
-            increment.incrementDate = new Date(incrementDate);
+            const targetDate = getStartOfDay(incrementDate);
+            const todayDate = getStartOfDay(new Date());
+            if (targetDate < todayDate) {
+                return res.status(400).json({ msg: 'Increment date cannot be a past date' });
+            }
+            increment.incrementDate = targetDate;
         }
         if (previousSalary !== undefined) {
             if (isNaN(previousSalary) || Number(previousSalary) < 0) {
@@ -174,8 +197,9 @@ router.put('/:id', [auth, isHR], async (req, res) => {
         increment.updatedBy = req.user.id;
         await increment.save();
 
-        // If status is now Approved, sync employee salary & rank
-        if (increment.status === 'Approved') {
+        // ONLY sync employee active salary & rank if status is Approved and date has arrived
+        const todayDate = getStartOfDay(new Date());
+        if (increment.status === 'Approved' && increment.incrementDate <= todayDate) {
             const emp = await User.findById(increment.employee);
             if (emp) {
                 emp.salary = increment.newSalary;
@@ -208,7 +232,12 @@ router.delete('/:id', [auth, isHR], async (req, res) => {
             return res.status(404).json({ msg: 'Increment record not found' });
         }
 
+        const employeeId = increment.employee;
         await Increment.findByIdAndDelete(req.params.id);
+
+        // After deletion, re-sync user salary to the latest approved increment remaining
+        await syncDueIncrements(employeeId);
+
         res.json({ msg: 'Increment record deleted successfully' });
     } catch (err) {
         console.error('Error deleting increment:', err.message);
