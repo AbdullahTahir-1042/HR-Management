@@ -559,9 +559,7 @@ const EmployeeDashboard = () => {
                                 leaveForm={leaveForm}
                                 setLeaveForm={setLeaveForm}
                                 handleApplyLeave={handleApplyLeave}
-                                leaves={leaves.filter(l =>
-                                    leaveStatusFilter === 'all' ? true : l.status === leaveStatusFilter
-                                )}
+                                leaves={leaves}
                                 statusFilter={leaveStatusFilter}
                                 setStatusFilter={setLeaveStatusFilter}
                                 leaveBalances={leaveBalances}

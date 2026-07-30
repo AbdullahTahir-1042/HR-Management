@@ -63,6 +63,11 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         return map;
     }, [leaves]);
 
+    const filteredLeavesForTable = React.useMemo(() => {
+        if (!leaves || !Array.isArray(leaves)) return [];
+        return leaves.filter(l => statusFilter === 'all' ? true : l.status === statusFilter);
+    }, [leaves, statusFilter]);
+
     const [viewMonth, setViewMonth] = useState(() => new Date());
     const [showVisualCalendar, setShowVisualCalendar] = useState(true);
 
@@ -606,7 +611,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {leaves.map(leave => (
+                                {filteredLeavesForTable.map(leave => (
                                     <tr
                                         key={leave._id}
                                         className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
@@ -646,7 +651,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                 ))}
                             </tbody>
                         </table>
-                        {leaves.length === 0 && (
+                        {filteredLeavesForTable.length === 0 && (
                             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400">
                                 <ClipboardList size={36} className="mb-2 opacity-30" />
                                 <p className="text-xs font-semibold">No leave requests found {statusFilter !== 'all' && `with status "${statusFilter}"`}.</p>

@@ -221,6 +221,12 @@ router.put('/:id/assign-teamlead', auth, isHR, async (req, res) => {
             await User.findByIdAndUpdate(dept.teamLead, { isTeamLead: false });
         }
 
+        // Validate that the new lead is not an Intern
+        const newLead = await User.findById(userId);
+        if (newLead && (newLead.promotionRank === 'Intern' || newLead.joiningStatus === 'Intern')) {
+            return res.status(400).json({ msg: 'An intern cannot be assigned as a Team Lead.' });
+        }
+
         // Set new team lead
         dept.teamLead = userId;
         await dept.save();

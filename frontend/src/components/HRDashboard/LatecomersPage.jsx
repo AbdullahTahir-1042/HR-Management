@@ -1,7 +1,9 @@
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Calendar, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Clock, Calendar, User, AlertCircle, CheckCircle, Search } from 'lucide-react';
 
 const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () => {} }) => {
+    const [searchTerm, setSearchTerm] = useState('');
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
@@ -29,9 +31,14 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
         return `${minutes}m`;
     };
 
-    const filtered = dateFilter
+    const filtered = (dateFilter
         ? latecomers.filter(l => l.date === dateFilter)
-        : latecomers;
+        : latecomers).filter(l => {
+            const q = searchTerm.toLowerCase();
+            return !q || 
+                   l.employee?.name?.toLowerCase().includes(q) || 
+                   l.employee?.email?.toLowerCase().includes(q);
+        });
 
     const uncompensated = filtered.filter(l => !l.compensated);
     const compensated = filtered.filter(l => l.compensated);
@@ -58,11 +65,21 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                             Clear
                         </button>
                     )}
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search employee..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="input-field pl-9 w-48 sm:w-64"
+                        />
+                    </div>
                     <input
                         type="date"
                         value={dateFilter}
                         onChange={(e) => setDateFilter(e.target.value)}
-                        className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
+                        className="input-field"
                     />
                 </div>
             </div>
@@ -70,7 +87,7 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+                className="table-container"
             >
                 <div className="overflow-x-auto">
                     {filtered.length === 0 ? (
@@ -79,25 +96,25 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                             <p className="font-medium">No latecomers found.</p>
                         </div>
                     ) : (
-                        <table className="w-full text-left">
+                        <table className="table-base">
                             <thead>
-                                <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-[0.1em]">
-                                    <th className="px-6 py-4">Employee</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Check-in</th>
-                                    <th className="px-6 py-4">Check-out</th>
-                                    <th className="px-6 py-4">Duration Late</th>
-                                    <th className="px-6 py-4">Status</th>
+                                <tr className="table-header">
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Check-in</th>
+                                    <th>Check-out</th>
+                                    <th>Duration Late</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="table-body">
                                 {filtered.map(entry => (
                                     <tr
                                         key={entry._id}
-                                        className={`transition-colors ${
+                                        className={`table-row transition-colors ${
                                             entry.compensated
                                                 ? 'bg-emerald-50/30 hover:bg-emerald-50/60'
-                                                : 'hover:bg-slate-50/80'
+                                                : ''
                                         }`}
                                     >
                                         <td className="px-6 py-5">

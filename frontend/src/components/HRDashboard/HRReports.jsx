@@ -925,7 +925,7 @@ const HRReports = ({ employees }) => {
                 {/* Filter Inputs Grid (Visible across ALL tabs: Attendance, Leave, Payroll, Staff Directory) */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-100">
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">From Date</label>
+                        <label className="text-xs font-bold text-slate-700 uppercase mb-1 block">From Date</label>
                         <input
                             type="date"
                             value={filters.startDate}
@@ -934,7 +934,7 @@ const HRReports = ({ employees }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">To Date</label>
+                        <label className="text-xs font-bold text-slate-700 uppercase mb-1 block">To Date</label>
                         <input
                             type="date"
                             value={filters.endDate}
@@ -943,7 +943,7 @@ const HRReports = ({ employees }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">Department</label>
+                        <label className="text-xs font-bold text-slate-700 uppercase mb-1 block">Department</label>
                         <select
                             value={filters.department}
                             onChange={e => {
@@ -966,7 +966,7 @@ const HRReports = ({ employees }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase mb-0.5 block">Employee Name</label>
+                        <label className="text-xs font-bold text-slate-700 uppercase mb-1 block">Employee Name</label>
                         <select
                             value={filters.employeeId}
                             onChange={e => setFilters({ ...filters, employeeId: e.target.value })}

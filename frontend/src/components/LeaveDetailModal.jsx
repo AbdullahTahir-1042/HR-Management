@@ -34,6 +34,9 @@ const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
     };
 
     const isProcessed = leave.status !== 'pending';
+    
+    // Check if the leave start date is in the past
+    const isPastLeave = new Date(leave.startDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
 
     return (
         <>
@@ -137,24 +140,33 @@ const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
                         {/* Footer - Actions allowed for all statuses */}
                         <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end">                        
                             {onStatusUpdate && (
-                                <div className="flex gap-2">
-                                    {leave.status !== 'rejected' && (
-                                        <button 
-                                            onClick={() => setConfirmAction({ leave, action: 'rejected' })}
-                                            className={`px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold rounded-xl transition-all flex items-center gap-2 ${isProcessed ? 'bg-white shadow-sm' : ''}`}
-                                        >
-                                            {isProcessed ? <Edit2 size={14} /> : <X size={16} />} 
-                                            {isProcessed ? 'Mark Rejected' : 'Reject'}
-                                        </button>
-                                    )}
-                                    {leave.status !== 'approved' && (
-                                        <button 
-                                            onClick={() => setConfirmAction({ leave, action: 'approved' })}
-                                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-100 flex items-center gap-2"
-                                        >
-                                            {isProcessed ? <Edit2 size={14} /> : <Check size={16} />}
-                                            {isProcessed ? 'Mark Approved' : 'Approve'}
-                                        </button>
+                                <div className="flex gap-2 w-full justify-end">
+                                    {isPastLeave ? (
+                                        <div className="flex items-center gap-2 text-rose-500 bg-rose-50 px-4 py-2 rounded-xl text-sm font-bold w-full justify-center">
+                                            <AlertCircle size={16} />
+                                            Past leave requests cannot be modified.
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {leave.status !== 'rejected' && (
+                                                <button 
+                                                    onClick={() => setConfirmAction({ leave, action: 'rejected' })}
+                                                    className={`px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold rounded-xl transition-all flex items-center gap-2 ${isProcessed ? 'bg-white shadow-sm' : ''}`}
+                                                >
+                                                    {isProcessed ? <Edit2 size={14} /> : <X size={16} />} 
+                                                    {isProcessed ? 'Mark Rejected' : 'Reject'}
+                                                </button>
+                                            )}
+                                            {leave.status !== 'approved' && (
+                                                <button 
+                                                    onClick={() => setConfirmAction({ leave, action: 'approved' })}
+                                                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-100 flex items-center gap-2"
+                                                >
+                                                    {isProcessed ? <Edit2 size={14} /> : <Check size={16} />}
+                                                    {isProcessed ? 'Mark Approved' : 'Approve'}
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             )}
