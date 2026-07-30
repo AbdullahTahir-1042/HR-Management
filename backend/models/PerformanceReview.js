@@ -12,7 +12,7 @@ const PerformanceReviewSchema = new mongoose.Schema({
     },
     reviewPeriod: {
         type: String,
-        required: true
+        default: ''
     },
     reviewer: {
         type: String,

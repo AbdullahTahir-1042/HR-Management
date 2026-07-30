@@ -48,8 +48,15 @@ router.post('/', [auth, isHR], async (req, res) => {
     try {
         const {
             employee, incrementDate, previousSalary, incrementAmount,
-            promotionRank, reason, approvedBy, notes, status
+            promotionRank, reason, notes, status
         } = req.body;
+
+        // Fetch logged-in HR/Admin name from database
+        const hrUser = await User.findById(req.user.id).select('name');
+        if (!hrUser) {
+            return res.status(404).json({ msg: 'HR/Admin user not found' });
+        }
+        const resolvedApprovedBy = hrUser.name;
 
         // ── Validation ──────────────────────────────────────────────────
         if (!employee) {
@@ -79,9 +86,6 @@ router.post('/', [auth, isHR], async (req, res) => {
         if (!reason || !reason.trim()) {
             return res.status(400).json({ msg: 'Reason for increment is required' });
         }
-        if (!approvedBy || !approvedBy.trim()) {
-            return res.status(400).json({ msg: 'Approved By field is required' });
-        }
         if (promotionRank && !VALID_RANKS.includes(promotionRank)) {
             return res.status(400).json({ msg: 'Invalid promotion rank value' });
         }
@@ -104,7 +108,7 @@ router.post('/', [auth, isHR], async (req, res) => {
             incrementPercentage,
             promotionRank: promotionRank || null,
             reason: reason.trim(),
-            approvedBy: approvedBy.trim(),
+            approvedBy: resolvedApprovedBy,
             notes: notes || '',
             status: status || 'Pending',
             createdBy: req.user.id
@@ -145,8 +149,15 @@ router.put('/:id', [auth, isHR], async (req, res) => {
 
         const {
             incrementDate, previousSalary, incrementAmount,
-            promotionRank, reason, approvedBy, notes, status
+            promotionRank, reason, notes, status
         } = req.body;
+
+        // Fetch logged-in HR/Admin name from database
+        const hrUser = await User.findById(req.user.id).select('name');
+        if (!hrUser) {
+            return res.status(404).json({ msg: 'HR/Admin user not found' });
+        }
+        increment.approvedBy = hrUser.name;
 
         // ── Validation ──────────────────────────────────────────────────
         if (incrementDate !== undefined) {
@@ -175,10 +186,6 @@ router.put('/:id', [auth, isHR], async (req, res) => {
         if (reason !== undefined) {
             if (!reason.trim()) return res.status(400).json({ msg: 'Reason for increment is required' });
             increment.reason = reason.trim();
-        }
-        if (approvedBy !== undefined) {
-            if (!approvedBy.trim()) return res.status(400).json({ msg: 'Approved By field is required' });
-            increment.approvedBy = approvedBy.trim();
         }
         if (notes !== undefined) increment.notes = notes;
         if (promotionRank !== undefined) {
