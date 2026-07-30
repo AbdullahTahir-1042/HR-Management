@@ -8,10 +8,16 @@ const { syncDueIncrements } = require('../utils/incrementHelper');
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 const VALID_STATUSES = ['Pending', 'Approved', 'Rejected'];
 
-// Helper to compare dates ignoring times
+// Helper to compare dates ignoring times timezone-insensitively
 const getStartOfDay = (d) => {
+    if (typeof d === 'string' && d.includes('-')) {
+        const parts = d.split('-');
+        if (parts.length === 3) {
+            return new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
+        }
+    }
     const date = new Date(d);
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 };
 
 // ─────────────────────────────────────────────

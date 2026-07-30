@@ -8,9 +8,10 @@ const Increment = require('../models/Increment');
 const syncDueIncrements = async (employeeId) => {
     try {
         const today = new Date();
-        const todayDoc = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        // Construct today's local date at UTC midnight for timezone independence
+        const todayDoc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
-        // Find the latest Approved increment for this employee whose date is <= today
+        // Find the latest Approved increment for this employee whose date is <= todayDoc
         const latestApproved = await Increment.findOne({
             employee: employeeId,
             status: 'Approved',

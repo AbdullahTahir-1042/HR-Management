@@ -196,9 +196,10 @@ const IncrementReviewPage = ({ employee }) => {
 
     const isFutureDateSelected = useMemo(() => {
         if (!incForm.incrementDate) return false;
-        const targetDate = new Date(incForm.incrementDate);
+        const parts = incForm.incrementDate.split('-');
+        if (parts.length !== 3) return false;
+        const targetDay = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
         const today = new Date();
-        const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
         const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         return targetDay > todayDay;
     }, [incForm.incrementDate]);
@@ -213,12 +214,16 @@ const IncrementReviewPage = ({ employee }) => {
         if (!incForm.incrementDate) {
             errs.incrementDate = 'Increment date is required';
         } else {
-            const targetDate = new Date(incForm.incrementDate);
-            const today = new Date();
-            const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-            const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            if (targetDay < todayDay) {
-                errs.incrementDate = 'Increment date cannot be in the past';
+            const parts = incForm.incrementDate.split('-');
+            if (parts.length === 3) {
+                const targetDay = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                const today = new Date();
+                const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                if (targetDay < todayDay) {
+                    errs.incrementDate = 'Increment date cannot be in the past';
+                }
+            } else {
+                errs.incrementDate = 'Valid increment date is required';
             }
         }
         if (incForm.previousSalary === '' || Number(incForm.previousSalary) < 0) errs.previousSalary = 'Previous salary must be 0 or more';
