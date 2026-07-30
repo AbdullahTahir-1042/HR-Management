@@ -208,21 +208,21 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm"
+                className="table-container"
             >
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="table-base">
                         <thead>
-                            <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-[0.1em]">
-                                <th className="px-8 py-4">Employee</th>
-                                <th className="px-8 py-4">Duration</th>
-                                <th className="px-8 py-4 text-center">Days</th>
-                                <th className="px-8 py-4">Reason</th>
-                                <th className="px-8 py-4">Status</th>
-                                <th className="px-8 py-4 text-right">Actions</th>
+                            <tr className="table-header">
+                                <th>Employee</th>
+                                <th>Duration</th>
+                                <th className="text-center">Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th className="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="table-body">
                             {filteredLeaves.map(leave => {
                                 const empId = leave.employee?._id || (typeof leave.employee === 'string' ? leave.employee : null);
                                 const emp = (empId ? employees.find(e => String(e._id) === String(empId)) : null) || leave.employee || {};
@@ -261,7 +261,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                 return (
                                     <tr 
                                         key={leave._id} 
-                                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                                        className="table-row"
                                         onClick={() => setSelectedLeave(leave)}
                                     >
                                         <td className="px-8 py-6">

@@ -23,7 +23,7 @@ const UserSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['full time', 'probation', 'internship'],
+        enum: ['full time', 'probation', 'internship', 'Inactive'],
         default: 'full time'
     },
     joiningStatus: {

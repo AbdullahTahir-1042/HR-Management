@@ -86,8 +86,13 @@ router.post('/', [auth, isHR], async (req, res) => {
         if (!reason || !reason.trim()) {
             return res.status(400).json({ msg: 'Reason for increment is required' });
         }
-        if (promotionRank && !VALID_RANKS.includes(promotionRank)) {
-            return res.status(400).json({ msg: 'Invalid promotion rank value' });
+        if (promotionRank) {
+            if (!VALID_RANKS.includes(promotionRank)) {
+                return res.status(400).json({ msg: 'Invalid promotion rank value' });
+            }
+            if (emp.promotionRank && VALID_RANKS.indexOf(promotionRank) < VALID_RANKS.indexOf(emp.promotionRank)) {
+                return res.status(400).json({ msg: 'Cannot assign a rank lower than the current rank' });
+            }
         }
         if (status && !VALID_STATUSES.includes(status)) {
             return res.status(400).json({ msg: 'Status must be Pending, Approved, or Rejected' });
@@ -189,8 +194,14 @@ router.put('/:id', [auth, isHR], async (req, res) => {
         }
         if (notes !== undefined) increment.notes = notes;
         if (promotionRank !== undefined) {
-            if (promotionRank && !VALID_RANKS.includes(promotionRank)) {
-                return res.status(400).json({ msg: 'Invalid promotion rank value' });
+            if (promotionRank) {
+                if (!VALID_RANKS.includes(promotionRank)) {
+                    return res.status(400).json({ msg: 'Invalid promotion rank value' });
+                }
+                const emp = await User.findById(increment.employee);
+                if (emp && emp.promotionRank && VALID_RANKS.indexOf(promotionRank) < VALID_RANKS.indexOf(emp.promotionRank)) {
+                    return res.status(400).json({ msg: 'Cannot assign a rank lower than the current rank' });
+                }
             }
             increment.promotionRank = promotionRank || null;
         }

@@ -277,7 +277,17 @@ const IncrementReviewPage = ({ employee }) => {
         if (incForm.incrementAmount === '' || Number(incForm.incrementAmount) < 0) errs.incrementAmount = 'Increment amount must be 0 or more';
         if (incForm.incrementAmount === 0 || incForm.incrementAmount === '0') errs.incrementAmount = 'Increment amount is required and must be greater than 0';
         if (!incForm.reason.trim()) errs.reason = 'Reason is required';
-        if (incForm.promotionRank && !VALID_RANKS.includes(incForm.promotionRank)) errs.promotionRank = 'Invalid rank';
+        if (incForm.promotionRank) {
+            if (!VALID_RANKS.includes(incForm.promotionRank)) {
+                errs.promotionRank = 'Invalid rank';
+            } else {
+                const currentRankIndex = VALID_RANKS.indexOf(employee?.promotionRank || 'Junior');
+                const selectedRankIndex = VALID_RANKS.indexOf(incForm.promotionRank);
+                if (selectedRankIndex < currentRankIndex) {
+                    errs.promotionRank = `Cannot assign a rank lower than current (${employee?.promotionRank || 'Junior'})`;
+                }
+            }
+        }
         setIncErrors(errs);
         return Object.keys(errs).length === 0;
     };

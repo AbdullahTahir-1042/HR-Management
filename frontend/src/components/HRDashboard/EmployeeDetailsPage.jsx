@@ -191,7 +191,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <button 
                     onClick={onBack}
-                    className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-2xl transition-all font-bold text-xs uppercase tracking-wider shadow-sm group cursor-pointer"
+                    className="btn-secondary font-bold text-xs uppercase tracking-wider"
                 >
                     <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
                     <span>Back to Employees</span>
@@ -200,15 +200,15 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => onEdit(employee)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 rounded-2xl transition-all font-bold text-xs uppercase tracking-wider shadow-sm cursor-pointer"
+                        className="btn-secondary font-bold text-xs uppercase tracking-wider"
                     >
                         <Edit3 size={14}/> Edit Profile
                     </button>
                     <button 
                         onClick={() => onDelete(employee._id)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-rose-50 border border-rose-100 text-rose-600 hover:bg-rose-100/50 rounded-2xl transition-all font-bold text-xs uppercase tracking-wider shadow-sm cursor-pointer"
+                        className="btn-danger font-bold text-xs uppercase tracking-wider"
                     >
-                        <Trash2 size={14}/> Delete Profile
+                        <Trash2 size={14}/> Mark as Inactive
                     </button>
                 </div>
             </div>
@@ -216,7 +216,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 {/* Left Column: Redesigned Profile Hero Card */}
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="card !p-0 overflow-hidden">
                         {/* Profile Cover Banner */}
                         <div className="h-28 bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 relative">
                             <div className="absolute inset-0 bg-black/10" />
@@ -259,7 +259,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                     </div>
 
                     {/* Quick Contact Block */}
-                    <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-sm">
+                    <div className="card space-y-4">
                         <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest border-b border-slate-100 pb-3">Contact Information</h3>
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
@@ -284,7 +284,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                     </div>
 
                     {/* Career Growth Ladder Card */}
-                    <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-sm">
+                    <div className="card space-y-4">
                         <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-2">
                             <TrendingUp size={14} className="text-indigo-500" /> Career Growth Ladder
                         </h3>
@@ -379,7 +379,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                     ) : (
                         <>
                         {/* ── REDESIGNED SALARY SUMMARY CARD ── */}
-                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 relative overflow-hidden">
+                        <div className="card relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/40 blur-2xl rounded-full" />
                             <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
                                 <DollarSign size={16} /> Salary & Review Summary
@@ -403,7 +403,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                             key={`${employee._id}-${salaryData.totalLeaveDays}`}
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden"
+                            className="card relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 w-56 h-56 bg-slate-50/50 blur-3xl -mr-18 -mt-18 rounded-full" />
                             
@@ -458,72 +458,67 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                         </motion.div>
 
                         {/* Employment Details Card */}
-                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="p-6">
-                                <h3 className="text-xs font-bold text-indigo-600 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
-                                    <Briefcase size={16} /> Employment Details
-                                </h3>
+                        <div className="card">
+                            <h3 className="text-xs font-bold text-indigo-600 mb-6 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
+                                <Briefcase size={16} /> Employment Details
+                            </h3>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                                    <InfoItem icon={Building2} label="Department" value={employee.department} />
-                                    <InfoItem icon={UserCheck} label="Reporting Officer" value={employee.reportingTo || 'Directly to HR'} />
-                                    <InfoItem icon={Shield} label="Access Role" value={employee.role} capitalize />
-                                    <InfoItem icon={Briefcase} label="Employment Type" value={employee.status} capitalize />
-                                    <InfoItem icon={Calendar} label="Joining Date" value={formatDate(employee.createdAt)} />
-                                    <InfoItem icon={DollarSign} label="Monthly Salary" value={formatSalary(employee.salary)} />
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                                <InfoItem icon={Building2} label="Department" value={employee.department} />
+                                <InfoItem icon={UserCheck} label="Reporting Officer" value={employee.reportingTo || 'Directly to HR'} />
+                                <InfoItem icon={Shield} label="Access Role" value={employee.role} capitalize />
+                                <InfoItem icon={Briefcase} label="Employment Type" value={employee.status} capitalize />
+                                <InfoItem icon={Calendar} label="Joining Date" value={formatDate(employee.createdAt)} />
+                                <InfoItem icon={DollarSign} label="Monthly Salary" value={formatSalary(employee.salary)} />
                             </div>
                         </div>
 
                         {/* Leave Balances Summary */}
-                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="p-6">
-                                <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
-                                    <Calendar size={16} /> Leave Balance Summary
-                                </h3>
-                                {leaveBalances.length === 0 ? (
-                                    <p className="text-xs text-slate-400 text-center py-4">No active leave type configurations found.</p>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                                        {leaveBalances.map(b => (
-                                            <div key={b.leaveType._id} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex flex-col justify-between hover:border-indigo-100 hover:shadow-xs transition-all duration-200">
-                                                <div>
-                                                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg uppercase tracking-wider">
-                                                        {b.leaveType.name}
-                                                    </span>
-                                                    <p className="text-xl font-black text-slate-800 mt-2.5">{b.remaining} Days</p>
-                                                </div>
-                                                <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase tracking-tight">
-                                                    <span>Used: {b.used}d</span>
-                                                    <span>Allocated: {b.allocated}d</span>
-                                                </div>
+                        <div className="card">
+                            <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
+                                <Calendar size={16} /> Leave Balance Summary
+                            </h3>
+                            {leaveBalances.length === 0 ? (
+                                <p className="text-xs text-slate-400 text-center py-4">No active leave type configurations found.</p>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                    {leaveBalances.map(b => (
+                                        <div key={b.leaveType._id} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex flex-col justify-between hover:border-indigo-100 hover:shadow-xs transition-all duration-200">
+                                            <div>
+                                                <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                                                    {b.leaveType.name}
+                                                </span>
+                                                <p className="text-xl font-black text-slate-800 mt-2.5">{b.remaining} Days</p>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase tracking-tight">
+                                                <span>Used: {b.used}d</span>
+                                                <span>Allocated: {b.allocated}d</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Recent Leave History */}
-                        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="p-6">
-                                <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
-                                    <ClipboardList size={16} /> Recent Leave Request History
-                                </h3>
-                                {employeeLeaves.length === 0 ? (
-                                    <p className="text-xs text-slate-400 text-center py-6">No leave requests found for this employee.</p>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs">
-                                            <thead>
-                                                <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold tracking-wider text-[9px]">
-                                                    <th className="py-2 pb-3">Type</th>
-                                                    <th className="py-2 pb-3">Duration</th>
-                                                    <th className="py-2 pb-3 text-center">Days</th>
-                                                    <th className="py-2 pb-3 text-right">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
+                        <div className="card space-y-6">
+                            <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
+                                <ClipboardList size={16} /> Recent Leave Request History
+                            </h3>
+                            {employeeLeaves.length === 0 ? (
+                                <p className="text-xs text-slate-400 text-center py-6">No leave requests found for this employee.</p>
+                            ) : (
+                                <div className="table-container shadow-none border-none">
+                                    <table className="table-base">
+                                        <thead>
+                                            <tr className="table-header">
+                                                <th>Type</th>
+                                                <th>Duration</th>
+                                                <th className="text-center">Days</th>
+                                                <th className="text-right">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="table-body">
                                                 {employeeLeaves.slice(0, 5).map(l => (
                                                     <tr key={l._id} className="hover:bg-slate-50/50 transition-colors">
                                                         <td className="py-3">
@@ -552,7 +547,6 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                                     </div>
                                 )}
                             </div>
-                        </div>
                         </>
                     )}
                 </div>

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
     ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2,
     UserCheck, Image as ImageIcon, Phone, Crown, AlertCircle,
-    TrendingUp, Award, CheckCircle2
+    TrendingUp, Award, CheckCircle2, Trash2
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
@@ -191,6 +191,14 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         }
     }, [formData.department, departmentsList, employee]);
 
+    // Reset isTeamLead to false if the employee is an Intern
+    useEffect(() => {
+        const isIntern = formData.status === 'internship' || formData.joiningStatus === 'Intern' || formData.promotionRank === 'Intern';
+        if (isIntern && formData.isTeamLead) {
+            setFormData(prev => ({ ...prev, isTeamLead: false }));
+        }
+    }, [formData.status, formData.joiningStatus, formData.promotionRank]);
+
     // ── Validate single field ────────────────────────────────────────────────
     const validateField = useCallback((fieldName, value) => {
         const validator = validators[fieldName];
@@ -207,9 +215,16 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
 
     // ── Handle field change ──────────────────────────────────────────────────
     const handleChange = (fieldName, value) => {
-        setFormData(prev => ({ ...prev, [fieldName]: value }));
+        let cleanedValue = value;
+        if (fieldName === 'phone') {
+            cleanedValue = value.replace(/[^0-9+]/g, '');
+            if (cleanedValue.includes('+')) {
+                cleanedValue = '+' + cleanedValue.replace(/\+/g, '');
+            }
+        }
+        setFormData(prev => ({ ...prev, [fieldName]: cleanedValue }));
         if (touched[fieldName]) {
-            const err = validateField(fieldName, value);
+            const err = validateField(fieldName, cleanedValue);
             setFieldErrors(prev => ({ ...prev, [fieldName]: err }));
         }
     };
@@ -236,6 +251,11 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert("File size must be less than 5MB");
+                e.target.value = null;
+                return;
+            }
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
@@ -243,6 +263,11 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleRemovePhoto = () => {
+        setPreview(null);
+        setFormData({ ...formData, photo: '' });
     };
 
     const handleSubmit = async (e) => {
@@ -268,7 +293,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         }
     };
 
-    const BASE_INPUT = "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm";
+    const BASE_INPUT = "input-field pl-10";
 
     return (
         <motion.div 
@@ -281,14 +306,14 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
             <div className="mb-6">
                 <button 
                     onClick={onBack}
-                    className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-xs group cursor-pointer"
+                    className="btn-secondary"
                 >
                     <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
                     <span>Back to Employee Details</span>
                 </button>
             </div>
 
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="card p-0 overflow-hidden shadow-xl">
                 <div className="p-6 sm:p-10">
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {error && (
@@ -312,6 +337,15 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                                 </label>
                             </div>
+                            {preview && (
+                                <button 
+                                    type="button" 
+                                    onClick={handleRemovePhoto} 
+                                    className="mt-3 text-[10px] text-rose-500 hover:text-rose-600 font-bold uppercase tracking-wider flex items-center gap-1 justify-center transition-colors"
+                                >
+                                    <Trash2 size={12} /> Remove Photo
+                                </button>
+                            )}
                             <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Update Photo</p>
                         </div>
 
@@ -381,7 +415,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Department</label>
                                     <div className="relative mt-1 group">
                                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
+                                        <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="input-field pl-10">
                                             {departmentsList.map(dept => (
                                                 <option key={dept._id} value={dept.name}>
                                                     {dept.name}
@@ -411,16 +445,18 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     );
                                     const existingLeadName = hasExistingLead ? (selectedDeptObj.teamLead.name || 'Another employee') : '';
 
+                                    const isIntern = formData.status === 'internship' || formData.joiningStatus === 'Intern' || formData.promotionRank === 'Intern';
+
                                     return (
                                         <div className="space-y-2">
                                             <div
                                                 onClick={() => {
-                                                    if (!hasExistingLead) {
+                                                    if (!hasExistingLead && !isIntern) {
                                                         setFormData({...formData, isTeamLead: !formData.isTeamLead});
                                                     }
                                                 }}
                                                 className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                                                    hasExistingLead
+                                                    hasExistingLead || isIntern
                                                         ? 'border-slate-200 bg-slate-100/50 cursor-not-allowed opacity-60'
                                                         : formData.isTeamLead
                                                             ? 'border-amber-300 bg-amber-50 cursor-pointer'
@@ -458,6 +494,14 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                                     </span>
                                                 </div>
                                             )}
+                                            {isIntern && !hasExistingLead && (
+                                                <div className="flex items-center gap-2 text-rose-600 bg-rose-50/50 border border-rose-100 rounded-xl p-3 text-[11px] font-semibold">
+                                                    <AlertCircle size={14} className="shrink-0" />
+                                                    <span>
+                                                        Interns cannot be assigned as Team Leads.
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })()}
@@ -484,7 +528,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Status</label>
                                     <div className="relative mt-1 group">
                                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
+                                        <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="input-field pl-10">
                                             <option value="full time">Full Time</option>
                                             <option value="probation">Probation</option>
                                             <option value="internship">Internship</option>
@@ -501,7 +545,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                             value={formData.promotionRank} 
                                             onChange={e => handleChange('promotionRank', e.target.value)} 
                                             onBlur={() => handleBlur('promotionRank')}
-                                            className={getInputBorderClass('promotionRank', touched, fieldErrors, "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none font-bold text-indigo-600")}
+                                            className={getInputBorderClass('promotionRank', touched, fieldErrors, "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none")}
                                         >
                                             <option value="Intern">Intern</option>
                                             <option value="Junior">Junior</option>
@@ -557,7 +601,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Role</label>
                                     <div className="relative mt-1 group">
                                         <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm appearance-none">
+                                        <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="input-field pl-10">
                                             <option value="employee">Employee</option>
                                             <option value="hr">HR Admin</option>
                                         </select>
@@ -573,7 +617,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                 disabled={loading}
                                 animate={submitShake ? { x: [0, -8, 8, -6, 6, -3, 3, 0] } : {}}
                                 transition={{ duration: 0.5 }}
-                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
+                                className="btn-primary w-full py-4 text-base"
                             >
                                 {loading ? 'Saving Changes...' : <><Save size={20} /> Update Employee Profile</>}
                             </motion.button>

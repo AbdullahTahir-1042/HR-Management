@@ -4,6 +4,7 @@ const { auth, isHR } = require('../middleware/auth');
 const LeaveRequest = require('../models/LeaveRequest');
 const User = require('../models/User');
 const LeaveType = require('../models/LeaveType');
+const Attendance = require('../models/Attendance');
 
 // Calculate number of days between two dates (inclusive)
 const calculateDays = (start, end) => {
@@ -202,6 +203,43 @@ router.post('/apply', auth, async (req, res) => {
             return res.status(400).json({ msg: 'End date cannot be before start date.' });
         }
 
+        if (start < today) {
+            return res.status(400).json({ msg: 'Leave start date cannot be in the past.' });
+        }
+
+        // Check for overlapping existing leaves
+        const overlappingLeaves = await LeaveRequest.find({
+            employee: req.user.id,
+            status: { $in: ['pending', 'approved'] },
+            $or: [
+                { startDate: { $lte: endDate }, endDate: { $gte: startDate } }
+            ]
+        });
+
+        if (overlappingLeaves.length > 0) {
+            return res.status(400).json({ msg: 'You already have an active leave request during this period.' });
+        }
+
+        // Check for existing attendance during the requested period
+        const dateStrings = [];
+        let curr = new Date(start);
+        while (curr <= end) {
+            const yyyy = curr.getFullYear();
+            const mm = String(curr.getMonth() + 1).padStart(2, '0');
+            const dd = String(curr.getDate()).padStart(2, '0');
+            dateStrings.push(`${yyyy}-${mm}-${dd}`);
+            curr.setDate(curr.getDate() + 1);
+        }
+
+        const existingAttendance = await Attendance.find({
+            employee: req.user.id,
+            date: { $in: dateStrings }
+        });
+
+        if (existingAttendance.length > 0) {
+            return res.status(400).json({ msg: 'You have already checked in for one or more days in this period.' });
+        }
+
         // Create leave request (quota balance warning calculated on UI, excess converted to unpaid leave in payroll)
 
         const leave = new LeaveRequest({
@@ -281,7 +319,13 @@ router.put('/:id/status', [auth, isHR], async (req, res) => {
         let leave = await LeaveRequest.findById(req.params.id).populate('leaveType');
         if (!leave) return res.status(404).json({ msg: 'Leave request not found' });
 
-
+        const start = new Date(leave.startDate);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        if (start < today) {
+            return res.status(400).json({ msg: 'Cannot edit or approve leave requests from the past.' });
+        }
 
         leave.status = status;
         await leave.save();

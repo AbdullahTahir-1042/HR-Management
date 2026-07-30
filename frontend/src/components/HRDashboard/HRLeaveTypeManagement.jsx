@@ -23,8 +23,8 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
             return setError('Quota (days per year) is required.');
         }
         const numQuota = Number(form.quota);
-        if (isNaN(numQuota) || numQuota < 0) {
-            return setError('Quota must be a non-negative number.');
+        if (isNaN(numQuota) || numQuota < 0 || numQuota > 365) {
+            return setError('Quota must be between 0 and 365 days.');
         }
 
         setError('');
@@ -99,7 +99,7 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                 <div className="space-y-4">
                     {/* Name */}
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                        <label className="input-label">
                             Leave Type Name <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -107,13 +107,13 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                             value={form.name}
                             onChange={handleChange}
                             placeholder="e.g. Sick Leave"
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                            className="input-field"
                         />
                     </div>
 
                     {/* Quota */}
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                        <label className="input-label">
                             Annual Quota (Days) <span className="text-rose-500">*</span>
                         </label>
                         <input
@@ -123,13 +123,13 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                             onChange={handleChange}
                             placeholder="e.g. 10"
                             min="0"
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                            className="input-field"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                        <label className="input-label">
                             Description
                         </label>
                         <textarea
@@ -138,7 +138,7 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                             onChange={handleChange}
                             rows={3}
                             placeholder="Brief details about who can request or constraints..."
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none"
+                            className="input-field resize-none"
                         />
                     </div>
                 </div>
@@ -147,14 +147,14 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                 <div className="flex gap-3 mt-6">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+                        className="btn-secondary flex-1"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-100"
+                        className="btn-primary flex-1"
                     >
                         <Check size={16} />
                         {loading ? 'Saving...' : isEdit ? 'Update' : 'Add Type'}
@@ -212,7 +212,7 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                     </div>
                     <button
                         onClick={openAdd}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-100"
+                        className="btn-primary"
                     >
                         <Plus size={16} />
                         Add Leave Type
@@ -230,14 +230,14 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-w-[768px]">
+                        <div className="table-container min-w-[768px]">
                             {/* Table Header */}
-                            <div className="grid grid-cols-12 px-6 py-3 bg-slate-50 border-b border-slate-100">
-                                <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">#</span>
-                                <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Leave Type</span>
-                                <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">Annual Quota</span>
-                                <span className="col-span-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Description</span>
-                                <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</span>
+                            <div className="grid grid-cols-12 px-6 py-3 table-header border-b-0">
+                                <span className="col-span-1">#</span>
+                                <span className="col-span-3">Leave Type</span>
+                                <span className="col-span-2 text-center">Annual Quota</span>
+                                <span className="col-span-4">Description</span>
+                                <span className="col-span-2 text-right">Actions</span>
                             </div>
 
                             {/* Rows */}
@@ -249,7 +249,7 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, x: -16 }}
                                         transition={{ delay: index * 0.04 }}
-                                        className="grid grid-cols-12 px-6 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition-colors items-center group"
+                                        className="grid grid-cols-12 px-6 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition-colors items-center group table-body"
                                     >
                                         <span className="col-span-1 text-sm text-slate-400 font-bold">{index + 1}</span>
 
@@ -258,7 +258,7 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                         </div>
 
                                         <div className="col-span-2 text-center">
-                                            <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
+                                            <span className="badge-primary px-3 py-1 text-sm inline-block mx-auto">
                                                 {lt.quota} Days
                                             </span>
                                         </div>

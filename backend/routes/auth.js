@@ -135,6 +135,10 @@ router.post('/login', async (req, res) => {
         if (!user || user.isDeleted) {
             return res.status(400).json({ msg: 'Invalid Credentials' });
         }
+        
+        if (user.status === 'Inactive') {
+            return res.status(403).json({ msg: 'Account is inactive. Please contact HR.' });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
@@ -316,7 +320,10 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
         }
 
-        user.isDeleted = true;
+        // Shift to Inactive instead of hard delete
+        user.status = 'Inactive';
+        user.isDeleted = false; // Still visible to HR, but blocked from login
+        user.isTeamLead = false; // Remove them from Team Lead if they are one
         await user.save();
 
         // Clean up conversations and messages for the deleted user
@@ -350,7 +357,7 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             }
         }
 
-        res.json({ msg: 'User soft-deleted successfully' });
+        res.json({ msg: 'User marked as Inactive' });
     } catch (err) {
         console.error('Delete Error:', err.message);
         res.status(500).send('Server Error');

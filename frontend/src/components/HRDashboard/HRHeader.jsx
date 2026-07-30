@@ -101,14 +101,16 @@ const HRHeader = ({
                             onChange={(e) => setAttendanceDateFilter(e.target.value)}
                             className="px-3 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm flex-1 sm:flex-none"
                         />
-                        {attendanceDateFilter !== new Date().toISOString().slice(0, 10) && (
-                            <button
-                                onClick={() => setAttendanceDateFilter(new Date().toISOString().slice(0, 10))}
-                                className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors"
-                            >
-                                Today
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setAttendanceDateFilter(new Date().toISOString().slice(0, 10))}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                                attendanceDateFilter === new Date().toISOString().slice(0, 10)
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                            }`}
+                        >
+                            Today
+                        </button>
                         {attendanceDateFilter !== '' ? (
                             <button 
                                 onClick={() => setAttendanceDateFilter('')} 

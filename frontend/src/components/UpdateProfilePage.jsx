@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2 } from 'lucide-react';
 
 const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const { updateUser } = useContext(AuthContext);
@@ -35,12 +35,21 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert("File size must be less than 5MB");
+                e.target.value = null;
+                return;
+            }
             const reader = new FileReader();
             reader.onloadend = () => {
                 setFormData({ ...formData, photo: reader.result });
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleRemovePhoto = () => {
+        setFormData({ ...formData, photo: '' });
     };
 
     const handleSubmit = async (e) => {
@@ -87,6 +96,15 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                 <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                             </label>
                         </div>
+                        {formData.photo && (
+                            <button 
+                                type="button" 
+                                onClick={handleRemovePhoto} 
+                                className="mb-4 text-[10px] text-rose-500 hover:text-rose-600 font-bold uppercase tracking-wider flex items-center gap-1 justify-center transition-colors"
+                            >
+                                <Trash2 size={12} /> Remove Photo
+                            </button>
+                        )}
                         <h3 className="font-bold text-slate-800">{formData.name}</h3>
                         <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">{user?.role}</p>
                     </div>
@@ -114,7 +132,13 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
                                 <div className="relative group">
                                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm" />
+                                    <input required type="tel" value={formData.phone} onChange={e => {
+                                        let val = e.target.value.replace(/[^0-9+]/g, '');
+                                        if (val.includes('+')) {
+                                            val = '+' + val.replace(/\+/g, '');
+                                        }
+                                        setFormData({...formData, phone: val});
+                                    }} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm" />
                                 </div>
                             </div>
                             <div className="space-y-1.5">

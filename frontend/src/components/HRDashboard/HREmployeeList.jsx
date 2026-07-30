@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Mail, Shield, Calendar, UserPlus, Briefcase,
     Building2, UserCheck, Trash2, Crown, Phone, Eye, Pencil,
-    LayoutGrid, List, Search, Filter, AlertCircle, TrendingUp
+    LayoutGrid, List, Search, Filter, AlertCircle, TrendingUp, AlertTriangle, UserX
 } from 'lucide-react';
 
 const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, onEdit, onDelete }) => {
     const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
     const [deptFilter, setDeptFilter] = useState('all');
-    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads'
+    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads' | 'inactive'
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
@@ -51,6 +51,8 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
             matchesStatus = emp.status === 'probation' || emp.status === 'internship';
         } else if (statusFilter === 'teamLeads') {
             matchesStatus = !!emp.isTeamLead;
+        } else if (statusFilter === 'inactive') {
+            matchesStatus = emp.status === 'Inactive';
         }
 
         return matchesSearch && matchesDept && matchesStatus;
@@ -61,12 +63,13 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
     const fullTimeCount = employees.filter(e => e.status === 'full time' || !e.status).length;
     const probationCount = employees.filter(e => e.status === 'probation' || e.status === 'internship').length;
     const teamLeadsCount = employees.filter(e => e.isTeamLead).length;
+    const inactiveCount = employees.filter(e => e.status === 'Inactive').length;
 
     return (
         <div className="space-y-8">
 
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Total Staff Card */}
                 <button
                     onClick={() => setStatusFilter('all')}
@@ -138,6 +141,24 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                         <p className="text-2xl font-black text-slate-800">{teamLeadsCount}</p>
                     </div>
                 </button>
+
+                {/* Inactive Card */}
+                <button
+                    onClick={() => setStatusFilter('inactive')}
+                    className={`text-left bg-white p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 group ${statusFilter === 'inactive'
+                            ? 'border-slate-500 ring-2 ring-slate-500/10 shadow-md bg-slate-50'
+                            : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+                        }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${statusFilter === 'inactive' ? 'bg-slate-600 text-white' : 'bg-slate-50 text-slate-500 group-hover:bg-slate-200'
+                        }`}>
+                        <UserX size={22} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Inactive</p>
+                        <p className="text-2xl font-black text-slate-800">{inactiveCount}</p>
+                    </div>
+                </button>
             </div>
 
             {/* Header Controls Bar */}
@@ -154,7 +175,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                             className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                             title="Clear Status Filter"
                         >
-                            <span>Filter: {statusFilter === 'teamLeads' ? 'Team Leads' : statusFilter === 'full time' ? 'Full Time' : 'Probation/Interns'}</span>
+                            <span>Filter: {statusFilter === 'teamLeads' ? 'Team Leads' : statusFilter === 'inactive' ? 'Inactive' : statusFilter === 'full time' ? 'Full Time' : 'Probation/Interns'}</span>
                             <span className="text-amber-900 font-extrabold text-sm">&times;</span>
                         </button>
                     )}
@@ -201,7 +222,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                 {onAddNew && (
                     <button
                         onClick={onAddNew}
-                        className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm shrink-0"
+                        className="btn-primary w-full sm:w-auto shrink-0"
                     >
                         <UserPlus size={18} />
                         <span>Add New Employee</span>
@@ -215,37 +236,36 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden"
+                    className="table-container"
                 >
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse table-fixed">
-                            <colgroup>
-                                <col className="w-[22%]" />
-                                <col className="w-[16%]" />
-                                <col className="w-[14%]" />
-                                <col className="w-[13%]" />
-                                <col className="w-[13%]" />
-                                <col className="w-[12%]" />
-                                <col className="w-[10%]" />
-                            </colgroup>
-                            <thead>
-                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                                    <th className="px-3 py-3">Employee</th>
-                                    <th className="px-3 py-3">Dept & Role</th>
-                                    <th className="px-3 py-3">Reporting To</th>
-                                    <th className="px-3 py-3">Status</th>
-                                    <th className="px-3 py-3">Salary</th>
-                                    <th className="px-3 py-3">Joined</th>
-                                    <th className="px-3 py-3 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredEmployees.map(emp => (
-                                    <tr
-                                        key={emp._id}
-                                        onClick={() => onSelect && onSelect(emp)}
-                                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
-                                    >
+                    <table className="table-base table-fixed">
+                        <colgroup>
+                            <col className="w-[22%]" />
+                            <col className="w-[16%]" />
+                            <col className="w-[14%]" />
+                            <col className="w-[13%]" />
+                            <col className="w-[13%]" />
+                            <col className="w-[12%]" />
+                            <col className="w-[10%]" />
+                        </colgroup>
+                        <thead>
+                            <tr className="table-header">
+                                <th>Employee</th>
+                                <th>Dept & Role</th>
+                                <th>Reporting To</th>
+                                <th>Status</th>
+                                <th>Salary</th>
+                                <th>Joined</th>
+                                <th className="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="table-body">
+                            {filteredEmployees.map(emp => (
+                                <tr
+                                    key={emp._id}
+                                    onClick={() => onSelect && onSelect(emp)}
+                                    className={`table-row ${emp.status === 'Inactive' ? 'opacity-50 hover:opacity-100 grayscale' : ''}`}
+                                >
                                         {/* Employee Name, Photo, Email, Phone & Lead badge */}
                                         <td className="px-3 py-3">
                                             <div className="flex items-center gap-2">
@@ -306,6 +326,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                                 ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : ''}
                                                 ${emp.status === 'probation' ? 'bg-amber-50 text-amber-600 border border-amber-200' : ''}
                                                 ${emp.status === 'internship' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : ''}
+                                                ${emp.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border border-rose-200' : ''}
                                             `}>
                                                 <Briefcase size={10} />
                                                 {emp.status || 'full time'}
@@ -330,15 +351,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                         {/* Actions */}
                                         <td className="px-3 py-3 text-right">
                                             <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
-                                                {onSelect && (
-                                                    <button
-                                                        onClick={() => onSelect(emp)}
-                                                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                                        title="View Full Profile"
-                                                    >
-                                                        <Eye size={15} />
-                                                    </button>
-                                                )}
+
                                                 {onEdit && (
                                                     <button
                                                         onClick={() => onEdit(emp)}
@@ -362,15 +375,14 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>
+                    </table>
 
-                        {filteredEmployees.length === 0 && (
-                            <div className="p-16 text-center text-slate-400">
-                                <Users size={44} className="mx-auto mb-3 opacity-20" />
-                                <p className="font-semibold text-sm">No employees found matching your filter criteria.</p>
-                            </div>
-                        )}
-                    </div>
+                    {filteredEmployees.length === 0 && (
+                        <div className="p-16 text-center text-slate-400">
+                            <Users size={44} className="mx-auto mb-3 opacity-20" />
+                            <p className="font-semibold text-sm">No employees found matching your filter criteria.</p>
+                        </div>
+                    )}
                 </motion.div>
             ) : (
                 /* GRID CARDS VIEW */
@@ -383,7 +395,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                         <div
                             key={emp._id}
                             onClick={() => onSelect && onSelect(emp)}
-                            className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col justify-between space-y-4 group"
+                            className={`card card-hover flex flex-col justify-between space-y-4 group ${emp.status === 'Inactive' ? 'opacity-60 hover:opacity-100 grayscale' : ''}`}
                         >
                             <div>
                                 <div className="flex items-start justify-between gap-3 mb-4">
@@ -405,7 +417,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                             <p className="text-xs text-slate-400 font-medium truncate">{emp.email}</p>
                                         </div>
                                     </div>
-                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : emp.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
                                         }`}>
                                         {emp.status || 'full time'}
                                     </span>
@@ -453,15 +465,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                     <p className="text-sm font-black text-slate-800">{formatSalary(emp.salary)}</p>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    {onSelect && (
-                                        <button
-                                            onClick={() => onSelect(emp)}
-                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                                            title="View Details"
-                                        >
-                                            <Eye size={17} />
-                                        </button>
-                                    )}
+
                                     {onEdit && (
                                         <button
                                             onClick={() => onEdit(emp)}
@@ -492,7 +496,6 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                     )}
                 </motion.div>
             )}
-
         </div>
     );
 };

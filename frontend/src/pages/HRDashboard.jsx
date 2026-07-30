@@ -268,13 +268,18 @@ const HRDashboard = () => {
     };
 
     const handleStatusUpdate = async (id, status) => {
-        await apiClient.put(`/leaves/${id}/status`, { status });
-        fetchAllLeaves();
         try {
-            const bc = new BroadcastChannel('leaves_channel');
-            bc.postMessage({ type: 'LEAVE_STATUS_CHANGED', leaveId: id, status });
-            bc.close();
-        } catch (e) { /* BroadcastChannel not supported */ }
+            await apiClient.put(`/leaves/${id}/status`, { status });
+            fetchAllLeaves();
+            try {
+                const bc = new BroadcastChannel('leaves_channel');
+                bc.postMessage({ type: 'LEAVE_STATUS_CHANGED', leaveId: id, status });
+                bc.close();
+            } catch (e) { /* BroadcastChannel not supported */ }
+        } catch (err) {
+            console.error('Error updating leave status:', err);
+            alert(err.response?.data?.msg || 'Failed to update leave status');
+        }
     };
 
     const handleDeleteLeave = async (id) => {
@@ -419,15 +424,14 @@ const HRDashboard = () => {
                                         onBack={() => setSelectedEmployee(null)}
                                         onEdit={() => setIsEditingEmployee(true)}
                                         onDelete={async (id) => {
-                                            if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
-                                                try {
-                                                    await apiClient.delete(`/auth/users/${id}`);
-                                                    setSelectedEmployee(null);
-                                                    fetchAllEmployees();
-                                                } catch (err) {
-                                                    console.error("Error deleting employee:", err);
-                                                    alert(err.response?.data?.msg || "Failed to delete employee");
-                                                }
+                                            if (!window.confirm("Are you sure you want to mark this employee as Inactive? They will lose login access but their data will be kept.")) return;
+                                            try {
+                                                await apiClient.delete(`/auth/users/${id}`);
+                                                setSelectedEmployee(null);
+                                                fetchAllEmployees();
+                                            } catch (err) {
+                                                console.error("Error deleting employee:", err);
+                                                alert(err.response?.data?.msg || "Failed to delete employee");
                                             }
                                         }}
                                     />
@@ -438,14 +442,13 @@ const HRDashboard = () => {
                                         onAddNew={() => setIsAddingEmployee(true)}
                                         onSelect={setSelectedEmployee}
                                         onDelete={async (id) => {
-                                            if (window.confirm('Are you sure you want to delete this employee? All their records will be permanently removed.')) {
-                                                try {
-                                                    await apiClient.delete(`/auth/users/${id}`);
-                                                    fetchAllEmployees();
-                                                } catch (err) {
-                                                    console.error("Error deleting employee:", err);
-                                                    alert(err.response?.data?.msg || "Failed to delete employee");
-                                                }
+                                            if (!window.confirm("Are you sure you want to mark this employee as Inactive? They will lose login access but their data will be kept.")) return;
+                                            try {
+                                                await apiClient.delete(`/auth/users/${id}`);
+                                                fetchAllEmployees();
+                                            } catch (err) {
+                                                console.error("Error deleting employee:", err);
+                                                alert(err.response?.data?.msg || "Failed to delete employee");
                                             }
                                         }}
                                     />

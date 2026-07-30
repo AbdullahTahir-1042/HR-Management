@@ -76,7 +76,14 @@ const AssignTeamLeadModal = ({ dept, onClose, onSuccess }) => {
                     </p>
                 ) : (
                     <div className="space-y-2 max-h-56 overflow-y-auto mb-4">
-                        {members.map((m) => (
+                        {members.filter(m => m.status !== 'internship' && m.joiningStatus !== 'Intern' && m.promotionRank !== 'Intern').length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-4">
+                                No eligible employees to assign as team lead (Interns cannot be team leads).
+                            </p>
+                        ) : (
+                            members
+                                .filter(m => m.status !== 'internship' && m.joiningStatus !== 'Intern' && m.promotionRank !== 'Intern')
+                                .map((m) => (
                             <label
                                 key={m._id}
                                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
@@ -99,7 +106,7 @@ const AssignTeamLeadModal = ({ dept, onClose, onSuccess }) => {
                                 </div>
                                 {dept.teamLead?._id === m._id && <TeamLeadBadge />}
                             </label>
-                        ))}
+                        )))}
                     </div>
                 )}
 
@@ -111,14 +118,14 @@ const AssignTeamLeadModal = ({ dept, onClose, onSuccess }) => {
                     <button
                         onClick={handleAssign}
                         disabled={saving || members.length === 0}
-                        className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50"
+                        className="btn-primary flex-1"
                     >
                         {saving ? <Loader2 size={15} className="animate-spin" /> : <Crown size={15} />}
                         Confirm
                     </button>
                     <button
                         onClick={onClose}
-                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
+                        className="btn-secondary flex-1"
                     >
                         Cancel
                     </button>
@@ -144,8 +151,13 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
     // Filter employees who are not assigned to any department
     const eligibleEmployees = allEmployees.filter(emp => !emp.departmentId);
 
-    // Only allow selected members to be eligible team leads
-    const eligibleTeamLeads = eligibleEmployees.filter(emp => selectedEmployeeIds.includes(emp._id));
+    // Only allow selected members to be eligible team leads and exclude interns
+    const eligibleTeamLeads = eligibleEmployees.filter(emp => 
+        selectedEmployeeIds.includes(emp._id) && 
+        emp.status !== 'internship' && 
+        emp.joiningStatus !== 'Intern' && 
+        emp.promotionRank !== 'Intern'
+    );
 
     // Check if typed name matches an existing department
     const nameExact = existingDepartments.find(
@@ -234,7 +246,7 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
                 <div className="space-y-4">
                     {/* Name with autocomplete dropdown */}
                     <div className="relative">
-                        <label className="text-xs font-semibold text-slate-500 mb-1 block uppercase tracking-wide">
+                        <label className="input-label">
                             Department Name *
                         </label>
                         <div className="relative">
@@ -245,8 +257,7 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
                                 value={name}
                                 onChange={e => { setName(e.target.value); setShowDropdown(true); }}
                                 onFocus={() => setShowDropdown(true)}
-                                placeholder="e.g. Marketing"
-                                className={`w-full border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 bg-slate-50 focus:bg-white transition-all ${
+                                className={`input-field pl-10 ${
                                     nameExact
                                         ? 'border-amber-300 focus:ring-amber-200'
                                         : 'border-slate-200 focus:ring-indigo-300'
@@ -449,8 +460,13 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
         return isCurrentMember || isUnassigned;
     });
 
-    // Only allow selected members to be eligible team leads
-    const eligibleTeamLeads = eligibleEmployees.filter(emp => selectedEmployeeIds.includes(emp._id));
+    // Only allow selected members to be eligible team leads and exclude interns
+    const eligibleTeamLeads = eligibleEmployees.filter(emp => 
+        selectedEmployeeIds.includes(emp._id) && 
+        emp.status !== 'internship' && 
+        emp.joiningStatus !== 'Intern' && 
+        emp.promotionRank !== 'Intern'
+    );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
@@ -478,13 +494,13 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
                             value={name}
                             onChange={e => setName(e.target.value)}
                             placeholder="e.g. Marketing"
-                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 focus:bg-white transition-all"
+                            className="input-field"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="text-xs font-semibold text-slate-500 mb-1 block uppercase tracking-wide">
+                        <label className="input-label">
                             Description
                         </label>
                         <input
@@ -492,7 +508,7 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
                             value={desc}
                             onChange={e => setDesc(e.target.value)}
                             placeholder="Brief description..."
-                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50 focus:bg-white transition-all"
+                            className="input-field"
                         />
                     </div>
 
@@ -766,8 +782,7 @@ const HRDepartments = () => {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors"
+                    className="btn-primary"
                 >
                     <Plus size={18} />
                     Add Department
@@ -804,7 +819,7 @@ const HRDepartments = () => {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4 cursor-pointer hover:border-indigo-100"
+                            className="card hover:border-indigo-100 flex flex-col gap-4 cursor-pointer p-5"
                             onClick={() => setSelectedDept(dept)}
                         >
                             {/* View Card Details */}
@@ -884,8 +899,7 @@ const HRDepartments = () => {
                             {/* Assign Team Lead Button */}
                             {!dept.teamLead && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setAssignModal(dept); }}
-                                    className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                                    className="btn-primary w-full"
                                 >
                                     <UserCheck size={14} />
                                     Assign Team Lead
