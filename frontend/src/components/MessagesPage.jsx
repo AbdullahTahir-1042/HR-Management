@@ -5,7 +5,7 @@ import {
     MessageCircle, Search, Plus, Send, Users, X, Loader2,
     ArrowLeft, UserPlus, Check, CheckCheck, Clock, Reply,
     Trash2, Settings, ShieldCheck, ShieldOff, LogOut, ChevronUp, Sparkles,
-    Info, Mail, Building2, BadgeCheck
+    Info, Mail, Building2, BadgeCheck, Bell, BellRing, BellOff
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
@@ -485,15 +485,38 @@ const MessagesPage = () => {
                         {totalUnread > 0 && <span className="text-rose-500 font-semibold"> · {totalUnread} unread</span>}
                     </p>
                 </div>
-                <motion.button
-                    onClick={() => setShowNewChat(true)}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.96 }}
-                    className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm shadow-indigo-200 hover:shadow-md hover:shadow-indigo-200 transition-shadow"
-                >
-                    <Plus size={16} />
-                    New Chat
-                </motion.button>
+                <div className="flex items-center gap-3">
+                    {notifPermission === 'default' && (
+                        <button
+                            onClick={() => Notification.requestPermission().then(setNotifPermission)}
+                            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+                        >
+                            <Bell size={16} />
+                            Enable Notifications
+                        </button>
+                    )}
+                    {notifPermission === 'granted' && (
+                        <div className="flex items-center gap-1.5 px-3 py-2 text-emerald-600 bg-emerald-50 rounded-xl text-sm font-semibold border border-emerald-100">
+                            <BellRing size={16} />
+                            Notifications On
+                        </div>
+                    )}
+                    {notifPermission === 'denied' && (
+                        <div className="flex items-center gap-1.5 px-3 py-2 text-rose-500 bg-rose-50 rounded-xl text-sm font-semibold border border-rose-100" title="Notifications are blocked in your browser settings">
+                            <BellOff size={16} />
+                            Notifications Blocked
+                        </div>
+                    )}
+                    <motion.button
+                        onClick={() => setShowNewChat(true)}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.96 }}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm shadow-indigo-200 hover:shadow-md hover:shadow-indigo-200 transition-shadow"
+                    >
+                        <Plus size={16} />
+                        New Chat
+                    </motion.button>
+                </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm shadow-slate-100 overflow-hidden flex h-[calc(100vh-180px)] min-h-[600px]">

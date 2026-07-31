@@ -449,6 +449,7 @@ router.post('/:id/messages', auth, async (req, res) => {
         (async () => {
             try {
                 const senderName = conversation.participants.find(p => String(p._id) === req.user.id)?.name || 'Someone';
+
                 const tokens = conversation.participants
                     .filter(p => String(p._id) !== req.user.id && p.fcmToken)
                     .map(p => p.fcmToken);

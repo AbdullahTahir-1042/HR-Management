@@ -56,15 +56,7 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
-                    {dateFilter && (
-                        <button
-                            onClick={() => setDateFilter('')}
-                            className="text-xs text-slate-400 hover:text-red-500 font-semibold transition-colors"
-                        >
-                            Clear
-                        </button>
-                    )}
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
                         <input
@@ -72,15 +64,39 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                             placeholder="Search employee..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="input-field pl-9 w-48 sm:w-64"
+                            className="px-3 py-2 pl-9 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm w-48 sm:w-64"
                         />
                     </div>
-                    <input
-                        type="date"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="input-field"
-                    />
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            className="px-3 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm"
+                        />
+                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                            <button
+                                onClick={() => setDateFilter(new Date().toISOString().slice(0, 10))}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    dateFilter === new Date().toISOString().slice(0, 10)
+                                        ? 'bg-white text-indigo-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                Today
+                            </button>
+                            <button
+                                onClick={() => setDateFilter('')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    dateFilter === ''
+                                        ? 'bg-white text-emerald-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                All Time
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

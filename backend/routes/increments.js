@@ -120,6 +120,15 @@ router.post('/', [auth, isHR], async (req, res) => {
         });
 
         await increment.save();
+        
+        const Notification = require('../models/Notification');
+        await Notification.create({
+            recipient: employee,
+            title: promotionRank ? 'Promotion & Increment' : 'Salary Increment',
+            message: `An increment of $${incAmt} ${promotionRank ? `and a promotion to ${promotionRank}` : ''} has been added to your profile (Status: ${status || 'Pending'}).`,
+            type: promotionRank ? 'promotion' : 'increment',
+            relatedId: increment._id
+        });
 
         // ONLY apply immediately to active employee profile if status is Approved AND the increment date is today or has passed
         if (increment.status === 'Approved' && targetDate <= todayDate) {

@@ -49,6 +49,20 @@ router.post('/', auth, isHR, async (req, res) => {
             createdBy: req.user.id,
         });
         const populated = await announcement.populate('createdBy', 'name');
+        
+        // Create in-app notifications for all active users
+        const Notification = require('../models/Notification');
+        const activeUsers = await User.find({ status: { $ne: 'Inactive' } }).select('_id');
+        if (activeUsers.length > 0) {
+            const notifications = activeUsers.map(u => ({
+                recipient: u._id,
+                title: 'New Announcement',
+                message: title.trim(),
+                type: 'announcement',
+                relatedId: announcement._id
+            }));
+            await Notification.insertMany(notifications);
+        }
 
         // 2. --- FIREBASE PUSH NOTIFICATION LOGIC ---
         try {
