@@ -101,29 +101,28 @@ const HRHeader = ({
                             onChange={(e) => setAttendanceDateFilter(e.target.value)}
                             className="px-3 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm flex-1 sm:flex-none"
                         />
-                        <button
-                            onClick={() => setAttendanceDateFilter(new Date().toISOString().slice(0, 10))}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                                attendanceDateFilter === new Date().toISOString().slice(0, 10)
-                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                    : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                            }`}
-                        >
-                            Today
-                        </button>
-                        {attendanceDateFilter !== '' ? (
-                            <button 
-                                onClick={() => setAttendanceDateFilter('')} 
-                                className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors"
-                                title="View complete historical logs"
+                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                            <button
+                                onClick={() => setAttendanceDateFilter(new Date().toISOString().slice(0, 10))}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    attendanceDateFilter === new Date().toISOString().slice(0, 10)
+                                        ? 'bg-white text-indigo-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
                             >
-                                All Logs
+                                Today
                             </button>
-                        ) : (
-                            <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold">
-                                All Logs Active
-                            </span>
-                        )}
+                            <button
+                                onClick={() => setAttendanceDateFilter('')}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    attendanceDateFilter === ''
+                                        ? 'bg-white text-emerald-600 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                All Time
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

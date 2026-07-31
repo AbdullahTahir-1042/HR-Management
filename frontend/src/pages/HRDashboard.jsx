@@ -52,7 +52,7 @@ const HRDashboard = () => {
 
     const getTodayStr = () => new Date().toISOString().slice(0, 10);
     const [departments, setDepartments] = useState([]);
-    const [latecomerDateFilter, setLatecomerDateFilter] = useState('');
+    const [latecomerDateFilter, setLatecomerDateFilter] = useState(getTodayStr());
     const [leaveFilter, setLeaveFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceDateFilter, setAttendanceDateFilter] = useState(getTodayStr());
