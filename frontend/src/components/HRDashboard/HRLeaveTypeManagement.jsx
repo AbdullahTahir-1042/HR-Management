@@ -3,19 +3,47 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarRange, Plus, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
+const PREDEFINED_LEAVE_TYPES = {
+    'Sick Leave': { quota: 10, maxConsecutiveDays: 2, cooldownDays: 15 },
+    'Casual Leave': { quota: 12, maxConsecutiveDays: 2, cooldownDays: 30 },
+    'Annual Leave': { quota: 14, maxConsecutiveDays: 14, cooldownDays: 60 },
+    'Maternity Leave': { quota: 45, maxConsecutiveDays: 2, cooldownDays: 300 },
+    'Paternity Leave': { quota: 5, maxConsecutiveDays: 2, cooldownDays: 300 },
+    'Custom': { quota: '', maxConsecutiveDays: '', cooldownDays: '' }
+};
+
 // ─── Add / Edit Modal ────────────────────────────────────────────────────────
 const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
     const isEdit = !!leaveType;
     const [form, setForm] = useState({
-        name:        leaveType?.name        || '',
-        quota:       leaveType?.quota       || '',
-        description: leaveType?.description || '',
+        name:               leaveType?.name               || 'Sick Leave',
+        quota:              leaveType?.quota              ?? 10,
+        maxConsecutiveDays: leaveType?.maxConsecutiveDays ?? 2,
+        cooldownDays:       leaveType?.cooldownDays       ?? 15,
+        description:        leaveType?.description        || '',
+        isCustom:           leaveType ? !PREDEFINED_LEAVE_TYPES[leaveType.name] : false
     });
     const [error,   setError]   = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e) =>
-        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'name' && PREDEFINED_LEAVE_TYPES[value] && value !== 'Custom') {
+            const defaults = PREDEFINED_LEAVE_TYPES[value];
+            setForm(prev => ({
+                ...prev,
+                name: value,
+                quota: defaults.quota,
+                maxConsecutiveDays: defaults.maxConsecutiveDays,
+                cooldownDays: defaults.cooldownDays,
+                isCustom: false
+            }));
+        } else if (name === 'name' && value === 'Custom') {
+            setForm(prev => ({ ...prev, name: '', isCustom: true, quota: '', maxConsecutiveDays: '', cooldownDays: '' }));
+        } else {
+            setForm(prev => ({ ...prev, [name]: value }));
+        }
+    };
 
     const handleSubmit = async () => {
         if (!form.name.trim()) return setError('Leave type name is required.');
@@ -23,9 +51,20 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
             return setError('Quota (days per year) is required.');
         }
         const numQuota = Number(form.quota);
-        if (isNaN(numQuota) || numQuota < 0 || numQuota > 365) {
-            return setError('Quota must be between 0 and 365 days.');
+        if (isNaN(numQuota) || numQuota < 0 || numQuota > 45) {
+            return setError('Quota must be between 0 and 45 days to prevent excessive limits.');
         }
+
+        const numMax = form.maxConsecutiveDays === '' ? 0 : Number(form.maxConsecutiveDays);
+        const isExempt = ['Annual Leave', 'Maternity Leave', 'Paternity Leave'].includes(form.name);
+        
+        if (isNaN(numMax) || numMax < 0) return setError('Invalid Max Consecutive Days.');
+        if (!isExempt && numMax > 2) {
+            return setError(`Max consecutive leaves must be under 3 (maximum 2 days) for ${form.name || 'this type'}.`);
+        }
+
+        const numCooldown = form.cooldownDays === '' ? 0 : Number(form.cooldownDays);
+        if (isNaN(numCooldown) || numCooldown < 0) return setError('Invalid Cooldown Period.');
 
         setError('');
         setLoading(true);
@@ -33,6 +72,8 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
             const payload = {
                 name: form.name.trim(),
                 quota: numQuota,
+                maxConsecutiveDays: numMax,
+                cooldownDays: numCooldown,
                 description: form.description
             };
 
@@ -102,29 +143,87 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                         <label className="input-label">
                             Leave Type Name <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                            placeholder="e.g. Sick Leave"
-                            className="input-field"
-                        />
+                        {!form.isCustom ? (
+                            <select
+                                name="name"
+                                value={form.name}
+                                onChange={handleChange}
+                                className="input-field"
+                            >
+                                {Object.keys(PREDEFINED_LEAVE_TYPES).map(type => (
+                                    <option key={type} value={type}>{type}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <div className="relative">
+                                <input
+                                    name="name"
+                                    value={form.name}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Unpaid Leave"
+                                    className="input-field pr-16"
+                                />
+                                <button 
+                                    onClick={() => setForm(prev => ({ ...prev, name: 'Sick Leave', isCustom: false }))}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                                >
+                                    Presets
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Quota */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Quota */}
+                        <div>
+                            <label className="input-label">
+                                Annual Quota (Days) <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                name="quota"
+                                value={form.quota}
+                                onChange={handleChange}
+                                placeholder="e.g. 10"
+                                min="0"
+                                max="45"
+                                className="input-field"
+                            />
+                        </div>
+
+                        {/* Max Consecutive */}
+                        <div>
+                            <label className="input-label">
+                                Max Consecutive Days
+                            </label>
+                            <input
+                                type="number"
+                                name="maxConsecutiveDays"
+                                value={form.maxConsecutiveDays}
+                                onChange={handleChange}
+                                placeholder={['Annual Leave', 'Maternity Leave', 'Paternity Leave'].includes(form.name) ? `Max ${form.quota || 0}` : "Max 2"}
+                                min="0"
+                                max={['Annual Leave', 'Maternity Leave', 'Paternity Leave'].includes(form.name) ? form.quota : "2"}
+                                className="input-field"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Cooldown */}
                     <div>
                         <label className="input-label">
-                            Annual Quota (Days) <span className="text-rose-500">*</span>
+                            Cooldown Period (Days)
                         </label>
                         <input
                             type="number"
-                            name="quota"
-                            value={form.quota}
+                            name="cooldownDays"
+                            value={form.cooldownDays}
                             onChange={handleChange}
-                            placeholder="e.g. 10"
+                            placeholder="e.g. 15 (0 = No Cooldown)"
                             min="0"
                             className="input-field"
                         />
+                        <p className="text-[10px] text-slate-400 mt-1">Days an employee must wait before requesting this leave again.</p>
                     </div>
 
                     {/* Description */}
@@ -136,7 +235,7 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                             name="description"
                             value={form.description}
                             onChange={handleChange}
-                            rows={3}
+                            rows={2}
                             placeholder="Brief details about who can request or constraints..."
                             className="input-field resize-none"
                         />
@@ -234,10 +333,12 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                             {/* Table Header */}
                             <div className="grid grid-cols-12 px-6 py-3 table-header border-b-0">
                                 <span className="col-span-1">#</span>
-                                <span className="col-span-3">Leave Type</span>
+                                <span className="col-span-2">Leave Type</span>
                                 <span className="col-span-2 text-center">Annual Quota</span>
-                                <span className="col-span-4">Description</span>
-                                <span className="col-span-2 text-right">Actions</span>
+                                <span className="col-span-2 text-center">Max Consecutive</span>
+                                <span className="col-span-2 text-center">Cooldown</span>
+                                <span className="col-span-2">Description</span>
+                                <span className="col-span-1 text-right">Actions</span>
                             </div>
 
                             {/* Rows */}
@@ -253,7 +354,7 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                     >
                                         <span className="col-span-1 text-sm text-slate-400 font-bold">{index + 1}</span>
 
-                                        <div className="col-span-3">
+                                        <div className="col-span-2">
                                             <p className="text-sm font-bold text-slate-800">{lt.name}</p>
                                         </div>
 
@@ -263,11 +364,23 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                             </span>
                                         </div>
 
-                                        <span className="col-span-4 text-xs text-slate-500 font-medium line-clamp-2 pr-4">
+                                        <div className="col-span-2 text-center">
+                                            <span className="text-sm font-semibold text-slate-600">
+                                                {lt.maxConsecutiveDays ? `${lt.maxConsecutiveDays} Days` : 'No Limit'}
+                                            </span>
+                                        </div>
+
+                                        <div className="col-span-2 text-center">
+                                            <span className="text-sm font-semibold text-slate-600">
+                                                {lt.cooldownDays ? `${lt.cooldownDays} Days` : 'None'}
+                                            </span>
+                                        </div>
+
+                                        <span className="col-span-2 text-xs text-slate-500 font-medium line-clamp-2 pr-4">
                                             {lt.description || '—'}
                                         </span>
 
-                                        <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="col-span-1 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => openEdit(lt)}
                                                 className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"

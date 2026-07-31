@@ -32,8 +32,8 @@ const NotificationsPanel = () => {
 
     useEffect(() => {
         fetchNotifications();
-        // Optional: poll every minute
-        const interval = setInterval(fetchNotifications, 60000);
+        // Poll every 3 seconds for real-time feel
+        const interval = setInterval(fetchNotifications, 3000);
         return () => clearInterval(interval);
     }, []);
 

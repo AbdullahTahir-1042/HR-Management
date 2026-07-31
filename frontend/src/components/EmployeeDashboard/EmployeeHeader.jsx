@@ -1,4 +1,5 @@
 import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft } from 'lucide-react';
+import NotificationsPanel from '../NotificationsPanel';
 
 const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, setSidebarOpen }) => {
     const config = {
@@ -27,6 +28,10 @@ const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, set
                     {current.icon}
                     <span>{current.label}</span>
                 </h2>
+            </div>
+            
+            <div className="flex items-center ml-2">
+                <NotificationsPanel />
             </div>
         </header>
     );

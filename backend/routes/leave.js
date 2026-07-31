@@ -6,12 +6,18 @@ const User = require('../models/User');
 const LeaveType = require('../models/LeaveType');
 const Attendance = require('../models/Attendance');
 
-// Calculate number of days between two dates (inclusive)
+// Calculate number of working days between two dates (inclusive, skips weekends)
 const calculateDays = (start, end) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const diffTime = Math.abs(endDate - startDate);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    let startDate = new Date(start);
+    let endDate = new Date(end);
+    let days = 0;
+    while (startDate <= endDate) {
+        if (startDate.getDay() !== 0 && startDate.getDay() !== 6) {
+            days++;
+        }
+        startDate.setDate(startDate.getDate() + 1);
+    }
+    return days;
 };
 
 // @route   GET api/leaves/types
@@ -31,7 +37,7 @@ router.get('/types', auth, async (req, res) => {
 // @desc    Create a new leave type (HR only)
 // @access  Private (HR)
 router.post('/types', [auth, isHR], async (req, res) => {
-    const { name, quota, description } = req.body;
+    const { name, quota, description, maxConsecutiveDays, cooldownDays } = req.body;
 
     try {
         if (!name || name.trim() === '') {
@@ -54,7 +60,9 @@ router.post('/types', [auth, isHR], async (req, res) => {
         const leaveType = new LeaveType({
             name: name.trim(),
             quota: numericQuota,
-            description: description || ''
+            description: description || '',
+            maxConsecutiveDays: Number(maxConsecutiveDays) || 0,
+            cooldownDays: Number(cooldownDays) || 0
         });
 
         await leaveType.save();
@@ -69,7 +77,7 @@ router.post('/types', [auth, isHR], async (req, res) => {
 // @desc    Update a leave type (HR only)
 // @access  Private (HR)
 router.put('/types/:id', [auth, isHR], async (req, res) => {
-    const { name, quota, description } = req.body;
+    const { name, quota, description, maxConsecutiveDays, cooldownDays } = req.body;
 
     try {
         if (!name || name.trim() === '') {
@@ -94,7 +102,13 @@ router.put('/types/:id', [auth, isHR], async (req, res) => {
 
         const leaveType = await LeaveType.findByIdAndUpdate(
             req.params.id,
-            { name: name.trim(), quota: numericQuota, description: description || '' },
+            { 
+                name: name.trim(), 
+                quota: numericQuota, 
+                description: description || '',
+                maxConsecutiveDays: Number(maxConsecutiveDays) || 0,
+                cooldownDays: Number(cooldownDays) || 0
+            },
             { new: true }
         );
 
@@ -142,10 +156,10 @@ router.get('/balances', auth, async (req, res) => {
         const startOfYear = new Date(currentYear, 0, 1);
         const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
-        // Find all approved leave requests for this user in the current year
+        // Find all approved and pending leave requests for this user in the current year
         const approvedLeaves = await LeaveRequest.find({
             employee: req.user.id,
-            status: 'approved',
+            status: { $in: ['approved', 'pending'] },
             startDate: { $gte: startOfYear, $lte: endOfYear }
         });
 
@@ -197,8 +211,8 @@ router.post('/apply', auth, async (req, res) => {
         const today = new Date();
         today.setHours(0,0,0,0); // Reset time for accurate day comparison
 
-        // Calculate duration in days
-        const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        // Calculate duration in working days
+        const duration = calculateDays(start, end);
         if (duration <= 0) {
             return res.status(400).json({ msg: 'End date cannot be before start date.' });
         }
@@ -240,7 +254,83 @@ router.post('/apply', auth, async (req, res) => {
             return res.status(400).json({ msg: 'You have already checked in for one or more days in this period.' });
         }
 
-        // Create leave request (quota balance warning calculated on UI, excess converted to unpaid leave in payroll)
+        // --- Advanced Policy Validations ---
+
+        // 0. Annual Leave "One-Time Use" Exception Check
+        if (leaveType.name === 'Annual Leave') {
+            const currentYear = new Date().getFullYear();
+            const startOfYear = new Date(currentYear, 0, 1);
+            const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+            
+            const existingAnnualLeave = await LeaveRequest.findOne({
+                employee: req.user.id,
+                leaveType: leaveTypeId,
+                status: { $in: ['approved', 'pending'] },
+                startDate: { $gte: startOfYear, $lte: endOfYear }
+            });
+
+            if (existingAnnualLeave) {
+                return res.status(400).json({ 
+                    msg: 'Policy Violation: Annual Leave can only be requested once per year. You have already applied for Annual Leave this year.' 
+                });
+            }
+        }
+
+        // 1. Max Consecutive Days Check
+        if (leaveType.name !== 'Unpaid Leave') {
+            if (leaveType.maxConsecutiveDays && leaveType.maxConsecutiveDays > 0) {
+                if (duration > leaveType.maxConsecutiveDays) {
+                    let msg = `Policy Violation: ${leaveType.name} allows a maximum of ${leaveType.maxConsecutiveDays} consecutive days per request.`;
+                    if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
+                        msg += ` It also requires a ${leaveType.cooldownDays}-day cooldown between requests.`;
+                    }
+                    return res.status(400).json({ msg });
+                }
+            }
+
+            // 2. Cooldown Period Check
+            if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
+                // Find the most recent approved or pending leave of this type
+                const lastLeave = await LeaveRequest.findOne({
+                    employee: req.user.id,
+                    leaveType: leaveTypeId,
+                    status: { $in: ['approved', 'pending'] }
+                }).sort({ endDate: -1 });
+
+                if (lastLeave) {
+                    const lastEnd = new Date(lastLeave.endDate);
+                    const diffDays = Math.ceil((start - lastEnd) / (1000 * 60 * 60 * 24));
+                    if (diffDays <= leaveType.cooldownDays) {
+                        return res.status(400).json({
+                            msg: `Policy Violation: ${leaveType.name} requires a ${leaveType.cooldownDays}-day cooldown between requests. Please wait ${leaveType.cooldownDays - diffDays + 1} more day(s).`
+                        });
+                    }
+                }
+            }
+
+            // 3. Strict Quota Enforcement
+            const currentYear = new Date().getFullYear();
+            const startOfYear = new Date(currentYear, 0, 1);
+            const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+            
+            const approvedAndPendingLeavesThisYear = await LeaveRequest.find({
+                employee: req.user.id,
+                leaveType: leaveTypeId,
+                status: { $in: ['approved', 'pending'] },
+                startDate: { $gte: startOfYear, $lte: endOfYear }
+            });
+
+            let usedDays = 0;
+            approvedAndPendingLeavesThisYear.forEach(l => {
+                usedDays += calculateDays(l.startDate, l.endDate);
+            });
+
+            if (usedDays + duration > leaveType.quota) {
+                return res.status(400).json({
+                    msg: `Quota Exceeded: You only have ${Math.max(0, leaveType.quota - usedDays)} days of ${leaveType.name} remaining.`
+                });
+            }
+        }
 
         const leave = new LeaveRequest({
             employee: req.user.id,

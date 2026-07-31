@@ -17,6 +17,7 @@ import {
     AlertTriangle,
     ArrowLeft
 } from 'lucide-react';
+import NotificationsPanel from '../NotificationsPanel';
 
 const HRHeader = ({ 
     activeTab, 
@@ -125,6 +126,10 @@ const HRHeader = ({
                         </div>
                     </div>
                 )}
+                
+                <div className="flex items-center ml-2">
+                    <NotificationsPanel />
+                </div>
             </div>
         </header>
     );
