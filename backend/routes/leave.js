@@ -128,11 +128,8 @@ router.put('/types/:id', [auth, isHR], async (req, res) => {
 // @access  Private (HR)
 router.delete('/types/:id', [auth, isHR], async (req, res) => {
     try {
-        // Prevent deleting if referenced by any leave request
-        const referenced = await LeaveRequest.findOne({ leaveType: req.params.id });
-        if (referenced) {
-            return res.status(400).json({ msg: 'Cannot delete leave type. It is already referenced by existing leave requests.' });
-        }
+        // Cascade delete: Remove all leave requests that reference this leave type
+        await LeaveRequest.deleteMany({ leaveType: req.params.id });
 
         const leaveType = await LeaveType.findByIdAndDelete(req.params.id);
         if (!leaveType) {
@@ -256,60 +253,39 @@ router.post('/apply', auth, async (req, res) => {
 
         // --- Advanced Policy Validations ---
 
-        // 0. Annual Leave "One-Time Use" Exception Check
-        if (leaveType.name === 'Annual Leave') {
-            const currentYear = new Date().getFullYear();
-            const startOfYear = new Date(currentYear, 0, 1);
-            const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
-            
-            const existingAnnualLeave = await LeaveRequest.findOne({
-                employee: req.user.id,
-                leaveType: leaveTypeId,
-                status: { $in: ['approved', 'pending'] },
-                startDate: { $gte: startOfYear, $lte: endOfYear }
-            });
-
-            if (existingAnnualLeave) {
-                return res.status(400).json({ 
-                    msg: 'Policy Violation: Annual Leave can only be requested once per year. You have already applied for Annual Leave this year.' 
-                });
+        // 1. Max Consecutive Days Check
+        if (leaveType.maxConsecutiveDays && leaveType.maxConsecutiveDays > 0) {
+            if (duration > leaveType.maxConsecutiveDays) {
+                let msg = `Policy Violation: ${leaveType.name} allows a maximum of ${leaveType.maxConsecutiveDays} consecutive days per request.`;
+                if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
+                    msg += ` It also requires a ${leaveType.cooldownDays}-day cooldown between requests.`;
+                }
+                return res.status(400).json({ msg });
             }
         }
 
-        // 1. Max Consecutive Days Check
-        if (leaveType.name !== 'Unpaid Leave') {
-            if (leaveType.maxConsecutiveDays && leaveType.maxConsecutiveDays > 0) {
-                if (duration > leaveType.maxConsecutiveDays) {
-                    let msg = `Policy Violation: ${leaveType.name} allows a maximum of ${leaveType.maxConsecutiveDays} consecutive days per request.`;
-                    if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
-                        msg += ` It also requires a ${leaveType.cooldownDays}-day cooldown between requests.`;
-                    }
-                    return res.status(400).json({ msg });
+        // 2. Cooldown Period Check
+        if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
+            // Find the most recent approved or pending leave of this type
+            const lastLeave = await LeaveRequest.findOne({
+                employee: req.user.id,
+                leaveType: leaveTypeId,
+                status: { $in: ['approved', 'pending'] }
+            }).sort({ endDate: -1 });
+
+            if (lastLeave) {
+                const lastEnd = new Date(lastLeave.endDate);
+                const diffDays = Math.ceil((start - lastEnd) / (1000 * 60 * 60 * 24));
+                if (diffDays <= leaveType.cooldownDays) {
+                    return res.status(400).json({
+                        msg: `Policy Violation: ${leaveType.name} requires a ${leaveType.cooldownDays}-day cooldown between requests. Please wait ${leaveType.cooldownDays - diffDays + 1} more day(s).`
+                    });
                 }
             }
+        }
 
-            // 2. Cooldown Period Check
-            if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
-                // Find the most recent approved or pending leave of this type
-                const lastLeave = await LeaveRequest.findOne({
-                    employee: req.user.id,
-                    leaveType: leaveTypeId,
-                    status: { $in: ['approved', 'pending'] }
-                }).sort({ endDate: -1 });
-
-                if (lastLeave) {
-                    const lastEnd = new Date(lastLeave.endDate);
-                    const diffDays = Math.ceil((start - lastEnd) / (1000 * 60 * 60 * 24));
-                    if (diffDays <= leaveType.cooldownDays) {
-                        return res.status(400).json({
-                            msg: `Policy Violation: ${leaveType.name} requires a ${leaveType.cooldownDays}-day cooldown between requests. Please wait ${leaveType.cooldownDays - diffDays + 1} more day(s).`
-                        });
-                    }
-                }
-            }
-
-            // 3. Strict Quota Enforcement
-            const currentYear = new Date().getFullYear();
+        // 3. Strict Quota Enforcement
+        const currentYear = new Date().getFullYear();
             const startOfYear = new Date(currentYear, 0, 1);
             const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
             
@@ -325,11 +301,10 @@ router.post('/apply', auth, async (req, res) => {
                 usedDays += calculateDays(l.startDate, l.endDate);
             });
 
-            if (usedDays + duration > leaveType.quota) {
-                return res.status(400).json({
-                    msg: `Quota Exceeded: You only have ${Math.max(0, leaveType.quota - usedDays)} days of ${leaveType.name} remaining.`
-                });
-            }
+        if (usedDays + duration > leaveType.quota) {
+            return res.status(400).json({
+                msg: `Quota Exceeded: You only have ${Math.max(0, leaveType.quota - usedDays)} days of ${leaveType.name} remaining.`
+            });
         }
 
         const leave = new LeaveRequest({

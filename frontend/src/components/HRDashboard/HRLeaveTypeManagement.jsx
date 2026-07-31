@@ -6,7 +6,6 @@ import apiClient from '../../api/axiosClient';
 const PREDEFINED_LEAVE_TYPES = {
     'Sick Leave': { quota: 10, maxConsecutiveDays: 2, cooldownDays: 15 },
     'Casual Leave': { quota: 12, maxConsecutiveDays: 2, cooldownDays: 30 },
-    'Annual Leave': { quota: 14, maxConsecutiveDays: 14, cooldownDays: 60 },
     'Maternity Leave': { quota: 45, maxConsecutiveDays: 2, cooldownDays: 300 },
     'Paternity Leave': { quota: 5, maxConsecutiveDays: 2, cooldownDays: 300 },
     'Custom': { quota: '', maxConsecutiveDays: '', cooldownDays: '' }
@@ -56,7 +55,7 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
         }
 
         const numMax = form.maxConsecutiveDays === '' ? 0 : Number(form.maxConsecutiveDays);
-        const isExempt = ['Annual Leave', 'Maternity Leave', 'Paternity Leave'].includes(form.name);
+        const isExempt = ['Maternity Leave', 'Paternity Leave'].includes(form.name);
         
         if (isNaN(numMax) || numMax < 0) return setError('Invalid Max Consecutive Days.');
         if (!isExempt && numMax > 2) {
@@ -201,9 +200,9 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
                                 name="maxConsecutiveDays"
                                 value={form.maxConsecutiveDays}
                                 onChange={handleChange}
-                                placeholder={['Annual Leave', 'Maternity Leave', 'Paternity Leave'].includes(form.name) ? `Max ${form.quota || 0}` : "Max 2"}
+                                placeholder={['Maternity Leave', 'Paternity Leave'].includes(form.name) ? `Max ${form.quota || 0}` : "Max 2"}
                                 min="0"
-                                max={['Annual Leave', 'Maternity Leave', 'Paternity Leave'].includes(form.name) ? form.quota : "2"}
+                                max={['Maternity Leave', 'Paternity Leave'].includes(form.name) ? form.quota : "2"}
                                 className="input-field"
                             />
                         </div>

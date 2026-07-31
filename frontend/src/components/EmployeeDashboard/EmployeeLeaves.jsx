@@ -190,18 +190,9 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         const maxConsecutiveDays = Number(lTypeObj?.maxConsecutiveDays) || 0;
         const exceedsMaxConsecutive = maxConsecutiveDays > 0 && netDuration > maxConsecutiveDays;
         
-        // Annual Leave exception: one-time use per year
-        let alreadyUsedAnnualLeave = false;
-        if (lTypeObj?.name === 'Annual Leave') {
-            const hasUsed = leaves.some(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending'].includes(l.status));
-            if (hasUsed) {
-                alreadyUsedAnnualLeave = true;
-            }
-        }
-
         const isUnpaid = lTypeObj?.name === 'Unpaid Leave';
         const excessDays = Math.max(0, netDuration - remaining);
-        const isFullyBooked = netDuration === 0 || (!isUnpaid && (excessDays > 0 || exceedsMaxConsecutive || alreadyUsedAnnualLeave));
+        const isFullyBooked = netDuration === 0 || exceedsMaxConsecutive || excessDays > 0;
 
         return {
             totalDuration,
@@ -215,7 +206,6 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
             isFullyBooked,
             exceedsMaxConsecutive,
             maxConsecutiveDays,
-            alreadyUsedAnnualLeave,
             isUnpaid
         };
     }, [leaveForm.startDate, leaveForm.endDate, leaveForm.leaveTypeId, bookedDatesMap, leaveBalances, leaveTypes, leaves, user?.salary]);
@@ -566,7 +556,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                         )}
 
                                         {/* 4. Strict Quota Exceeded Block */}
-                                        {deductionPreview.netDuration > 0 && !deductionPreview.isUnpaid && !deductionPreview.exceedsMaxConsecutive && deductionPreview.excessDays > 0 && (
+                                        {deductionPreview.netDuration > 0 && !deductionPreview.exceedsMaxConsecutive && deductionPreview.excessDays > 0 && (
                                             <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
                                                 <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
                                                     <AlertTriangle size={16} className="shrink-0 text-rose-600" />
@@ -579,7 +569,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                         )}
 
                                         {/* 4b. Max Consecutive Days Exceeded Block */}
-                                        {deductionPreview.netDuration > 0 && !deductionPreview.isUnpaid && deductionPreview.exceedsMaxConsecutive && (
+                                        {deductionPreview.netDuration > 0 && deductionPreview.exceedsMaxConsecutive && (
                                             <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
                                                 <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
                                                     <AlertTriangle size={16} className="shrink-0 text-rose-600" />
@@ -591,30 +581,17 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             </div>
                                         )}
 
-                                        {/* 4c. Annual Leave One-Time Use Block */}
-                                        {deductionPreview.alreadyUsedAnnualLeave && (
-                                            <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
-                                                <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
-                                                    <AlertTriangle size={16} className="shrink-0 text-rose-600" />
-                                                    <span>Request Blocked: One-Time Use Limit</span>
-                                                </div>
-                                                <p className="text-xs leading-relaxed text-rose-800 font-medium">
-                                                    Annual Leave can only be applied for <strong>once per year</strong>. You have already submitted an Annual Leave request this year.
-                                                </p>
-                                            </div>
-                                        )}
-
                                         {/* 5. Fully Covered Banner */}
-                                        {deductionPreview.netDuration > 0 && deductionPreview.excessDays === 0 && !deductionPreview.exceedsMaxConsecutive && !deductionPreview.alreadyUsedAnnualLeave && !deductionPreview.isUnpaid && (
+                                        {deductionPreview.netDuration > 0 && deductionPreview.excessDays === 0 && !deductionPreview.exceedsMaxConsecutive && !deductionPreview.isUnpaid && (
                                             <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
                                                 <span>✓ Request is fully covered under your remaining quota.</span>
                                             </div>
                                         )}
 
                                         {/* 6. Unpaid Leave Notice */}
-                                        {deductionPreview.netDuration > 0 && deductionPreview.isUnpaid && (
-                                            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-700 font-semibold flex items-center gap-1.5">
-                                                <span>✓ This will be processed as Unpaid Leave. No quota rules apply.</span>
+                                        {deductionPreview.netDuration > 0 && deductionPreview.isUnpaid && deductionPreview.excessDays === 0 && !deductionPreview.exceedsMaxConsecutive && (
+                                            <div className="p-2.5 mt-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-700 font-semibold flex items-center gap-1.5">
+                                                <span>✓ This will be processed as Unpaid Leave.</span>
                                             </div>
                                         )}
                                     </div>
