@@ -205,7 +205,7 @@ router.get('/users', [auth, isHR], async (req, res) => {
 // @access  Private
 router.get('/colleagues', auth, async (req, res) => {
     try {
-        const users = await User.find({ isDeleted: { $ne: true }, _id: { $ne: req.user.id } })
+        const users = await User.find({ isDeleted: { $ne: true }, status: { $ne: 'Inactive' }, _id: { $ne: req.user.id } })
             .select('name email photo role department')
             .sort({ name: 1 });
         res.json(users);
