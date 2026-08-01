@@ -113,7 +113,8 @@ router.get('/status', auth, async (req, res) => {
 // @access  Private
 router.get('/my-history', auth, async (req, res) => {
     try {
-        const attendance = await Attendance.find({ employee: req.user.id }).sort({ date: -1 });
+        const today = new Date().toISOString().split('T')[0];
+        const attendance = await Attendance.find({ employee: req.user.id, date: today }).sort({ date: -1 });
         res.json(attendance);
     } catch (err) {
         res.status(500).send('Server Error');
