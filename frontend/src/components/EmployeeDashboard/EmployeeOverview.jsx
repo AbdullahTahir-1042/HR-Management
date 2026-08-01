@@ -180,7 +180,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             <User size={20} />
                         </div>
                         <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-blue-100 transition-colors">
-                            {user?.employeeId || 'ID Pending'}
+                            {user?._id ? `EMP-${user._id.slice(-6).toUpperCase()}` : 'Profile'}
                         </span>
                     </div>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">My Profile</p>
