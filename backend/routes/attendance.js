@@ -26,41 +26,47 @@ router.post('/check-in', auth, async (req, res) => {
         await attendance.save();
         console.log("✅ Attendance saved");
 
-        // ── Send Check-In Email Notification (With Debug Logs) ──
-        try {
-            const employee = await User.findById(req.user.id).select('+notificationPreferences');
-            console.log("Employee:", employee);
-
-            if (employee && employee.email && employee.notificationPreferences?.all !== false && employee.notificationPreferences?.attendance !== false) {
-                const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
-                });
-                const checkInTime = new Date(attendance.checkIn).toLocaleTimeString('en-US', {
-                    hour: '2-digit', minute: '2-digit', hour12: true
-                });
-
-                const template = getCheckInEmailTemplate({
-                    name: employee.name,
-                    date: checkInDate,
-                    time: checkInTime,
-                    department: employee.department || 'N/A'
-                });
-
-                console.log("Sending email to:", employee.email);
-
-                sendEmail({
-                    to: employee.email,
-                    subject: template.subject,
-                    html: template.html
-                })
-                .then(result => console.log("✅ Email sent in background"))
-                .catch(error => console.error("❌ Background email failed:", error));
-            }
-        } catch (emailErr) {
-            console.error("❌ Email process failed:", emailErr);
-        }
-
+        // Send response immediately so the user isn't kept waiting
         res.json(attendance);
+
+        // ── Send Check-In Email Notification Asynchronously afterwards ──
+        setTimeout(async () => {
+            try {
+                const employee = await User.findById(req.user.id).select('+notificationPreferences');
+                console.log("Employee:", employee);
+
+                if (employee && employee.email && employee.notificationPreferences?.all !== false && employee.notificationPreferences?.attendance !== false) {
+                    const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
+                    });
+                    const checkInTime = new Date(attendance.checkIn).toLocaleTimeString('en-US', {
+                        hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+
+                    const template = getCheckInEmailTemplate({
+                        name: employee.name,
+                        date: checkInDate,
+                        time: checkInTime,
+                        department: employee.department || 'N/A'
+                    });
+
+                    console.log("Sending email to:", employee.email);
+
+                    try {
+                        await sendEmail({
+                            to: employee.email,
+                            subject: template.subject,
+                            html: template.html
+                        });
+                        console.log("✅ Email sent in background");
+                    } catch (error) {
+                        console.error("❌ Background email failed:", error);
+                    }
+                }
+            } catch (emailErr) {
+                console.error("❌ Email process failed:", emailErr);
+            }
+        }, 0);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
