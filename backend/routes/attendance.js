@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth, isHR } = require('../middleware/auth');
 const Attendance = require('../models/Attendance');
-const LeaveRequest = require('../models/LeaveRequest'); // <-- We added this to read leaves!
+const LeaveRequest = require('../models/LeaveRequest');
 
 const User = require('../models/User');
 const { sendEmail } = require('../services/emailService');

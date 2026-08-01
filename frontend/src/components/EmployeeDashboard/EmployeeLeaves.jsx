@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Lock, AlertCircle } from 'lucide-react';
 import LeaveDetailModal from '../LeaveDetailModal';
 
 const getLeaveTypeId = (leaveType) => {
@@ -28,8 +28,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
     };
 
-    const truncateReason = (reason) => {
-        if (!reason) return '';
+    const truncateReason = (reason = '') => {
         return reason.length > 20 ? reason.substring(0, 20) + '...' : reason;
     };
 
@@ -167,16 +166,17 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         const typeIdStr = String(leaveForm.leaveTypeId);
         const bal = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeIdStr);
 
+        const lTypeObj = leaveTypes.find(t => String(t._id || t.id || '') === typeIdStr);
+
         if (bal !== undefined) {
             remaining = bal.remaining ?? 0;
             allocated = bal.allocated ?? 12;
         } else {
-            const lTypeObj = leaveTypes.find(t => String(t._id || t.id || '') === typeIdStr);
             allocated = Number(lTypeObj?.quota || lTypeObj?.maxDays) || 12;
 
-            // Calculate approved used days from leaves list
+            // Calculate approved and pending used days from leaves list
             const usedDays = leaves
-                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && l.status === 'approved')
+                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending'].includes(l.status))
                 .reduce((acc, l) => {
                     const ls = String(l.startDate).slice(0, 10);
                     const le = String(l.endDate).slice(0, 10);
@@ -186,10 +186,28 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
             remaining = Math.max(0, allocated - usedDays);
         }
 
+        const maxConsecutiveDays = Number(lTypeObj?.maxConsecutiveDays) || 0;
+        const exceedsMaxConsecutive = maxConsecutiveDays > 0 && netDuration > maxConsecutiveDays;
+        
+        // Calculate Global Leaves
+        const GLOBAL_MAX_LEAVES = 24;
+        const isExemptFromGlobal = ['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lTypeObj?.name);
+        
+        let globalUsed = 0;
+        leaves.forEach(l => {
+            const lType = leaveTypes.find(t => String(t._id || t.id) === String(l.leaveType?._id || l.leaveType));
+            if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending'].includes(l.status)) {
+                const ls = String(l.startDate).slice(0, 10);
+                const le = String(l.endDate).slice(0, 10);
+                globalUsed += getDatesInRange(ls, le).length;
+            }
+        });
+
+        const exceedsGlobalLimit = !isExemptFromGlobal && (globalUsed + netDuration > GLOBAL_MAX_LEAVES);
+
+        const isUnpaid = lTypeObj?.name === 'Unpaid Leave';
         const excessDays = Math.max(0, netDuration - remaining);
-        const baseSalary = Number(user?.salary) || 0;
-        const dailyRate = baseSalary > 0 ? Math.round(baseSalary / 30) : 0;
-        const estimatedDeduction = excessDays * dailyRate;
+        const isFullyBooked = netDuration === 0 || exceedsMaxConsecutive || excessDays > 0 || exceedsGlobalLimit;
 
         return {
             totalDuration,
@@ -200,9 +218,13 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
             remaining,
             allocated,
             excessDays,
-            dailyRate,
-            estimatedDeduction,
-            isFullyBooked: netDuration === 0
+            isFullyBooked,
+            exceedsMaxConsecutive,
+            maxConsecutiveDays,
+            isUnpaid,
+            exceedsGlobalLimit,
+            globalUsed,
+            GLOBAL_MAX_LEAVES
         };
     }, [leaveForm.startDate, leaveForm.endDate, leaveForm.leaveTypeId, bookedDatesMap, leaveBalances, leaveTypes, leaves, user?.salary]);
 
@@ -282,6 +304,30 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                 );
                                             })}
                                         </select>
+                                        
+                                        {/* Policy Hint Display */}
+                                        {(() => {
+                                            if (!leaveForm.leaveTypeId) return null;
+                                            const selectedType = leaveTypes.find(t => String(t._id || t.id || '') === leaveForm.leaveTypeId);
+                                            if (!selectedType) return null;
+                                            const hasMax = selectedType.maxConsecutiveDays > 0;
+                                            const hasCooldown = selectedType.cooldownDays > 0;
+                                            if (!hasMax && !hasCooldown) return null;
+                                            return (
+                                                <div className="mt-2 bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex items-start gap-2.5">
+                                                    <div className="p-1 bg-indigo-100 rounded-md">
+                                                        <AlertCircle size={14} className="text-indigo-600" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[11px] font-bold text-indigo-900 leading-tight mb-0.5">Leave Policy Rules</p>
+                                                        <ul className="text-[10px] font-semibold text-indigo-700 space-y-0.5 list-disc pl-3">
+                                                            {hasMax && <li>Max <strong>{selectedType.maxConsecutiveDays}</strong> consecutive days allowed per request.</li>}
+                                                            {hasCooldown && <li><strong>{selectedType.cooldownDays} days</strong> cooldown period between requests.</li>}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                     {/* Start & End Date Status Cards */}
                                     <div className="grid grid-cols-2 gap-3">
@@ -519,39 +565,64 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             </div>
                                         )}
 
-                                        {/* 3. Fully Booked Error */}
-                                        {deductionPreview.isFullyBooked && (
+                                        {/* 3. Fully Booked Error (Dates Overlap) */}
+                                        {deductionPreview.netDuration === 0 && (
                                             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2">
                                                 <AlertTriangle size={15} className="shrink-0 text-rose-600" />
                                                 <span>All selected dates are already covered by your existing leave. Please pick different dates.</span>
                                             </div>
                                         )}
 
-                                        {/* 4. Quota Exceeded / Unpaid Leave Salary Deduction Warning */}
-                                        {!deductionPreview.isFullyBooked && deductionPreview.excessDays > 0 && (
-                                            <div className="p-3 bg-rose-50/90 border border-rose-200 rounded-xl text-xs space-y-1 text-rose-900">
-                                                <div className="flex items-center gap-1.5 font-bold text-rose-800">
-                                                    <AlertTriangle size={14} className="shrink-0 text-rose-600" />
-                                                    <span>Quota Exceeded ({deductionPreview.excessDays} Unpaid {deductionPreview.excessDays === 1 ? 'Day' : 'Days'})</span>
+                                        {/* 4. Strict Quota Exceeded Block */}
+                                        {deductionPreview.netDuration > 0 && !deductionPreview.exceedsMaxConsecutive && deductionPreview.excessDays > 0 && (
+                                            <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
+                                                <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
+                                                    <AlertTriangle size={16} className="shrink-0 text-rose-600" />
+                                                    <span>Request Blocked: Quota Exceeded</span>
                                                 </div>
-                                                <p className="text-[11px] leading-relaxed text-rose-700">
-                                                    You have <strong>{deductionPreview.remaining} paid day(s)</strong> remaining. The net excess <strong>{deductionPreview.excessDays} day(s)</strong> will be processed as <strong>Unpaid Leave</strong>.
+                                                <p className="text-xs leading-relaxed text-rose-800 font-medium">
+                                                    You are requesting <strong>{deductionPreview.netDuration} days</strong>, but you only have <strong>{deductionPreview.remaining} days</strong> remaining in this category. Please reduce the number of days or select a different leave type.
                                                 </p>
-                                                {deductionPreview.dailyRate > 0 && (
-                                                    <div className="pt-1.5 mt-1 border-t border-rose-200/80 font-bold flex justify-between items-center text-slate-800">
-                                                        <span>Est. Monthly Payroll Deduction:</span>
-                                                        <span className="text-rose-600 font-black text-sm">
-                                                            -₨ {deductionPreview.estimatedDeduction.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* 4b. Max Consecutive Days Exceeded Block */}
+                                        {deductionPreview.netDuration > 0 && deductionPreview.exceedsMaxConsecutive && (
+                                            <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
+                                                <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
+                                                    <AlertTriangle size={16} className="shrink-0 text-rose-600" />
+                                                    <span>Request Blocked: Consecutive Days Limit Exceeded</span>
+                                                </div>
+                                                <p className="text-xs leading-relaxed text-rose-800 font-medium">
+                                                    You are requesting <strong>{deductionPreview.netDuration} consecutive days</strong>, but this leave type allows a maximum of <strong>{deductionPreview.maxConsecutiveDays} consecutive days</strong> per request. Please shorten your request.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* 4c. Global Leave Cap Block */}
+                                        {deductionPreview.netDuration > 0 && deductionPreview.exceedsGlobalLimit && (
+                                            <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
+                                                <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
+                                                    <AlertTriangle size={16} className="shrink-0 text-rose-600" />
+                                                    <span>Request Blocked: Global Limit Exceeded</span>
+                                                </div>
+                                                <p className="text-xs leading-relaxed text-rose-800 font-medium">
+                                                    You are allowed a maximum of <strong>{deductionPreview.GLOBAL_MAX_LEAVES} standard paid leaves</strong> per year across all categories. You have already used <strong>{deductionPreview.globalUsed} days</strong>.
+                                                </p>
                                             </div>
                                         )}
 
                                         {/* 5. Fully Covered Banner */}
-                                        {!deductionPreview.isFullyBooked && deductionPreview.excessDays === 0 && (
+                                        {deductionPreview.netDuration > 0 && deductionPreview.excessDays === 0 && !deductionPreview.exceedsMaxConsecutive && !deductionPreview.isUnpaid && (
                                             <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
-                                                <span>✓ Net duration ({deductionPreview.netDuration} days) is fully covered under your paid leave quota. No salary deduction.</span>
+                                                <span>✓ Request is fully covered under your remaining quota.</span>
+                                            </div>
+                                        )}
+
+                                        {/* 6. Unpaid Leave Notice */}
+                                        {deductionPreview.netDuration > 0 && deductionPreview.isUnpaid && deductionPreview.excessDays === 0 && !deductionPreview.exceedsMaxConsecutive && (
+                                            <div className="p-2.5 mt-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-700 font-semibold flex items-center gap-1.5">
+                                                <span>✓ This will be processed as Unpaid Leave.</span>
                                             </div>
                                         )}
                                     </div>
