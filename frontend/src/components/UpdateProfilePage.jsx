@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil, Bell, MessageSquare, Megaphone, CalendarCheck, CheckCircle2 } from 'lucide-react';
 
 const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const { updateUser } = useContext(AuthContext);
@@ -14,7 +14,14 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
         department: user?.department || '',
         reportingTo: user?.reportingTo || '',
         salary: user?.salary || '',
-        password: '' // Optional password update
+        password: '', // Optional password update
+        notificationPreferences: user?.notificationPreferences || {
+            all: true,
+            announcements: true,
+            messages: true,
+            leaves: true,
+            attendance: true
+        }
     });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -168,6 +175,98 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                 </div>
                             </div>
                             <p className="text-[10px] text-slate-400 italic mt-3">* Employment details can only be changed by the HR Department.</p>
+                        </div>
+
+                        {/* Notification Preferences Section */}
+                        <div className="pt-6 border-t border-slate-100">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2"><Bell size={14}/> Notification Settings</h4>
+                            <div className="space-y-4">
+                                {/* Master Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                    <div>
+                                        <p className="font-bold text-sm text-slate-800">All Notifications</p>
+                                        <p className="text-xs text-slate-500 mt-0.5">Master switch to pause or resume all alerts.</p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, notificationPreferences: { ...formData.notificationPreferences, all: !formData.notificationPreferences.all } })}
+                                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center ${formData.notificationPreferences.all ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                    >
+                                        <span className={`w-4 h-4 rounded-full bg-white shadow-sm absolute transition-all ${formData.notificationPreferences.all ? 'left-[24px]' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                {/* Specific Toggles */}
+                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-all ${!formData.notificationPreferences.all ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                                    {/* Announcements */}
+                                    <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:border-indigo-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Megaphone size={16} /></div>
+                                            <div>
+                                                <p className="font-semibold text-sm text-slate-800">Announcements</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, notificationPreferences: { ...formData.notificationPreferences, announcements: !formData.notificationPreferences.announcements } })}
+                                            className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${formData.notificationPreferences.announcements ? 'bg-indigo-500' : 'bg-slate-200'}`}
+                                        >
+                                            <span className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm absolute transition-all ${formData.notificationPreferences.announcements ? 'left-[18px]' : 'left-[3px]'}`} />
+                                        </button>
+                                    </div>
+
+                                    {/* Messages */}
+                                    <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:border-indigo-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><MessageSquare size={16} /></div>
+                                            <div>
+                                                <p className="font-semibold text-sm text-slate-800">Chat Messages</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, notificationPreferences: { ...formData.notificationPreferences, messages: !formData.notificationPreferences.messages } })}
+                                            className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${formData.notificationPreferences.messages ? 'bg-indigo-500' : 'bg-slate-200'}`}
+                                        >
+                                            <span className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm absolute transition-all ${formData.notificationPreferences.messages ? 'left-[18px]' : 'left-[3px]'}`} />
+                                        </button>
+                                    </div>
+
+                                    {/* Leaves */}
+                                    <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:border-indigo-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><CalendarCheck size={16} /></div>
+                                            <div>
+                                                <p className="font-semibold text-sm text-slate-800">Leave Updates</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, notificationPreferences: { ...formData.notificationPreferences, leaves: !formData.notificationPreferences.leaves } })}
+                                            className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${formData.notificationPreferences.leaves ? 'bg-indigo-500' : 'bg-slate-200'}`}
+                                        >
+                                            <span className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm absolute transition-all ${formData.notificationPreferences.leaves ? 'left-[18px]' : 'left-[3px]'}`} />
+                                        </button>
+                                    </div>
+
+                                    {/* Attendance */}
+                                    <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:border-indigo-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircle2 size={16} /></div>
+                                            <div>
+                                                <p className="font-semibold text-sm text-slate-800">Attendance Emails</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, notificationPreferences: { ...formData.notificationPreferences, attendance: !formData.notificationPreferences.attendance } })}
+                                            className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${formData.notificationPreferences.attendance ? 'bg-indigo-500' : 'bg-slate-200'}`}
+                                        >
+                                            <span className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm absolute transition-all ${formData.notificationPreferences.attendance ? 'left-[18px]' : 'left-[3px]'}`} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <button 
