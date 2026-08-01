@@ -29,8 +29,11 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         <User size={24} />
                     </div>
                     <div>
-                        <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight block leading-tight transition-colors duration-200">
-                            Employee Portal
+                        <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight block leading-tight transition-colors duration-200 truncate max-w-[150px]">
+                            {user?.name || 'Employee Portal'}
+                        </span>
+                        <span className="text-xs text-slate-500 font-medium truncate max-w-[150px] block">
+                            {user?.designation || 'Staff'}
                         </span>
                         {user?.isTeamLead && (
                             <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">
