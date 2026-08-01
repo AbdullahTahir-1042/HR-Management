@@ -38,7 +38,10 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         const curr = new Date(startDateStr + 'T00:00:00');
         const last = new Date(endDateStr + 'T00:00:00');
         while (curr <= last) {
-            dates.push(curr.toISOString().slice(0, 10));
+            const year = curr.getFullYear();
+            const month = String(curr.getMonth() + 1).padStart(2, '0');
+            const day = String(curr.getDate()).padStart(2, '0');
+            dates.push(`${year}-${month}-${day}`);
             curr.setDate(curr.getDate() + 1);
         }
         return dates;
@@ -189,17 +192,22 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         const maxConsecutiveDays = Number(lTypeObj?.maxConsecutiveDays) || 0;
         const exceedsMaxConsecutive = maxConsecutiveDays > 0 && netDuration > maxConsecutiveDays;
         
-        // Calculate Global Leaves
+        // Calculate Global Leaves for the CURRENT YEAR
         const GLOBAL_MAX_LEAVES = 24;
         const isExemptFromGlobal = ['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lTypeObj?.name);
         
         let globalUsed = 0;
+        const currentYear = new Date().getFullYear();
+        
         leaves.forEach(l => {
             const lType = leaveTypes.find(t => String(t._id || t.id) === String(l.leaveType?._id || l.leaveType));
             if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending'].includes(l.status)) {
-                const ls = String(l.startDate).slice(0, 10);
-                const le = String(l.endDate).slice(0, 10);
-                globalUsed += getDatesInRange(ls, le).length;
+                const leaveYear = new Date(l.startDate).getFullYear();
+                if (leaveYear === currentYear) {
+                    const ls = String(l.startDate).slice(0, 10);
+                    const le = String(l.endDate).slice(0, 10);
+                    globalUsed += getDatesInRange(ls, le).length;
+                }
             }
         });
 
