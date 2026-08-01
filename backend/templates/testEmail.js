@@ -1,5 +1,5 @@
 /**
- * Simple HTML Template for Resend Integration Testing
+ * Simple HTML Template for SMTP Integration Testing
  */
 const getTestEmailTemplate = () => {
     return {
@@ -52,7 +52,7 @@ const getTestEmailTemplate = () => {
                     <div class="content">
                         <p>Hello,</p>
                         <p>This is a test email from the HR Management System.</p>
-                        <p>If you received this email, the Resend integration is working successfully.</p>
+                        <p>If you received this email, the SMTP email integration is working successfully.</p>
                     </div>
                     <div class="footer">
                         Sent automatically by HR Management System Backend.
