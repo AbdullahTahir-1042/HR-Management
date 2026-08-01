@@ -26,15 +26,16 @@ router.post('/check-in', auth, async (req, res) => {
         await attendance.save();
         console.log("✅ Attendance saved");
 
+        // Send response immediately so the user isn't kept waiting
         res.json(attendance);
 
         // ── Send Check-In Email Notification Asynchronously afterwards ──
         setTimeout(async () => {
             try {
-                const employee = await User.findById(req.user.id);
+                const employee = await User.findById(req.user.id).select('+notificationPreferences');
                 console.log("Employee:", employee);
 
-                if (employee && employee.email) {
+                if (employee && employee.email && employee.notificationPreferences?.all !== false && employee.notificationPreferences?.attendance !== false) {
                     const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
                         year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
                     });

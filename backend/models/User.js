@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['employee', 'hr'],
+        enum: ['employee', 'hr', 'admin'],
         default: 'employee'
     },
     status: {
@@ -97,6 +97,13 @@ const UserSchema = new mongoose.Schema({
     isFirstLogin: {
         type: Boolean,
         default: true
+    },
+    notificationPreferences: {
+        all: { type: Boolean, default: true },
+        announcements: { type: Boolean, default: true },
+        messages: { type: Boolean, default: true },
+        leaves: { type: Boolean, default: true },
+        attendance: { type: Boolean, default: true }
     }
 }, { timestamps: true });
 

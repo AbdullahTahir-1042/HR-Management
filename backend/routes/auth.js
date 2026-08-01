@@ -205,7 +205,7 @@ router.get('/users', [auth, isHR], async (req, res) => {
 // @access  Private
 router.get('/colleagues', auth, async (req, res) => {
     try {
-        const users = await User.find({ isDeleted: { $ne: true }, _id: { $ne: req.user.id } })
+        const users = await User.find({ isDeleted: { $ne: true }, status: { $ne: 'Inactive' }, _id: { $ne: req.user.id } })
             .select('name email photo role department')
             .sort({ name: 1 });
         res.json(users);
@@ -218,15 +218,16 @@ router.get('/colleagues', auth, async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus, notificationPreferences } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
         const currentUser = await User.findById(req.user.id);
         const isSelf = req.user.id === req.params.id;
         const isHRUser = currentUser.role === 'hr';
+        const isAdminUser = currentUser.role === 'admin';
 
-        if (!isSelf && !isHRUser) {
+        if (!isSelf && !isHRUser && !isAdminUser) {
             return res.status(403).json({ msg: 'Access denied. You can only update your own profile.' });
         }
 
@@ -238,26 +239,38 @@ router.put('/users/:id', auth, async (req, res) => {
         if (photo !== undefined) user.photo = photo;
         if (phone !== undefined) user.phone = phone;
         if (password) user.password = password;
+        if (notificationPreferences !== undefined) {
+            user.notificationPreferences = {
+                ...user.notificationPreferences,
+                ...notificationPreferences
+            };
+        }
 
-        if (isHRUser) {
-            if (role !== undefined) user.role = role;
-            if (status !== undefined) user.status = status;
-            if (salary !== undefined) user.salary = salary;
-            if (promotionRank !== undefined) {
-                const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
-                if (!validRanks.includes(promotionRank)) {
-                    return res.status(400).json({ msg: 'Invalid Promotion Rank value' });
+        if (isHRUser || isAdminUser) {
+            const targetIsProtected = user.role === 'hr' || user.role === 'admin';
+            const canEditProtectedFields = isAdminUser || (isHRUser && !targetIsProtected);
+
+            if (canEditProtectedFields) {
+                if (role !== undefined) user.role = role;
+                if (status !== undefined) user.status = status;
+                if (salary !== undefined) user.salary = salary;
+                if (promotionRank !== undefined) {
+                    const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+                    if (!validRanks.includes(promotionRank)) {
+                        return res.status(400).json({ msg: 'Invalid Promotion Rank value' });
+                    }
+                    user.promotionRank = promotionRank;
                 }
-                user.promotionRank = promotionRank;
-            }
-            if (joiningStatus !== undefined) {
-                const validJoiningStatuses = ['Intern', 'Fresh Join'];
-                if (!validJoiningStatuses.includes(joiningStatus)) {
-                    return res.status(400).json({ msg: 'Invalid Joining Status value' });
+                if (joiningStatus !== undefined) {
+                    const validJoiningStatuses = ['Intern', 'Fresh Join'];
+                    if (!validJoiningStatuses.includes(joiningStatus)) {
+                        return res.status(400).json({ msg: 'Invalid Joining Status value' });
+                    }
+                    user.joiningStatus = joiningStatus;
                 }
-                user.joiningStatus = joiningStatus;
             }
-            if (department !== undefined) {
+
+            if (department !== undefined && canEditProtectedFields) {
                 const oldDeptId = user.departmentId;
                 const newDept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
 
@@ -343,11 +356,25 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
         }
 
-        // Shift to Inactive instead of hard delete
-        user.status = 'Inactive';
-        user.isDeleted = false; // Still visible to HR, but blocked from login
-        user.isTeamLead = false; // Remove them from Team Lead if they are one
-        await user.save();
+        const currentUser = await User.findById(req.user.id);
+        const isHRUser = currentUser.role === 'hr';
+        const isAdminUser = currentUser.role === 'admin';
+        const targetIsProtected = user.role === 'hr' || user.role === 'admin';
+
+        if (isHRUser && targetIsProtected && !isAdminUser) {
+            return res.status(403).json({ msg: 'Access denied. HR cannot delete Admin or HR accounts.' });
+        }
+
+        if (user.status === 'Inactive') {
+            // Hard delete the employee completely from the database
+            await User.deleteOne({ _id: req.params.id });
+        } else {
+            // Shift to Inactive instead of hard delete
+            user.status = 'Inactive';
+            user.isDeleted = false; // Still visible to HR, but blocked from login
+            user.isTeamLead = false; // Remove them from Team Lead if they are one
+            await user.save();
+        }
 
         // Clean up conversations and messages for the deleted user
         const userConversations = await Conversation.find({ participants: req.params.id });
