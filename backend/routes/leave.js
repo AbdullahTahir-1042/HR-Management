@@ -6,18 +6,14 @@ const User = require('../models/User');
 const LeaveType = require('../models/LeaveType');
 const Attendance = require('../models/Attendance');
 
-// Calculate number of working days between two dates (inclusive, skips weekends)
+// Calculate number of raw calendar days between two dates (inclusive) for Sandwich Rule
 const calculateDays = (start, end) => {
-    let startDate = new Date(start);
-    let endDate = new Date(end);
-    let days = 0;
-    while (startDate <= endDate) {
-        if (startDate.getDay() !== 0 && startDate.getDay() !== 6) {
-            days++;
-        }
-        startDate.setDate(startDate.getDate() + 1);
-    }
-    return days;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    // DST-Safe Calculation: Use Math.round instead of Math.ceil to prevent 25-hour days from adding an extra day
+    const diffTime = Math.abs(endDate - startDate);
+    return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
 };
 
 // @route   GET api/leaves/types
@@ -205,10 +201,15 @@ router.post('/apply', auth, async (req, res) => {
 
         const start = new Date(startDate);
         const end = new Date(endDate);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return res.status(400).json({ msg: 'Invalid dates provided. Please select valid calendar dates.' });
+        }
+
         const today = new Date();
         today.setHours(0,0,0,0); // Reset time for accurate day comparison
 
-        // Calculate duration in working days
+        // Calculate duration in working days (backend recalculates securely, does not trust frontend)
         const duration = calculateDays(start, end);
         if (duration <= 0) {
             return res.status(400).json({ msg: 'End date cannot be before start date.' });
@@ -305,6 +306,32 @@ router.post('/apply', auth, async (req, res) => {
             return res.status(400).json({
                 msg: `Quota Exceeded: You only have ${Math.max(0, leaveType.quota - usedDays)} days of ${leaveType.name} remaining.`
             });
+        }
+
+        // 4. Global Annual Leave Cap (Max 24 paid leaves per year)
+        const GLOBAL_MAX_LEAVES = 24;
+        const isExemptFromGlobal = ['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(leaveType.name);
+
+        if (!isExemptFromGlobal) {
+            // Find all non-exempt leaves for the current year
+            const allYearlyLeaves = await LeaveRequest.find({
+                employee: req.user.id,
+                status: { $in: ['approved', 'pending'] },
+                startDate: { $gte: startOfYear, $lte: endOfYear }
+            }).populate('leaveType');
+
+            let totalGlobalUsed = 0;
+            allYearlyLeaves.forEach(l => {
+                if (l.leaveType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(l.leaveType.name)) {
+                    totalGlobalUsed += calculateDays(l.startDate, l.endDate);
+                }
+            });
+
+            if (totalGlobalUsed + duration > GLOBAL_MAX_LEAVES) {
+                return res.status(400).json({
+                    msg: `Global Limit Exceeded: You are allowed a maximum of ${GLOBAL_MAX_LEAVES} standard paid leaves per year. You have already used ${totalGlobalUsed} days across all categories.`
+                });
+            }
         }
 
         const leave = new LeaveRequest({

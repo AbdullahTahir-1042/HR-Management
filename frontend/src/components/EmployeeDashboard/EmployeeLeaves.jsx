@@ -28,8 +28,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
     };
 
-    const truncateReason = (reason) => {
-        if (!reason) return '';
+    const truncateReason = (reason = '') => {
         return reason.length > 20 ? reason.substring(0, 20) + '...' : reason;
     };
 
@@ -190,9 +189,25 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         const maxConsecutiveDays = Number(lTypeObj?.maxConsecutiveDays) || 0;
         const exceedsMaxConsecutive = maxConsecutiveDays > 0 && netDuration > maxConsecutiveDays;
         
+        // Calculate Global Leaves
+        const GLOBAL_MAX_LEAVES = 24;
+        const isExemptFromGlobal = ['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lTypeObj?.name);
+        
+        let globalUsed = 0;
+        leaves.forEach(l => {
+            const lType = leaveTypes.find(t => String(t._id || t.id) === String(l.leaveType?._id || l.leaveType));
+            if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending'].includes(l.status)) {
+                const ls = String(l.startDate).slice(0, 10);
+                const le = String(l.endDate).slice(0, 10);
+                globalUsed += getDatesInRange(ls, le).length;
+            }
+        });
+
+        const exceedsGlobalLimit = !isExemptFromGlobal && (globalUsed + netDuration > GLOBAL_MAX_LEAVES);
+
         const isUnpaid = lTypeObj?.name === 'Unpaid Leave';
         const excessDays = Math.max(0, netDuration - remaining);
-        const isFullyBooked = netDuration === 0 || exceedsMaxConsecutive || excessDays > 0;
+        const isFullyBooked = netDuration === 0 || exceedsMaxConsecutive || excessDays > 0 || exceedsGlobalLimit;
 
         return {
             totalDuration,
@@ -206,7 +221,10 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
             isFullyBooked,
             exceedsMaxConsecutive,
             maxConsecutiveDays,
-            isUnpaid
+            isUnpaid,
+            exceedsGlobalLimit,
+            globalUsed,
+            GLOBAL_MAX_LEAVES
         };
     }, [leaveForm.startDate, leaveForm.endDate, leaveForm.leaveTypeId, bookedDatesMap, leaveBalances, leaveTypes, leaves, user?.salary]);
 
@@ -577,6 +595,19 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                 </div>
                                                 <p className="text-xs leading-relaxed text-rose-800 font-medium">
                                                     You are requesting <strong>{deductionPreview.netDuration} consecutive days</strong>, but this leave type allows a maximum of <strong>{deductionPreview.maxConsecutiveDays} consecutive days</strong> per request. Please shorten your request.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* 4c. Global Leave Cap Block */}
+                                        {deductionPreview.netDuration > 0 && deductionPreview.exceedsGlobalLimit && (
+                                            <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs space-y-1.5 text-rose-900 shadow-sm">
+                                                <div className="flex items-center gap-1.5 font-bold text-rose-700 text-sm">
+                                                    <AlertTriangle size={16} className="shrink-0 text-rose-600" />
+                                                    <span>Request Blocked: Global Limit Exceeded</span>
+                                                </div>
+                                                <p className="text-xs leading-relaxed text-rose-800 font-medium">
+                                                    You are allowed a maximum of <strong>{deductionPreview.GLOBAL_MAX_LEAVES} standard paid leaves</strong> per year across all categories. You have already used <strong>{deductionPreview.globalUsed} days</strong>.
                                                 </p>
                                             </div>
                                         )}

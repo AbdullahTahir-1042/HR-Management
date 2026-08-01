@@ -60,10 +60,20 @@ const LeaveTypeModal = ({ leaveType, onClose, onSaved }) => {
         if (isNaN(numMax) || numMax < 0) return setError('Invalid Max Consecutive Days.');
         if (!isExempt && numMax > 2) {
             return setError(`Max consecutive leaves must be under 3 (maximum 2 days) for ${form.name || 'this type'}.`);
+        } else if (isExempt && numMax > 45) {
+            return setError(`Max consecutive leaves cannot exceed the absolute limit of 45 days.`);
         }
 
         const numCooldown = form.cooldownDays === '' ? 0 : Number(form.cooldownDays);
-        if (isNaN(numCooldown) || numCooldown < 0) return setError('Invalid Cooldown Period.');
+        if (isNaN(numCooldown) || numCooldown < 0) {
+            return setError('Invalid Cooldown Period.');
+        }
+
+        if (isExempt && numCooldown > 365) {
+            return setError('Cooldown Period for Maternity/Paternity cannot exceed 365 days.');
+        } else if (!isExempt && numCooldown > 60) {
+            return setError('Cooldown Period for standard leaves cannot exceed 60 days to prevent lockouts.');
+        }
 
         setError('');
         setLoading(true);
