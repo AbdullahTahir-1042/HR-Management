@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
 
 const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const { updateUser } = useContext(AuthContext);
@@ -91,8 +91,8 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                     <User size={48} className="text-slate-300" />
                                 )}
                             </div>
-                            <label className="absolute bottom-2 right-2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:bg-indigo-700 transition-colors">
-                                <Camera size={16} />
+                            <label className="absolute -top-3 -right-3 p-2 bg-indigo-600 text-white rounded-full shadow-lg cursor-pointer hover:bg-indigo-700 transition-colors z-10 border-2 border-white">
+                                <Pencil size={16} />
                                 <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                             </label>
                         </div>
