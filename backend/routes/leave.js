@@ -423,13 +423,16 @@ router.put('/:id/status', [auth, isHR], async (req, res) => {
         await leave.save();
         
         const Notification = require('../models/Notification');
-        await Notification.create({
-            recipient: leave.employee,
-            title: `Leave Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-            message: `Your leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been ${status}.`,
-            type: 'leave',
-            relatedId: leave._id
-        });
+        const user = await User.findById(leave.employee).select('notificationPreferences');
+        if (!user || (user.notificationPreferences?.all !== false && user.notificationPreferences?.leaves !== false)) {
+            await Notification.create({
+                recipient: leave.employee,
+                title: `Leave Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+                message: `Your leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been ${status}.`,
+                type: 'leave',
+                relatedId: leave._id
+            });
+        }
 
         const populatedLeave = await LeaveRequest.findById(leave._id)
             .populate('employee', ['name', 'email'])

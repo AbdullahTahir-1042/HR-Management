@@ -218,7 +218,7 @@ router.get('/colleagues', auth, async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus, notificationPreferences } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
@@ -238,6 +238,12 @@ router.put('/users/:id', auth, async (req, res) => {
         if (photo !== undefined) user.photo = photo;
         if (phone !== undefined) user.phone = phone;
         if (password) user.password = password;
+        if (notificationPreferences !== undefined) {
+            user.notificationPreferences = {
+                ...user.notificationPreferences,
+                ...notificationPreferences
+            };
+        }
 
         if (isHRUser) {
             if (role !== undefined) user.role = role;

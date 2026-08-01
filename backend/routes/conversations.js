@@ -410,7 +410,7 @@ router.get('/:id/messages', auth, async (req, res) => {
 router.post('/:id/messages', auth, async (req, res) => {
     try {
         const conversation = await Conversation.findById(req.params.id)
-            .populate('participants', 'name fcmToken');
+            .populate('participants', 'name fcmToken notificationPreferences');
         if (!conversation) return res.status(404).json({ msg: 'Conversation not found' });
         if (!isParticipant(conversation, req.user.id)) return res.status(403).json({ msg: 'Access denied' });
 
@@ -451,7 +451,7 @@ router.post('/:id/messages', auth, async (req, res) => {
                 const senderName = conversation.participants.find(p => String(p._id) === req.user.id)?.name || 'Someone';
 
                 const tokens = conversation.participants
-                    .filter(p => String(p._id) !== req.user.id && p.fcmToken)
+                    .filter(p => String(p._id) !== req.user.id && p.fcmToken && p.notificationPreferences?.all !== false && p.notificationPreferences?.messages !== false)
                     .map(p => p.fcmToken);
                 if (tokens.length > 0) {
                     await messaging.sendEachForMulticast({

@@ -50,11 +50,12 @@ router.post('/', auth, isHR, async (req, res) => {
         });
         const populated = await announcement.populate('createdBy', 'name');
         
-        // Create in-app notifications for all active users
+        // Create in-app notifications for all active users who want announcements
         const Notification = require('../models/Notification');
-        const activeUsers = await User.find({ status: { $ne: 'Inactive' } }).select('_id');
-        if (activeUsers.length > 0) {
-            const notifications = activeUsers.map(u => ({
+        const activeUsers = await User.find({ status: { $ne: 'Inactive' } }).select('_id notificationPreferences');
+        const interestedUsers = activeUsers.filter(u => u.notificationPreferences?.all !== false && u.notificationPreferences?.announcements !== false);
+        if (interestedUsers.length > 0) {
+            const notifications = interestedUsers.map(u => ({
                 recipient: u._id,
                 title: 'New Announcement',
                 message: title.trim(),
@@ -69,8 +70,10 @@ router.post('/', auth, isHR, async (req, res) => {
             // Find all users who have an FCM token saved
             const users = await User.find({ fcmToken: { $exists: true, $ne: null } });
             
-            // Map out the tokens
-            const rawTokens = users.map(user => user.fcmToken);
+            // Map out the tokens, checking preferences
+            const rawTokens = users
+                .filter(u => u.notificationPreferences?.all !== false && u.notificationPreferences?.announcements !== false)
+                .map(user => user.fcmToken);
             
             // CRITICAL FIX: Filter out duplicates to stop double-notifications
             const uniqueTokens = [...new Set(rawTokens)];
