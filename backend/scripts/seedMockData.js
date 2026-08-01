@@ -118,6 +118,7 @@ const run = async () => {
             console.log(`Created user: ${p.name} <${p.email}> (${p.role})`);
         } else {
             user.name = p.name;
+            user.password = PASSWORD;
             user.salary = p.salary;
             user.department = p.department;
             user.departmentId = deptId;
