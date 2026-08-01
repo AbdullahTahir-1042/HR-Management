@@ -8,7 +8,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Force Google DNS so MongoDB Atlas SRV lookups work on restricted networks
 const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+// dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const mongoose = require('mongoose');
 const User = require('../models/User');

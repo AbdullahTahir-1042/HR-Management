@@ -9,6 +9,8 @@ const Department = require('../models/Department');
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const { auth, isHR } = require('../middleware/auth');
+const { sendEmail } = require('../services/emailService');
+const { getWelcomeEmailTemplate } = require('../templates/welcomeEmail');
 
 // @route   POST api/auth/register
 // @desc    Register user (HR only)
@@ -68,6 +70,7 @@ router.post('/register', [auth, isHR], async (req, res) => {
             }
         }
 
+        const rawPassword = password;
         user = new User({
             name,
             email,
@@ -82,7 +85,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
             departmentId,
             reportingTo,
             phone,
-            isTeamLead: !!isTeamLead
+            isTeamLead: !!isTeamLead,
+            isFirstLogin: true
         });
         await user.save();
 
@@ -102,19 +106,36 @@ router.post('/register', [auth, isHR], async (req, res) => {
             }
         }
 
-        const payload = { user: { id: user.id } };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
-            if (err) throw err;
-            res.json({
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    isTeamLead: user.isTeamLead
-                }
+        // ── Dispatch Welcome Email via Resend ──
+        try {
+            const template = getWelcomeEmailTemplate({
+                name: user.name,
+                email: user.email,
+                tempPassword: rawPassword
             });
+            sendEmail({
+                to: user.email,
+                subject: template.subject,
+                html: template.html
+            }).then(res => console.log('Welcome email dispatch result:', res))
+              .catch(e => console.error('[Welcome Email Error]:', e));
+        } catch (wErr) {
+            console.error('Error generating welcome email template:', wErr);
+        }
+
+        const payload = { user: { id: user.id } };
+        const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_123';
+        const token = jwt.sign(payload, secret, { expiresIn: '7d' });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isTeamLead: user.isTeamLead,
+                isFirstLogin: true
+            }
         });
     } catch (err) {
         console.error(err.message);
@@ -135,7 +156,7 @@ router.post('/login', async (req, res) => {
         if (!user || user.isDeleted) {
             return res.status(400).json({ msg: 'Invalid Credentials' });
         }
-        
+
         if (user.status === 'Inactive') {
             return res.status(403).json({ msg: 'Account is inactive. Please contact HR.' });
         }
@@ -146,22 +167,23 @@ router.post('/login', async (req, res) => {
         }
 
         const payload = { user: { id: user.id } };
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' }, (err, token) => {
-            if (err) throw err;
-            res.json({
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    teamName: user.teamName || ''
-                }
-            });
+        const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_123';
+        const token = jwt.sign(payload, secret, { expiresIn: '7d' });
+
+        return res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                teamName: user.teamName || '',
+                isFirstLogin: user.isFirstLogin === true
+            }
         });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        console.error('Login Route Error:', err);
+        res.status(500).json({ msg: 'Server error during login', error: err.message });
     }
 });
 
@@ -387,6 +409,79 @@ router.put('/fcm-token', auth, async (req, res) => {
     } catch (err) {
         console.error('Error saving FCM token:', err);
         res.status(500).send('Server Error syncing token');
+    }
+});
+// @route   PUT api/auth/users/:id/card-visibility
+// @desc    Update hidden card visibility state for an employee
+// @access  Private (HR Admin)
+router.put('/users/:id/card-visibility', auth, async (req, res) => {
+    try {
+        const { hiddenProfileCards, hiddenCareerCards } = req.body;
+        const targetUser = await User.findById(req.params.id);
+        if (!targetUser) {
+            return res.status(404).json({ msg: 'Employee not found' });
+        }
+
+        if (hiddenProfileCards !== undefined) {
+            targetUser.hiddenProfileCards = hiddenProfileCards;
+        }
+        if (hiddenCareerCards !== undefined) {
+            targetUser.hiddenCareerCards = hiddenCareerCards;
+        }
+
+        await targetUser.save();
+        res.json({
+            msg: 'Card visibility updated successfully',
+            hiddenProfileCards: targetUser.hiddenProfileCards,
+            hiddenCareerCards: targetUser.hiddenCareerCards
+        });
+    } catch (err) {
+        console.error('Error updating card visibility:', err);
+        res.status(500).json({ msg: 'Server Error updating card visibility', error: err.message });
+    }
+});
+
+// @route   POST api/auth/change-first-password
+// @desc    Change password on first login
+// @access  Private
+router.post('/change-first-password', auth, async (req, res) => {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user || user.isDeleted) {
+            return res.status(404).json({ msg: 'User account not found' });
+        }
+
+        if (!currentPassword) {
+            return res.status(400).json({ msg: 'Please enter your current password' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Incorrect current password' });
+        }
+
+        if (!newPassword || newPassword.length < 6 || !/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+            return res.status(400).json({ msg: 'New password must be at least 6 characters long and include both letters and numbers' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ msg: 'New password and confirm password do not match' });
+        }
+
+        user.password = newPassword;
+        user.isFirstLogin = false;
+        await user.save();
+
+        const cleanUser = await User.findById(user._id).select('-password');
+        res.json({
+            msg: 'Password updated successfully.',
+            user: cleanUser
+        });
+    } catch (err) {
+        console.error('Error updating first login password:', err);
+        res.status(500).json({ msg: 'Server error updating password', error: err.message });
     }
 });
 

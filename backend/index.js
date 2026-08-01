@@ -38,6 +38,8 @@ app.use((req, res, next) => {
     next();
 });
 
+console.log('✓ Backend Entry Loaded');
+
 connectDB();
 
 app.get('/', (req, res) => res.send('Server is running'));
@@ -55,6 +57,9 @@ app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/increments', require('./routes/increments'));
 app.use('/api/performance-reviews', require('./routes/performanceReviews'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/loans', require('./routes/loans'));
+app.use('/api/test', require('./routes/test'));
+console.log('✓ Test Route Registered');
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

@@ -9,7 +9,8 @@ const auth = async (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_123';
+        const decoded = jwt.verify(token, secret);
         req.user = decoded.user;
         // Fire-and-forget presence heartbeat — never block the request on this.
         User.findByIdAndUpdate(decoded.user.id, { lastSeenAt: new Date() }).catch(() => {});
