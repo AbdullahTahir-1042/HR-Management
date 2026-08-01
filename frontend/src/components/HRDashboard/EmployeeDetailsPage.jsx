@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck,
@@ -8,6 +8,7 @@ import {
 import IncrementReviewPage from './IncrementReviewPage';
 import apiClient from '../../api/axiosClient';
 import RestoreCardModal from './RestoreCardModal';
+import { AuthContext } from '../../context/AuthContext';
 
 const RATING_LABELS = {
     1: 'Needs Improvement',
@@ -20,6 +21,7 @@ const RATING_LABELS = {
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 
 const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+    const { user: currentUser } = useContext(AuthContext);
     const [activeDetailTab, setActiveDetailTab] = useState('profile');
     const [increments, setIncrements] = useState([]);
     const [reviews, setReviews] = useState([]);
@@ -323,8 +325,13 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
                         <Edit3 size={14} /> Edit Profile
                     </button>
                     <button
+                        disabled={currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'}
                         onClick={() => onDelete(employee._id)}
-                        className="btn-danger font-bold text-xs uppercase tracking-wider"
+                        className={`font-bold text-xs uppercase tracking-wider ${
+                            currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'
+                                ? 'btn-secondary opacity-50 cursor-not-allowed'
+                                : 'btn-danger'
+                        }`}
                     >
                         <Trash2 size={14} /> Mark as Inactive
                     </button>

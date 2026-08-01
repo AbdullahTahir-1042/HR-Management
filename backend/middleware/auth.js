@@ -27,8 +27,8 @@ const isHR = async (req, res, next) => {
             return res.status(401).json({ msg: 'No user on request — check auth middleware ran first' });
         }
         const user = await User.findById(req.user.id);
-        if (!user || user.role !== 'hr') {
-            return res.status(403).json({ msg: `Access denied. HR only. (your role: ${user?.role || 'none'})` });
+        if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+            return res.status(403).json({ msg: `Access denied. HR/Admin only. (your role: ${user?.role || 'none'})` });
         }
         next();
     } catch (err) {
@@ -44,8 +44,8 @@ const isTeamLead = async (req, res, next) => {
             return res.status(401).json({ msg: 'No user on request — check auth middleware ran first' });
         }
         const user = await User.findById(req.user.id);
-        if (!user || (!user.isTeamLead && user.role !== 'hr')) {
-            return res.status(403).json({ msg: 'Access denied. Team Lead only.' });
+        if (!user || (!user.isTeamLead && user.role !== 'hr' && user.role !== 'admin')) {
+            return res.status(403).json({ msg: 'Access denied. Team Lead/HR/Admin only.' });
         }
         next();
     } catch (err) {
@@ -54,4 +54,21 @@ const isTeamLead = async (req, res, next) => {
     }
 };
 
-module.exports = { auth, isHR, isTeamLead };
+// Admin middleware
+const isAdmin = async (req, res, next) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ msg: 'No user on request — check auth middleware ran first' });
+        }
+        const user = await User.findById(req.user.id);
+        if (!user || user.role !== 'admin') {
+            return res.status(403).json({ msg: `Access denied. Admin only. (your role: ${user?.role || 'none'})` });
+        }
+        next();
+    } catch (err) {
+        console.error('isAdmin Middleware Error:', err);
+        res.status(500).json({ msg: 'Server error checking permissions' });
+    }
+};
+
+module.exports = { auth, isHR, isTeamLead, isAdmin };

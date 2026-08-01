@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Mail, Shield, Calendar, UserPlus, Briefcase,
     Building2, UserCheck, Trash2, Crown, Phone, Eye, Pencil,
     LayoutGrid, List, Search, Filter, AlertCircle, TrendingUp, AlertTriangle, UserX
 } from 'lucide-react';
+import { AuthContext } from '../../context/AuthContext';
 
 const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, onEdit, onDelete }) => {
+    const { user: currentUser } = useContext(AuthContext);
     const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
     const [deptFilter, setDeptFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads' | 'inactive'
@@ -363,8 +365,13 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                                 )}
                                                 {onDelete && (
                                                     <button
+                                                        disabled={currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'}
                                                         onClick={() => onDelete(emp._id)}
-                                                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                        className={`p-1 rounded-lg transition-all ${
+                                                            currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'
+                                                                ? 'text-slate-300 cursor-not-allowed'
+                                                                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                                        }`}
                                                         title="Delete Employee"
                                                     >
                                                         <Trash2 size={15} />
@@ -477,8 +484,13 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                     )}
                                     {onDelete && (
                                         <button
+                                            disabled={currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'}
                                             onClick={() => onDelete(emp._id)}
-                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                            className={`p-2 rounded-xl transition-all ${
+                                                currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'
+                                                    ? 'text-slate-300 cursor-not-allowed'
+                                                    : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                            }`}
                                             title="Delete Employee"
                                         >
                                             <Trash2 size={17} />

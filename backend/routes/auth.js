@@ -225,8 +225,9 @@ router.put('/users/:id', auth, async (req, res) => {
         const currentUser = await User.findById(req.user.id);
         const isSelf = req.user.id === req.params.id;
         const isHRUser = currentUser.role === 'hr';
+        const isAdminUser = currentUser.role === 'admin';
 
-        if (!isSelf && !isHRUser) {
+        if (!isSelf && !isHRUser && !isAdminUser) {
             return res.status(403).json({ msg: 'Access denied. You can only update your own profile.' });
         }
 
@@ -245,25 +246,31 @@ router.put('/users/:id', auth, async (req, res) => {
             };
         }
 
-        if (isHRUser) {
-            if (role !== undefined) user.role = role;
-            if (status !== undefined) user.status = status;
-            if (salary !== undefined) user.salary = salary;
-            if (promotionRank !== undefined) {
-                const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
-                if (!validRanks.includes(promotionRank)) {
-                    return res.status(400).json({ msg: 'Invalid Promotion Rank value' });
+        if (isHRUser || isAdminUser) {
+            const targetIsProtected = user.role === 'hr' || user.role === 'admin';
+            const canEditProtectedFields = isAdminUser || (isHRUser && !targetIsProtected);
+
+            if (canEditProtectedFields) {
+                if (role !== undefined) user.role = role;
+                if (status !== undefined) user.status = status;
+                if (salary !== undefined) user.salary = salary;
+                if (promotionRank !== undefined) {
+                    const validRanks = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
+                    if (!validRanks.includes(promotionRank)) {
+                        return res.status(400).json({ msg: 'Invalid Promotion Rank value' });
+                    }
+                    user.promotionRank = promotionRank;
                 }
-                user.promotionRank = promotionRank;
-            }
-            if (joiningStatus !== undefined) {
-                const validJoiningStatuses = ['Intern', 'Fresh Join'];
-                if (!validJoiningStatuses.includes(joiningStatus)) {
-                    return res.status(400).json({ msg: 'Invalid Joining Status value' });
+                if (joiningStatus !== undefined) {
+                    const validJoiningStatuses = ['Intern', 'Fresh Join'];
+                    if (!validJoiningStatuses.includes(joiningStatus)) {
+                        return res.status(400).json({ msg: 'Invalid Joining Status value' });
+                    }
+                    user.joiningStatus = joiningStatus;
                 }
-                user.joiningStatus = joiningStatus;
             }
-            if (department !== undefined) {
+
+            if (department !== undefined && canEditProtectedFields) {
                 const oldDeptId = user.departmentId;
                 const newDept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
 
@@ -347,6 +354,15 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
 
         if (req.user.id === req.params.id) {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
+        }
+
+        const currentUser = await User.findById(req.user.id);
+        const isHRUser = currentUser.role === 'hr';
+        const isAdminUser = currentUser.role === 'admin';
+        const targetIsProtected = user.role === 'hr' || user.role === 'admin';
+
+        if (isHRUser && targetIsProtected && !isAdminUser) {
+            return res.status(403).json({ msg: 'Access denied. HR cannot delete Admin or HR accounts.' });
         }
 
         if (user.status === 'Inactive') {

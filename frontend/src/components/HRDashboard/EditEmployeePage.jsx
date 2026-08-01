@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { motion } from 'framer-motion';
 import {
     ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2,
@@ -6,6 +6,7 @@ import {
     TrendingUp, Award, CheckCircle2, Trash2
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+import { AuthContext } from '../../context/AuthContext';
 
 // ── Validation Helpers ────────────────────────────────────────────────────────
 const validators = {
@@ -138,6 +139,13 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(null);
+    const { user: currentUser } = useContext(AuthContext);
+
+    const isHRUser = currentUser?.role === 'hr';
+    const isAdminUser = currentUser?.role === 'admin';
+    const targetIsProtected = employee?.role === 'hr' || employee?.role === 'admin';
+    // HR cannot edit protected fields (salary, role, status) of Admin or other HR users
+    const disableProtectedFields = isHRUser && targetIsProtected && !isAdminUser;
 
     // ── Validation State ──────────────────────────────────────────────────────
     const [touched, setTouched] = useState({});
@@ -519,7 +527,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Status</label>
                                     <div className="relative mt-1 group">
                                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="input-field pl-10">
+                                        <select disabled={disableProtectedFields} value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}>
                                             <option value="full time">Full Time</option>
                                             <option value="probation">Probation</option>
                                             <option value="internship">Internship</option>
@@ -577,10 +585,11 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₨</div>
                                         <input 
                                             type="number" 
+                                            disabled={disableProtectedFields}
                                             value={formData.salary} 
                                             onChange={e => handleChange('salary', e.target.value)} 
                                             onBlur={() => handleBlur('salary')}
-                                            className={getInputBorderClass('salary', touched, fieldErrors, BASE_INPUT)} 
+                                            className={`${getInputBorderClass('salary', touched, fieldErrors, BASE_INPUT)} ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}
                                         />
                                         {touched.salary && !fieldErrors.salary && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                     </div>
@@ -592,9 +601,10 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Role</label>
                                     <div className="relative mt-1 group">
                                         <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="input-field pl-10">
-                                            <option value="employee">Employee</option>
-                                            <option value="hr">HR Admin</option>
+                                        <select disabled={disableProtectedFields} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}>
+                                            <option value="employee">Standard Employee</option>
+                                            <option value="hr">HR Administrator</option>
+                                            <option value="admin">Super Admin</option>
                                         </select>
                                     </div>
                                 </div>
