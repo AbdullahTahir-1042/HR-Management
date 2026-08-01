@@ -91,12 +91,6 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                     <User size={48} className="text-slate-300" />
                                 )}
                             </div>
-                            {/* Very Small Edit Pencil (Top Right) */}
-                            <label className="absolute -top-2 -right-2 p-1.5 bg-indigo-500 text-white rounded-full shadow-md cursor-pointer hover:bg-indigo-600 transition-colors z-10 border-2 border-white">
-                                <Pencil size={10} />
-                                <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-                            </label>
-
                             {/* Main Camera Icon (Bottom Right) */}
                             <label className="absolute bottom-2 right-2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer hover:bg-indigo-700 transition-colors z-10">
                                 <Camera size={16} />
