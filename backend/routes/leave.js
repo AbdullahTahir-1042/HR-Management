@@ -22,6 +22,7 @@ const calculateDays = (start, end) => {
 router.get('/types', auth, async (req, res) => {
     try {
         const types = await LeaveType.find().sort({ name: 1 });
+
         res.json(types);
     } catch (err) {
         console.error(err.message);
