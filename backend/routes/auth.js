@@ -127,7 +127,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
     let { email, password } = req.body;
-    if (email) email = email.toLowerCase();
+    if (email) email = email.toLowerCase().trim();
+    if (password) password = password.trim();
     console.log('Login attempt:', email);
 
     try {
