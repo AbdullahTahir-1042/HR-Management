@@ -169,27 +169,27 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     </div>
                 </motion.div>
 
-                {/* Net Salary Card */}
+                {/* Profile Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('profile')}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-emerald-200"
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-blue-200"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-100 transition-colors">
-                            <TrendingUp size={20} />
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-colors">
+                            <User size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-emerald-100 transition-colors">
-                            Est. Payable
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-blue-100 transition-colors">
+                            {user?.employeeId || 'ID Pending'}
                         </span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Current Month Net</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">My Profile</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <div>
-                            <p className="text-xl font-bold text-slate-900">{formatCurrency(salaryStats.netSalary)}</p>
-                            <p className="text-[9px] text-slate-400 font-medium">After {salaryStats.totalDays} days deduction</p>
+                            <p className="text-xl font-bold text-slate-900 truncate max-w-[150px]">{user?.name || 'Employee'}</p>
+                            <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">{user?.designation || 'Staff'} • {user?.department?.name || user?.department || 'General'}</p>
                         </div>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                     </div>
                 </motion.div>
 
