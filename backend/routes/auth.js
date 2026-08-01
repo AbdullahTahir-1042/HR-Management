@@ -343,11 +343,16 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'You cannot delete your own account' });
         }
 
-        // Shift to Inactive instead of hard delete
-        user.status = 'Inactive';
-        user.isDeleted = false; // Still visible to HR, but blocked from login
-        user.isTeamLead = false; // Remove them from Team Lead if they are one
-        await user.save();
+        if (user.status === 'Inactive') {
+            user.isDeleted = true;
+            await user.save();
+        } else {
+            // Shift to Inactive instead of hard delete
+            user.status = 'Inactive';
+            user.isDeleted = false; // Still visible to HR, but blocked from login
+            user.isTeamLead = false; // Remove them from Team Lead if they are one
+            await user.save();
+        }
 
         // Clean up conversations and messages for the deleted user
         const userConversations = await Conversation.find({ participants: req.params.id });

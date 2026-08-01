@@ -435,7 +435,7 @@ const HRDashboard = () => {
                                         onBack={() => setSelectedEmployee(null)}
                                         onEdit={() => setIsEditingEmployee(true)}
                                         onDelete={async (id) => {
-                                            if (!window.confirm("Are you sure you want to mark this employee as Inactive? They will lose login access but their data will be kept.")) return;
+                                            if (!window.confirm("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
                                             try {
                                                 await apiClient.delete(`/auth/users/${id}`);
                                                 setSelectedEmployee(null);
@@ -453,7 +453,7 @@ const HRDashboard = () => {
                                         onAddNew={() => setIsAddingEmployee(true)}
                                         onSelect={setSelectedEmployee}
                                         onDelete={async (id) => {
-                                            if (!window.confirm("Are you sure you want to mark this employee as Inactive? They will lose login access but their data will be kept.")) return;
+                                            if (!window.confirm("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
                                             try {
                                                 await apiClient.delete(`/auth/users/${id}`);
                                                 fetchAllEmployees();
