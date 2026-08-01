@@ -35,8 +35,8 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                alert("File size must be less than 5MB");
+            if (file.size > 500 * 1024) {
+                alert("File size must be less than 500KB");
                 e.target.value = null;
                 return;
             }
