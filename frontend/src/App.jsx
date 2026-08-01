@@ -1,6 +1,18 @@
 import React, { useContext, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+
+const ScrollToTop = () => {
+    const { pathname } = useLocation();
+
+    React.useEffect(() => {
+        window.scrollTo(0, 0);
+        const mainEl = document.querySelector('main');
+        if (mainEl) mainEl.scrollTop = 0;
+    }, [pathname]);
+
+    return null;
+};
 
 const Login = lazy(() => import('./pages/Login'));
 const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'));
@@ -33,6 +45,7 @@ function App() {
     return (
         <AuthProvider>
             <Router>
+                <ScrollToTop />
                 <Suspense fallback={<PageLoader />}>
                     <Routes>
                         <Route path="/login" element={<Login />} />

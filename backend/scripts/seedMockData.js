@@ -25,14 +25,21 @@ const DEPARTMENTS = [
 ];
 
 const PEOPLE = [
-    { name: 'Fahad Tufail', email: 'fahad.tufail@tdc.com', role: 'hr', department: 'Management', reportingTo: '', salary: 500000 },
-    { name: 'Ayan Tufail', email: 'ayan.tufail@tdc.com', role: 'hr', department: 'Management', reportingTo: 'Fahad Tufail', salary: 300000 },
-    { name: 'Huzaifa', email: 'huzaifa@tdc.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 180000 },
-    { name: 'Saad Jamil', email: 'saad.jamil@tdc.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 180000 },
-    { name: 'Abdullah Tahir', email: 'abdullah.tahir@tdc.com', role: 'employee', department: 'Full-Stack Development', reportingTo: 'Ayan Tufail', salary: 170000 },
-    { name: 'Laiba Ajmal', email: 'laiba.ajmal@tdc.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 160000 },
-    { name: 'Rahmeen Fatima', email: 'rahmeen.fatima@tdc.com', role: 'employee', department: 'Full-Stack Development', reportingTo: 'Ayan Tufail', salary: 170000 },
-    { name: 'Tahseen Fatima', email: 'tahseen.fatima@tdc.com', role: 'employee', department: 'Design', reportingTo: 'Ayan Tufail', salary: 150000 },
+    // Team Gmail/Personal/Test Accounts (matching the existing accounts in the database)
+    { name: 'Fahad Tufail', email: 'fahadtufail873@gmail.com', role: 'hr', department: 'Management', reportingTo: '', salary: 180000 },
+    { name: 'Ayan Tufail', email: 'ayantufail1@gmail.com', role: 'hr', department: 'Management', reportingTo: 'Fahad Tufail', salary: 120000 },
+    { name: 'Huzaifa', email: 'huzaifaras10@gmail.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 80000 },
+    { name: 'Saad Jamil', email: 'saadjamil504@gmail.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 80000 },
+    { name: 'Abdullah Tahir', email: 'tahirabdullah587@gmail.com', role: 'employee', department: 'Full-Stack Development', reportingTo: 'Ayan Tufail', salary: 75000 },
+    { name: 'Laiba Ajmal', email: 'laiba.ajmal@tdc.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 70000 },
+    { name: 'Rahmeen Fatima', email: 'rahmeenfatima009@gmail.com', role: 'employee', department: 'Full-Stack Development', reportingTo: 'Ayan Tufail', salary: 75000 },
+    { name: 'Tahseen Fatima', email: 'tahseenfatima.design@gmail.com', role: 'employee', department: 'Design', reportingTo: 'Ayan Tufail', salary: 70000 },
+    { name: 'Abdullah Hasiff', email: 'abdullahhasiff15@gmail.com', role: 'employee', department: 'Full-Stack Development', reportingTo: 'Ayan Tufail', salary: 75000 },
+    { name: 'System HR Admin', email: 'admin@company.com', role: 'hr', department: 'Management', reportingTo: '', salary: 180000 },
+    
+    // New Employee Accounts requested by user
+    { name: 'Farhan Rashid', email: 'farhanrashid938@gmail.com', role: 'employee', department: 'Full-Stack Development', reportingTo: 'Ayan Tufail', salary: 75000 },
+    { name: 'Abdul Rehman Aleem', email: 'abdulrehmanaleem46@gmail.com', role: 'employee', department: 'AI Engineering', reportingTo: 'Ayan Tufail', salary: 80000 },
 ];
 
 const toDateStr = (d) => d.toISOString().slice(0, 10);
@@ -52,6 +59,27 @@ const run = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB connected.');
 
+    // Clean up duplicate @tdc.com users (except laiba.ajmal@tdc.com) and their related data
+    const duplicateEmails = [
+        'fahad.tufail@tdc.com',
+        'ayan.tufail@tdc.com',
+        'huzaifa@tdc.com',
+        'saad.jamil@tdc.com',
+        'abdullah.tahir@tdc.com',
+        'rahmeen.fatima@tdc.com',
+        'tahseen.fatima@tdc.com'
+    ];
+    for (const email of duplicateEmails) {
+        const u = await User.findOne({ email });
+        if (u) {
+            await Attendance.deleteMany({ employee: u._id });
+            await LeaveRequest.deleteMany({ employee: u._id });
+            await HRRequest.deleteMany({ employee: u._id });
+            await User.deleteOne({ _id: u._id });
+            console.log(`Deleted duplicate user and records: ${email}`);
+        }
+    }
+
     // Remove the throwaway test HR account from earlier local setup, if present.
     await User.deleteOne({ email: 'hr@example.com' });
 
@@ -70,6 +98,9 @@ const run = async () => {
     const userByEmail = {};
     for (const p of PEOPLE) {
         let user = await User.findOne({ email: p.email });
+        const dept = deptByName[p.department];
+        const deptId = dept ? dept._id : null;
+
         if (!user) {
             user = new User({
                 name: p.name,
@@ -78,20 +109,35 @@ const run = async () => {
                 role: p.role,
                 status: 'full time',
                 department: p.department,
+                departmentId: deptId,
                 reportingTo: p.reportingTo,
                 salary: p.salary,
+                isFirstLogin: true,
             });
             await user.save();
             console.log(`Created user: ${p.name} <${p.email}> (${p.role})`);
         } else {
-            console.log(`User already exists, skipping: ${p.email}`);
+            user.name = p.name;
+            user.salary = p.salary;
+            user.department = p.department;
+            user.departmentId = deptId;
+            user.role = p.role;
+            user.reportingTo = p.reportingTo;
+            await user.save();
+            console.log(`Updated user: ${p.name} <${p.email}> with salary ₨ ${p.salary}`);
         }
         userByEmail[p.email] = user;
+
+        if (deptId) {
+            await Department.findByIdAndUpdate(deptId, {
+                $addToSet: { employees: user._id }
+            });
+        }
     }
 
     // Attendance: last 5 weekdays for every employee (not the founder)
     const days = lastNWeekdays(5);
-    const attendanceUsers = PEOPLE.filter(p => p.email !== 'fahad.tufail@tdc.com');
+    const attendanceUsers = PEOPLE.filter(p => p.email !== 'fahadtufail873@gmail.com');
     let attendanceCreated = 0;
     for (const p of attendanceUsers) {
         const user = userByEmail[p.email];
@@ -123,12 +169,12 @@ const run = async () => {
     const casual = await LeaveType.findOne({ name: 'Casual Leave' });
 
     const leaveDefs = [
-        { email: 'huzaifa@tdc.com', leaveType: casual, days: 1, offset: 3, reason: 'Personal errand', status: 'pending' },
+        { email: 'huzaifaras10@gmail.com', leaveType: casual, days: 1, offset: 3, reason: 'Personal errand', status: 'pending' },
         { email: 'laiba.ajmal@tdc.com', leaveType: annual, days: 4, offset: 10, reason: 'Family trip', status: 'approved' },
-        { email: 'rahmeen.fatima@tdc.com', leaveType: sick, days: 2, offset: -2, reason: 'Fever', status: 'approved' },
-        { email: 'tahseen.fatima@tdc.com', leaveType: casual, days: 1, offset: 5, reason: 'Personal work', status: 'pending' },
-        { email: 'saad.jamil@tdc.com', leaveType: sick, days: 1, offset: -5, reason: 'Migraine', status: 'rejected' },
-        { email: 'abdullah.tahir@tdc.com', leaveType: annual, days: 3, offset: 15, reason: 'Sibling\'s wedding', status: 'pending' },
+        { email: 'rahmeenfatima009@gmail.com', leaveType: sick, days: 2, offset: -2, reason: 'Fever', status: 'approved' },
+        { email: 'tahseenfatima.design@gmail.com', leaveType: casual, days: 1, offset: 5, reason: 'Personal work', status: 'pending' },
+        { email: 'saadjamil504@gmail.com', leaveType: sick, days: 1, offset: -5, reason: 'Migraine', status: 'rejected' },
+        { email: 'tahirabdullah587@gmail.com', leaveType: annual, days: 3, offset: 15, reason: 'Sibling\'s wedding', status: 'pending' },
     ];
     let leavesCreated = 0;
     for (const l of leaveDefs) {
@@ -154,12 +200,12 @@ const run = async () => {
 
     // HR Requests (employee help-desk tickets, for HR to triage)
     const hrRequestDefs = [
-        { email: 'huzaifa@tdc.com', type: 'Salary Slip', description: 'Need my June salary slip for a bank loan application.', status: 'Pending' },
-        { email: 'saad.jamil@tdc.com', type: 'Work From Home', description: 'Requesting WFH for next Monday due to a home repair appointment.', status: 'In Review' },
-        { email: 'abdullah.tahir@tdc.com', type: 'Attendance Correction', description: 'Forgot to check out on July 10, I left around 6:30 PM.', status: 'Resolved', hrNote: 'Verified with office CCTV, attendance corrected.' },
+        { email: 'huzaifaras10@gmail.com', type: 'Salary Slip', description: 'Need my June salary slip for a bank loan application.', status: 'Pending' },
+        { email: 'saadjamil504@gmail.com', type: 'Work From Home', description: 'Requesting WFH for next Monday due to a home repair appointment.', status: 'In Review' },
+        { email: 'tahirabdullah587@gmail.com', type: 'Attendance Correction', description: 'Forgot to check out on July 10, I left around 6:30 PM.', status: 'Resolved', hrNote: 'Verified with office CCTV, attendance corrected.' },
         { email: 'laiba.ajmal@tdc.com', type: 'Experience Letter', description: 'Need an experience letter for a visa application.', status: 'Pending' },
-        { email: 'rahmeen.fatima@tdc.com', type: 'Other', description: 'Asking about the process to update my emergency contact details.', status: 'Pending' },
-        { email: 'tahseen.fatima@tdc.com', type: 'Work From Home', description: 'Requesting to work remotely this Friday.', status: 'Rejected', hrNote: 'Client meeting scheduled on-site this Friday, please plan to come in.' },
+        { email: 'rahmeenfatima009@gmail.com', type: 'Other', description: 'Asking about the process to update my emergency contact details.', status: 'Pending' },
+        { email: 'tahseenfatima.design@gmail.com', type: 'Work From Home', description: 'Requesting to work remotely this Friday.', status: 'Rejected', hrNote: 'Client meeting scheduled on-site this Friday, please plan to come in.' },
     ];
     let hrRequestsCreated = 0;
     for (const r of hrRequestDefs) {
@@ -180,11 +226,11 @@ const run = async () => {
 
     // Onboarding tasks, with some employees marked as having completed them
     const onboardingDefs = [
-        { title: 'Complete company laptop setup', description: 'Install required dev tools and VPN client.', category: 'IT Setup', completedBy: ['huzaifa@tdc.com', 'saad.jamil@tdc.com', 'abdullah.tahir@tdc.com', 'laiba.ajmal@tdc.com', 'rahmeen.fatima@tdc.com', 'tahseen.fatima@tdc.com'] },
-        { title: 'Sign employment contract', description: 'Review and digitally sign your contract.', category: 'Paperwork', completedBy: ['huzaifa@tdc.com', 'saad.jamil@tdc.com', 'abdullah.tahir@tdc.com', 'laiba.ajmal@tdc.com', 'rahmeen.fatima@tdc.com', 'tahseen.fatima@tdc.com'] },
-        { title: 'Meet your team lead', description: 'Schedule a 1:1 intro call with Ayan Tufail.', category: 'General', completedBy: ['huzaifa@tdc.com', 'saad.jamil@tdc.com', 'laiba.ajmal@tdc.com'] },
-        { title: 'Complete security & compliance training', description: 'Watch the onboarding security training video and pass the quiz.', category: 'Training', completedBy: ['huzaifa@tdc.com'] },
-        { title: 'Set up direct deposit', description: 'Submit your bank details for salary payments.', category: 'Paperwork', completedBy: ['saad.jamil@tdc.com', 'abdullah.tahir@tdc.com'] },
+        { title: 'Complete company laptop setup', description: 'Install required dev tools and VPN client.', category: 'IT Setup', completedBy: ['huzaifaras10@gmail.com', 'saadjamil504@gmail.com', 'tahirabdullah587@gmail.com', 'laiba.ajmal@tdc.com', 'rahmeenfatima009@gmail.com', 'tahseenfatima.design@gmail.com'] },
+        { title: 'Sign employment contract', description: 'Review and digitally sign your contract.', category: 'Paperwork', completedBy: ['huzaifaras10@gmail.com', 'saadjamil504@gmail.com', 'tahirabdullah587@gmail.com', 'laiba.ajmal@tdc.com', 'rahmeenfatima009@gmail.com', 'tahseenfatima.design@gmail.com'] },
+        { title: 'Meet your team lead', description: 'Schedule a 1:1 intro call with Ayan Tufail.', category: 'General', completedBy: ['huzaifaras10@gmail.com', 'saadjamil504@gmail.com', 'laiba.ajmal@tdc.com'] },
+        { title: 'Complete security & compliance training', description: 'Watch the onboarding security training video and pass the quiz.', category: 'Training', completedBy: ['huzaifaras10@gmail.com'] },
+        { title: 'Set up direct deposit', description: 'Submit your bank details for salary payments.', category: 'Paperwork', completedBy: ['saadjamil504@gmail.com', 'tahirabdullah587@gmail.com'] },
     ];
     let onboardingCreated = 0;
     for (const t of onboardingDefs) {
@@ -216,7 +262,7 @@ const run = async () => {
     console.log(`Created ${holidaysCreated} holidays.`);
 
     // Announcement
-    const founder = userByEmail['fahad.tufail@tdc.com'];
+    const founder = userByEmail['fahadtufail873@gmail.com'];
     const existingAnnouncement = await Announcement.findOne({ title: 'Welcome to TDC' });
     if (!existingAnnouncement && founder) {
         await Announcement.create({

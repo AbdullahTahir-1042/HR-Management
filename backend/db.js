@@ -4,9 +4,12 @@ const dns = require('dns');
 
 dotenv.config();
 
-// Force Node.js to use Google DNS (8.8.8.8) so that MongoDB Atlas SRV/TXT
-// lookups succeed even when the local router DNS blocks them.
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+try {
+    dns.setDefaultResultOrder('ipv4first');
+    dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+    console.warn('DNS server configuration warning:', e.message);
+}
 
 const seedLeaveTypes = async () => {
     try {
@@ -114,15 +117,25 @@ const cleanupDepartmentMembers = async () => {
     }
 };
 
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log('MongoDB Connected...');
-        await seedLeaveTypes();
-        await cleanupDepartmentMembers();
-    } catch (err) {
-        console.error('Error connecting to MongoDB:', err.message);
-        process.exit(1);
+const connectDB = async (retries = 5) => {
+    while (retries > 0) {
+        try {
+            await mongoose.connect(process.env.MONGO_URI, {
+                serverSelectionTimeoutMS: 10000
+            });
+            console.log('MongoDB Connected...');
+            await seedLeaveTypes();
+            await cleanupDepartmentMembers();
+            return;
+        } catch (err) {
+            retries -= 1;
+            console.error(`MongoDB Connection Error: ${err.message}. Retrying in 3 seconds... (${retries} attempts left)`);
+            if (retries === 0) {
+                console.error('MongoDB Connection failed after maximum retries.');
+                process.exit(1);
+            }
+            await new Promise(res => setTimeout(res, 3000));
+        }
     }
 };
 

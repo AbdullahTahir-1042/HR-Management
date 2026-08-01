@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp, Star, Plus, Edit3, Trash2, X, Save, AlertCircle,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 import { AuthContext } from '../../context/AuthContext';
+import RestoreCardModal from './RestoreCardModal';
 
 // ── Rating Labels ─────────────────────────────────────────────────────────────
 const RATING_LABELS = {
@@ -57,9 +58,9 @@ const StarRating = ({ rating, size = 14 }) => (
 // ── Custom Interactive Star Rating Selector ─────────────────────────────────
 const StarRatingSelector = ({ value, onChange, error }) => {
     const [hoverValue, setHoverValue] = useState(null);
-    
+
     const LABEL_CLASS = "text-[9px] font-bold text-slate-400 uppercase ml-1 tracking-widest";
-    
+
     return (
         <div className="flex flex-col gap-1.5">
             <label className={LABEL_CLASS}>Overall Rating *</label>
@@ -70,17 +71,16 @@ const StarRatingSelector = ({ value, onChange, error }) => {
                             key={star}
                             type="button"
                             onClick={() => onChange(star)}
-                              onMouseEnter={() => setHoverValue(star)}
-                              onMouseLeave={() => setHoverValue(null)}
+                            onMouseEnter={() => setHoverValue(star)}
+                            onMouseLeave={() => setHoverValue(null)}
                             className="focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer"
                         >
                             <Star
                                 size={22}
-                                className={`${
-                                    star <= (hoverValue || value)
+                                className={`${star <= (hoverValue || value)
                                         ? 'text-amber-400 fill-amber-400'
                                         : 'text-slate-200'
-                                } transition-colors duration-150`}
+                                    } transition-colors duration-150`}
                             />
                         </button>
                     ))}
@@ -149,7 +149,7 @@ const IncrementReviewPage = ({ employee }) => {
     const [showRevForm, setShowRevForm] = useState(false);
     const [editingRev, setEditingRev] = useState(null);
     const [revForm, setRevForm] = useState({
-        reviewDate: '', reviewer: '', overallRating: '', 
+        reviewDate: '', reviewer: '', overallRating: '',
         comments: '', strengths: '', areasForImprovement: '', goals: '', nextReviewDate: ''
     });
     const [revErrors, setRevErrors] = useState({});
@@ -200,6 +200,126 @@ const IncrementReviewPage = ({ employee }) => {
             lastRevDate: lastRev ? formatDate(lastRev.reviewDate) : 'No records'
         };
     }, [employee, increments, reviews]);
+
+    // ── Predefined Career Summary Cards ──────────────────────────────────
+    const predefinedCareerCards = useMemo(() => [
+        {
+            id: 'salary',
+            label: 'Current Salary',
+            value: careerSummary.currentSalary,
+            icon: DollarSign,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50'
+        },
+        {
+            id: 'rank',
+            label: 'Current Rank',
+            value: careerSummary.currentRank,
+            icon: Award,
+            color: 'text-indigo-600',
+            bg: 'bg-indigo-50'
+        },
+        {
+            id: 'lastIncDate',
+            label: 'Last Increment',
+            value: careerSummary.lastIncDate,
+            icon: TrendingUp,
+            color: 'text-sky-600',
+            bg: 'bg-sky-50'
+        },
+        {
+            id: 'lastIncAmount',
+            label: 'Last Inc. Amount',
+            value: careerSummary.lastIncAmount,
+            icon: ArrowUpRight,
+            color: 'text-violet-600',
+            bg: 'bg-violet-50'
+        },
+        {
+            id: 'currentRating',
+            label: 'Current Rating',
+            value: careerSummary.currentRating
+                ? `${careerSummary.currentRating}/5 — ${RATING_LABELS[careerSummary.currentRating]}`
+                : 'No reviews',
+            icon: Star,
+            color: 'text-amber-600',
+            bg: 'bg-amber-50'
+        },
+        {
+            id: 'lastRevDate',
+            label: 'Last Review',
+            value: careerSummary.lastRevDate,
+            icon: Calendar,
+            color: 'text-rose-600',
+            bg: 'bg-rose-50'
+        }
+    ], [careerSummary]);
+
+    const [hiddenCareerCards, setHiddenCareerCards] = useState([]);
+    const [showAddCareerDropdown, setShowAddCareerDropdown] = useState(false);
+    const careerDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (careerDropdownRef.current && !careerDropdownRef.current.contains(event.target)) {
+                setShowAddCareerDropdown(false);
+            }
+        };
+        if (showAddCareerDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showAddCareerDropdown]);
+
+    useEffect(() => {
+        if (!employee?._id) return;
+        try {
+            const stored = localStorage.getItem(`hidden_career_${employee._id}`);
+            if (stored !== null) {
+                setHiddenCareerCards(JSON.parse(stored));
+                return;
+            }
+        } catch (e) {}
+        setHiddenCareerCards(employee.hiddenCareerCards || []);
+    }, [employee?._id, employee?.hiddenCareerCards]);
+
+    const visibleCareerCards = useMemo(() => {
+        return predefinedCareerCards.filter(c => !hiddenCareerCards.includes(c.id));
+    }, [predefinedCareerCards, hiddenCareerCards]);
+
+    const removedCareerCards = useMemo(() => {
+        return predefinedCareerCards.filter(c => hiddenCareerCards.includes(c.id));
+    }, [predefinedCareerCards, hiddenCareerCards]);
+
+    const handleHideCareerCard = async (id) => {
+        const nextHidden = Array.from(new Set([...hiddenCareerCards, id]));
+        setHiddenCareerCards(nextHidden);
+        if (employee) employee.hiddenCareerCards = nextHidden;
+        try {
+            localStorage.setItem(`hidden_career_${employee._id}`, JSON.stringify(nextHidden));
+            await apiClient.put(`/auth/users/${employee._id}/card-visibility`, {
+                hiddenCareerCards: nextHidden
+            });
+        } catch (e) {
+            console.error('Error updating career card visibility:', e);
+        }
+    };
+
+    const handleRestoreCareerCard = async (id) => {
+        const nextHidden = hiddenCareerCards.filter(cId => cId !== id);
+        setHiddenCareerCards(nextHidden);
+        if (employee) employee.hiddenCareerCards = nextHidden;
+        try {
+            localStorage.setItem(`hidden_career_${employee._id}`, JSON.stringify(nextHidden));
+            await apiClient.put(`/auth/users/${employee._id}/card-visibility`, {
+                hiddenCareerCards: nextHidden
+            });
+        } catch (e) {
+            console.error('Error updating career card visibility:', e);
+        }
+    };
 
     // ══════════════════════════════════════════════════════════════════════
     // INCREMENT FORM LOGIC
@@ -431,33 +551,110 @@ const IncrementReviewPage = ({ employee }) => {
     // ══════════════════════════════════════════════════════════════════════
     return (
         <div className="space-y-6">
-            {/* ── Career Summary Strip ───────────────────────────────────── */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
-                <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
-                    <BarChart3 size={16} /> Career Summary
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {[
-                        { label: 'Current Salary', value: careerSummary.currentSalary, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                        { label: 'Current Rank', value: careerSummary.currentRank, icon: Award, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                        { label: 'Last Increment', value: careerSummary.lastIncDate, icon: TrendingUp, color: 'text-sky-600', bg: 'bg-sky-50' },
-                        { label: 'Last Inc. Amount', value: careerSummary.lastIncAmount, icon: ArrowUpRight, color: 'text-violet-600', bg: 'bg-violet-50' },
-                        {
-                            label: 'Current Rating',
-                            value: careerSummary.currentRating
-                                ? `${careerSummary.currentRating}/5 — ${RATING_LABELS[careerSummary.currentRating]}`
-                                : 'No reviews',
-                            icon: Star, color: 'text-amber-600', bg: 'bg-amber-50'
-                        },
-                        { label: 'Last Review', value: careerSummary.lastRevDate, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' }
-                    ].map((kpi, i) => (
-                        <div key={i} className={`${kpi.bg} p-3.5 rounded-2xl flex flex-col items-center text-center gap-1 border border-slate-100/50`}>
-                            <kpi.icon size={16} className={kpi.color} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
-                            <span className={`text-[11px] font-bold ${kpi.color} leading-tight`}>{kpi.value}</span>
+            {/* ── CAREER SUMMARY STRIP ── */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 relative overflow-visible">
+                <div className="flex items-center justify-between mb-5 border-b border-indigo-50 pb-3">
+                    <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest">
+                        <BarChart3 size={16} /> Career Summary
+                    </h3>
+                    {removedCareerCards.length > 0 && (
+                        <div className="relative" ref={careerDropdownRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowAddCareerDropdown(prev => !prev)}
+                                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-indigo-200 hover:shadow-indigo-300"
+                            >
+                                <Plus size={14} /> Add Card
+                                <span className="ml-0.5 px-1.5 py-0.2 bg-white/25 rounded-md text-[10px] font-extrabold">
+                                    {removedCareerCards.length}
+                                </span>
+                            </button>
+
+                            <AnimatePresence>
+                                {showAddCareerDropdown && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl border border-slate-200/80 shadow-2xl p-2 z-[100] overflow-hidden"
+                                    >
+                                        <div className="px-3 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest border-b border-slate-100/80 mb-1 flex items-center justify-between">
+                                            <span>Available Cards</span>
+                                            <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-bold">
+                                                {removedCareerCards.length} hidden
+                                            </span>
+                                        </div>
+                                        <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
+                                            {removedCareerCards.map(kpi => {
+                                                const IconComp = kpi.icon || DollarSign;
+                                                return (
+                                                    <button
+                                                        key={kpi.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            handleRestoreCareerCard(kpi.id);
+                                                            setShowAddCareerDropdown(false);
+                                                        }}
+                                                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs font-bold text-slate-700 hover:bg-indigo-50/80 hover:text-indigo-700 transition-all cursor-pointer group border border-transparent hover:border-indigo-100/80"
+                                                    >
+                                                        <span className="flex items-center gap-2.5">
+                                                            <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100/60 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-105 transition-transform">
+                                                                <IconComp size={14} />
+                                                            </div>
+                                                            <span className="truncate">{kpi.label}</span>
+                                                        </span>
+                                                        <span className="text-[10px] text-indigo-600 font-extrabold uppercase bg-indigo-100/70 group-hover:bg-indigo-600 group-hover:text-white px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all shrink-0">
+                                                            <Plus size={11} /> Add
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-                    ))}
+                    )}
                 </div>
+
+                {visibleCareerCards.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 text-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 shadow-2xs">
+                            <BarChart3 size={18} />
+                        </div>
+                        <p className="text-xs font-bold text-slate-700">All career summary cards are currently removed</p>
+                        <p className="text-[11px] text-slate-400 font-medium max-w-xs">
+                            Click the <span className="text-indigo-600 font-bold">+ Add Card</span> button above to restore any metrics.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        {visibleCareerCards.map((kpi) => {
+                            const IconComp = kpi.icon || DollarSign;
+                            return (
+                                <div
+                                    key={kpi.id}
+                                    className={`group relative ${kpi.bg} p-3.5 rounded-2xl flex flex-col items-center justify-center text-center gap-1 border border-slate-100/50 min-h-[76px] transition-all hover:shadow-xs`}
+                                >
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleHideCareerCard(kpi.id);
+                                        }}
+                                        title="Remove card from view"
+                                        className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-slate-100/90 hover:bg-rose-100 hover:text-rose-600 text-slate-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer border border-slate-200/50 z-10"
+                                    >
+                                        <X size={10} />
+                                    </button>
+                                    <IconComp size={16} className={kpi.color} />
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
+                                    <span className={`text-[11px] font-bold ${kpi.color} leading-tight`}>{kpi.value}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* ── Sub-Tab Switcher ── */}
@@ -469,11 +666,10 @@ const IncrementReviewPage = ({ employee }) => {
                     <button
                         key={tab.key}
                         onClick={() => setActiveSubTab(tab.key)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                            activeSubTab === tab.key
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === tab.key
                                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
                                 : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
-                        }`}
+                            }`}
                     >
                         <tab.icon size={14} />
                         {tab.label}
