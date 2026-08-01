@@ -3,7 +3,7 @@ import axios from 'axios';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Megaphone, ArrowLeft } from 'lucide-react';
+import { X, Megaphone } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { requestForToken, onMessageListener } from '../firebase';
@@ -19,6 +19,7 @@ import EmployeeAnnouncement from '../components/EmployeeDashboard/EmployeeAnnoun
 import UpdateProfilePage from '../components/UpdateProfilePage';
 import MyTeamSection from '../components/EmployeeDashboard/MyTeamSection';
 import MessagesPage from '../components/MessagesPage';
+import FirstLoginModal from '../components/FirstLoginModal';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -54,6 +55,7 @@ const AnnouncementToast = ({ notification, onClose }) => (
 
 // ─────────────────────────────────────────────────────────────────────────────
 const EmployeeDashboard = () => {
+    const mainRef = useRef(null);
     const { user: authUser, logout, updateUser } = useContext(AuthContext);
     const [fullUser, setFullUser] = useState(authUser || null);
     const [attendance, setAttendance] = useState(null);
@@ -71,6 +73,20 @@ const EmployeeDashboard = () => {
     const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
     const [activeTab, setActiveTab] = useState('dashboard');
     const [navHistory, setNavHistory] = useState([]);
+
+    // Scroll to top automatically whenever active tab changes
+    useEffect(() => {
+        if (mainRef.current) {
+            mainRef.current.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+
+    const handleSidebarNavigate = (newTab) => {
+        setActiveTab(newTab);
+        setNavHistory([]);
+        setSidebarOpen(false);
+    };
 
     const handleTabChange = (newTab) => {
         if (newTab === activeTab) return;
@@ -122,7 +138,7 @@ const EmployeeDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const profilePromise = authUser ? Promise.resolve({ data: authUser }) : apiClient.get('/auth/user');
+            const profilePromise = apiClient.get('/auth/user');
             const [profile, todayAtt, history, leavesRes, holidaysRes, hrReqs, balances, types, announcementsRes] = await Promise.all([
                 profilePromise,
                 apiClient.get('/attendance/status'),
@@ -135,7 +151,7 @@ const EmployeeDashboard = () => {
                 apiClient.get('/announcements')
             ]);
             setFullUser(profile.data);
-            if (!authUser) updateUser(profile.data);
+            updateUser(profile.data);
             setAttendance(todayAtt.data);
             setAttendanceHistory(history.data);
             setLeaves(leavesRes.data);
@@ -490,7 +506,7 @@ const EmployeeDashboard = () => {
             <EmployeeSidebar
                 unreadMessages={unreadMessages}
                 activeTab={activeTab}
-                setActiveTab={handleTabChange}
+                setActiveTab={handleSidebarNavigate}
                 user={fullUser || authUser}
                 logout={logout}
                 isOpen={isSidebarOpen}
@@ -504,7 +520,7 @@ const EmployeeDashboard = () => {
                 />
             )}
 
-            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <EmployeeHeader
                     activeTab={activeTab}
                     setActiveTab={handleTabChange}
@@ -513,20 +529,8 @@ const EmployeeDashboard = () => {
                     setSidebarOpen={setSidebarOpen}
                 />
 
-                <div className="p-4 lg:p-6 max-w-full mx-auto">
-                    {/* Inline Body Back Button */}
-                    {activeTab !== 'dashboard' && canGoBack && (
-                        <div className="mb-6">
-                            <button 
-                                onClick={handleGoBack}
-                                className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-2xs group cursor-pointer"
-                            >
-                                <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
-                                <span>Back</span>
-                            </button>
-                        </div>
-                    )}
 
+                <div className="p-4 lg:p-6 max-w-full mx-auto">
                     <AnimatePresence mode="wait">
 
                         {activeTab === 'dashboard' && (
@@ -589,6 +593,7 @@ const EmployeeDashboard = () => {
                             <UpdateProfilePage
                                 user={fullUser || authUser}
                                 onBack={() => setActiveTab('dashboard')}
+                                onUpdate={(updatedUser) => setFullUser(updatedUser)}
                             />
                         )}
 
@@ -607,6 +612,7 @@ const EmployeeDashboard = () => {
                     </AnimatePresence>
                 </div>
             </main>
+            <FirstLoginModal isOpen={authUser?.isFirstLogin === true || fullUser?.isFirstLogin === true} />
         </div>
     );
 };

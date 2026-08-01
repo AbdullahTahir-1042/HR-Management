@@ -331,16 +331,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
             exit={{ opacity: 0, x: -20 }}
             className="max-w-4xl mx-auto"
         >
-            {/* Top Navigation */}
-            <div className="mb-6">
-                <button 
-                    onClick={onBack}
-                    className="btn-secondary"
-                >
-                    <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
-                    <span>Back to Staff Directory</span>
-                </button>
-            </div>
+
 
             <div className="card shadow-xl p-0 overflow-hidden">
                 <div className="p-6 sm:p-10">

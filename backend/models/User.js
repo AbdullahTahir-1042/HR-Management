@@ -82,6 +82,21 @@ const UserSchema = new mongoose.Schema({
     lastSeenAt: {
         type: Date,
         default: null
+    },
+    hiddenProfileCards: [{
+        type: String
+    }],
+    hiddenCareerCards: [{
+        type: String
+    }],
+    activeLoan: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'LoanRequest',
+        default: null
+    },
+    isFirstLogin: {
+        type: Boolean,
+        default: true
     }
 }, { timestamps: true });
 

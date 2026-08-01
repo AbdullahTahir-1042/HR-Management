@@ -1,5 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
@@ -33,6 +32,7 @@ const SHIFT_END_HOUR = 18;
 const SHIFT_END_MINUTE = 0;
 
 const HRDashboard = () => {
+    const mainRef = useRef(null);
     const { user, logout } = useContext(AuthContext);
     const [leaves, setLeaves] = useState([]);
     const [attendance, setAttendance] = useState([]);
@@ -123,7 +123,7 @@ const HRDashboard = () => {
 
         const unsubscribe = onMessageListener((payload) => {
             console.log("HR Foreground message received:", payload);
-            fetchAllAnnouncements(); 
+            fetchAllAnnouncements();
         });
 
         return () => {
@@ -133,6 +133,23 @@ const HRDashboard = () => {
 
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [navHistory, setNavHistory] = useState([]);
+
+    // Scroll to top automatically whenever active tab or active detail page changes
+    useEffect(() => {
+        if (mainRef.current) {
+            mainRef.current.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+    }, [activeTab, selectedEmployee, isAddingEmployee, isEditingEmployee]);
+
+    const handleSidebarNavigate = (tabKey) => {
+        setActiveTab(tabKey);
+        setSelectedEmployee(null);
+        setIsAddingEmployee(false);
+        setIsEditingEmployee(false);
+        setNavHistory([]);
+        setSidebarOpen(false);
+    };
 
     const pushNavState = () => {
         setNavHistory(prev => [
@@ -300,24 +317,24 @@ const HRDashboard = () => {
     };
 
     const latecomers = attendance
-    .filter(record => record.checkIn)
-    .map(record => {
-        const checkIn = new Date(record.checkIn);
-        const shiftStart = new Date(checkIn);
-        shiftStart.setHours(SHIFT_START_HOUR, SHIFT_START_MINUTE, 0, 0);
-        const shiftEnd = new Date(checkIn);
-        shiftEnd.setHours(SHIFT_END_HOUR, SHIFT_END_MINUTE, 0, 0);
-        const minutesLate = Math.round((checkIn - shiftStart) / 60000);
-        let compensated = false;
-        if (record.checkOut && minutesLate > 0) {
-            const checkOut = new Date(record.checkOut);
-            const expectedEnd = new Date(shiftEnd);
-            const overtimeMinutes = Math.round((checkOut - expectedEnd) / 60000);
-            if (overtimeMinutes >= minutesLate) compensated = true;
-        }
-        return { ...record, minutesLate, compensated };
-    })
-    .filter(record => record.minutesLate > 0); 
+        .filter(record => record.checkIn)
+        .map(record => {
+            const checkIn = new Date(record.checkIn);
+            const shiftStart = new Date(checkIn);
+            shiftStart.setHours(SHIFT_START_HOUR, SHIFT_START_MINUTE, 0, 0);
+            const shiftEnd = new Date(checkIn);
+            shiftEnd.setHours(SHIFT_END_HOUR, SHIFT_END_MINUTE, 0, 0);
+            const minutesLate = Math.round((checkIn - shiftStart) / 60000);
+            let compensated = false;
+            if (record.checkOut && minutesLate > 0) {
+                const checkOut = new Date(record.checkOut);
+                const expectedEnd = new Date(shiftEnd);
+                const overtimeMinutes = Math.round((checkOut - expectedEnd) / 60000);
+                if (overtimeMinutes >= minutesLate) compensated = true;
+            }
+            return { ...record, minutesLate, compensated };
+        })
+        .filter(record => record.minutesLate > 0);
 
     const filteredLatecomers = latecomers.filter(l => latecomerDateFilter ? l.date === latecomerDateFilter : true);
     const filteredLeaves = leaves.filter(l => leaveFilter === 'all' ? true : l.status === leaveFilter);
@@ -344,7 +361,7 @@ const HRDashboard = () => {
         <div className="flex h-screen overflow-hidden bg-slate-50 font-sans relative">
             <HRSidebar
                 activeTab={activeTab}
-                setActiveTab={setActiveTab}
+                setActiveTab={handleSidebarNavigate}
                 user={user}
                 logout={logout}
                 isOpen={isSidebarOpen}
@@ -352,16 +369,21 @@ const HRDashboard = () => {
                 unreadMessages={unreadMessages}
             />
             {isSidebarOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
                     onClick={() => setSidebarOpen(false)}
                 />
             )}
 
-            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+            <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <HRHeader
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
+                    onBack={handleGoBack}
+                    canGoBack={canGoBack}
+                    selectedEmployee={selectedEmployee}
+                    isAddingEmployee={isAddingEmployee}
+                    isEditingEmployee={isEditingEmployee}
                     leaveFilter={leaveFilter}
                     setLeaveFilter={setLeaveFilter}
                     attendanceDateFilter={attendanceDateFilter}
@@ -372,17 +394,6 @@ const HRDashboard = () => {
                 />
 
                 <div className="p-4 lg:p-6 max-w-full mx-auto">
-                    {activeTab !== 'dashboard' && !selectedEmployee && !isAddingEmployee && !isEditingEmployee && (
-                        <div className="mb-6">
-                            <button 
-                                onClick={handleGoBack}
-                                className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 bg-white hover:bg-indigo-50/50 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all font-bold text-sm shadow-2xs group cursor-pointer"
-                            >
-                                <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
-                                <span>Back</span>
-                            </button>
-                        </div>
-                    )}
 
                     <AnimatePresence mode="wait">
                         {activeTab === 'dashboard' && (
