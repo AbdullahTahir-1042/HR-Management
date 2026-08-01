@@ -15,6 +15,14 @@ const LeaveTypeSchema = new mongoose.Schema({
     description: {
         type: String,
         default: ''
+    },
+    maxConsecutiveDays: {
+        type: Number,
+        default: 0 // 0 means no limit
+    },
+    cooldownDays: {
+        type: Number,
+        default: 0 // 0 means no cooldown
     }
 }, { timestamps: true });
 
