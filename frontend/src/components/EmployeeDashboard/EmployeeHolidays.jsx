@@ -257,7 +257,7 @@ const EmptyState = () => (
 
 const EmployeeHolidays = ({ holidays = [] }) => {
     const [selectedHoliday, setSelectedHoliday] = React.useState(null);
-    const [filter, setFilter] = React.useState('all'); // 'all' | 'upcoming' | 'past'
+    const [filter, setFilter] = React.useState('upcoming'); // 'all' | 'upcoming'
 
     const upcomingCount = useMemo(
         () => holidays.filter((h) => isUpcoming(h.startDate)).length,
@@ -303,44 +303,25 @@ const EmployeeHolidays = ({ holidays = [] }) => {
                         <p className="text-sm text-slate-400">Official company holidays for the year</p>
                     </div>
                 </div>
-
-                {filter !== 'all' && (
-                    <button
-                        onClick={() => setFilter('all')}
-                        className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                        title="Clear Filter"
-                    >
-                        <span>Showing: {filter === 'upcoming' ? 'Upcoming Holidays' : 'Past Holidays'}</span>
-                        <span className="text-amber-900 font-extrabold text-sm">&times;</span>
-                    </button>
-                )}
             </div>
 
             {/* ── Interactive Stat Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard
-                    icon={CalendarDays}
-                    label="Total Holidays"
-                    value={holidays.length}
-                    active={filter === 'all'}
-                    color="bg-indigo-600"
-                    onClick={() => setFilter('all')}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <StatCard
                     icon={Clock}
-                    label="Upcoming"
+                    label="Upcoming Holidays"
                     value={upcomingCount}
                     active={filter === 'upcoming'}
                     color="bg-emerald-600"
                     onClick={() => setFilter('upcoming')}
                 />
                 <StatCard
-                    icon={Tag}
-                    label="Past Holidays"
-                    value={pastCount}
-                    active={filter === 'past'}
-                    color="bg-amber-600"
-                    onClick={() => setFilter('past')}
+                    icon={CalendarDays}
+                    label="All Annual Holidays"
+                    value={holidays.length}
+                    active={filter === 'all'}
+                    color="bg-indigo-600"
+                    onClick={() => setFilter('all')}
                 />
             </div>
 
