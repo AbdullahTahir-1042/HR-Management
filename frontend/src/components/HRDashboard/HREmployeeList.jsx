@@ -1,9 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Users, Mail, Shield, Calendar, UserPlus, Briefcase,
-    Building2, UserCheck, Trash2, Crown, Phone, Eye, Pencil,
-    LayoutGrid, List, Search, Filter, AlertCircle, TrendingUp, AlertTriangle, UserX
+    Users, Calendar, UserPlus, Briefcase,
+    Building2, UserCheck, Trash2, Crown, Phone, Pencil,
+    LayoutGrid, List, Filter, TrendingUp, UserX
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 

@@ -20,7 +20,8 @@ const RATING_LABELS = {
 
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 
-const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+    const employee = propEmployee || {};
     const { user: currentUser } = useContext(AuthContext);
     const [activeDetailTab, setActiveDetailTab] = useState('profile');
     const [increments, setIncrements] = useState([]);
@@ -57,13 +58,7 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
         fetchSummaryData();
     }, [employee?._id]);
 
-    // Safety check for employee
-    if (!employee) return (
-        <div className="p-16 text-center text-slate-400">
-            No employee selected.
-        </div>
-    );
-
+    // Removed early return to comply with React Hooks rules
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
         try {
@@ -283,7 +278,6 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
     const handleHideProfileCard = async (id) => {
         const nextHidden = Array.from(new Set([...hiddenProfileCards, id]));
         setHiddenProfileCards(nextHidden);
-        if (employee) employee.hiddenProfileCards = nextHidden;
         try {
             localStorage.setItem(`hidden_profile_${employee._id}`, JSON.stringify(nextHidden));
             await apiClient.put(`/auth/users/${employee._id}/card-visibility`, {
@@ -307,6 +301,14 @@ const EmployeeDetailsPage = ({ employee, leaves = [], leaveTypes = [], onBack, o
             console.error('Error updating card visibility:', e);
         }
     };
+
+    if (!employee || !employee._id) {
+        return (
+            <div className="p-16 text-center text-slate-400">
+                No employee selected.
+            </div>
+        );
+    }
 
     return (
         <motion.div
@@ -830,14 +832,6 @@ const ProfileDetailItem = ({ label, value, icon: Icon, uppercase }) => (
                 {value || '-'}
             </p>
         </div>
-    </div>
-);
-
-const SummaryKPI = ({ label, value, subtext, color, bg }) => (
-    <div className={`${bg} p-3 rounded-2xl border border-slate-100/50 flex flex-col items-center justify-center text-center gap-1 min-h-[72px]`}>
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{label}</span>
-        <span className={`text-xs font-black ${color} leading-none tracking-tight`}>{value}</span>
-        {subtext && <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter leading-none mt-0.5">{subtext}</span>}
     </div>
 );
 
