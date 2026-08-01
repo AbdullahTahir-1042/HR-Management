@@ -37,7 +37,7 @@ const HRHeader = ({
 }) => {
     const tabMeta = {
         'dashboard': { icon: <LayoutDashboard size={24} className="text-indigo-600" />, title: 'Overview' },
-        'employees': { icon: <Users size={24} className="text-indigo-600" />, title: 'Staff Directory ✨' },
+        'employees': { icon: <Users size={24} className="text-indigo-600" />, title: 'Employee Directory' },
         'leaves': { icon: <CalendarCheck size={24} className="text-indigo-600" />, title: 'Leave Requests' },
         'leave-types': { icon: <CalendarRange size={24} className="text-indigo-600" />, title: 'Leave Types' },
         'latecomers': { icon: <Clock size={24} className="text-indigo-600" />, title: 'Late Comers' },
