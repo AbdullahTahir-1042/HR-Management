@@ -48,16 +48,13 @@ router.post('/check-in', auth, async (req, res) => {
 
                 console.log("Sending email to:", employee.email);
 
-                try {
-                    const result = await sendEmail({
-                        to: employee.email,
-                        subject: template.subject,
-                        html: template.html
-                    });
-                    console.log("✅ Email sent:", result);
-                } catch (error) {
-                    console.error("❌ Email send failed:", error);
-                }
+                sendEmail({
+                    to: employee.email,
+                    subject: template.subject,
+                    html: template.html
+                })
+                .then(result => console.log("✅ Email sent in background"))
+                .catch(error => console.error("❌ Background email failed:", error));
             }
         } catch (emailErr) {
             console.error("❌ Email process failed:", emailErr);
