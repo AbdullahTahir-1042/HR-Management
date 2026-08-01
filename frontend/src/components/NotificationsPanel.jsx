@@ -15,12 +15,11 @@ const ICONS = {
 const NotificationsPanel = () => {
     const [notifications, setNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const panelRef = useRef(null);
 
     const fetchNotifications = async () => {
         try {
-            setLoading(true);
             const res = await apiClient.get('/notifications');
             setNotifications(res.data);
         } catch (err) {

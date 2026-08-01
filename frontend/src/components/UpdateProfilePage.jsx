@@ -3,7 +3,6 @@ import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil, Bell, MessageSquare, Megaphone, CalendarCheck, CheckCircle2 } from 'lucide-react';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
 
 const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const { updateUser } = useContext(AuthContext);

@@ -20,7 +20,8 @@ const RATING_LABELS = {
 
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 
-const EmployeeDetailsPage = ({ employee = {}, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+    const employee = propEmployee || {};
     const { user: currentUser } = useContext(AuthContext);
     const [activeDetailTab, setActiveDetailTab] = useState('profile');
     const [increments, setIncrements] = useState([]);
