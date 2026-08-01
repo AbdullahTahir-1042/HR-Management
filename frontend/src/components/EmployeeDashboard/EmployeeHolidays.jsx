@@ -180,10 +180,15 @@ const HolidayCard = ({ holiday, onClick }) => {
         <motion.div
             variants={cardVariants}
             onClick={() => onClick(holiday)}
-            className={`bg-white rounded-2xl border ${upcoming ? 'border-indigo-100 shadow-md shadow-indigo-50' : 'border-slate-100 shadow-sm'} p-5 flex flex-col gap-3 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200 cursor-pointer transition-all duration-200 group`}
+            className={`relative overflow-hidden bg-white rounded-2xl border ${upcoming ? 'border-indigo-100 shadow-lg shadow-indigo-50/50 hover:shadow-indigo-100/50' : 'border-slate-100 shadow-sm'} p-6 flex flex-col gap-4 hover:-translate-y-1.5 hover:border-indigo-300 cursor-pointer transition-all duration-300 group`}
         >
+            {/* Subtle Gradient Background for Upcoming */}
+            {upcoming && (
+                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-gradient-to-br from-indigo-50 to-fuchsia-50 rounded-full blur-2xl opacity-70 pointer-events-none" />
+            )}
+
             {/* Header row */}
-            <div className="flex items-start justify-between gap-3">
+            <div className="relative flex items-start justify-between gap-3 z-10">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className={`p-2.5 rounded-xl ${style.bg} shrink-0 group-hover:scale-105 transition-transform`}>
                         <CalendarDays size={18} className={style.text} />
@@ -265,9 +270,17 @@ const EmployeeHolidays = ({ holidays = [] }) => {
     );
 
     const filteredHolidays = useMemo(() => {
-        if (filter === 'upcoming') return holidays.filter((h) => isUpcoming(h.startDate));
-        if (filter === 'past') return holidays.filter((h) => !isUpcoming(h.startDate));
-        return holidays;
+        let result = [...holidays];
+        if (filter === 'upcoming') {
+            result = result.filter((h) => isUpcoming(h.startDate));
+            result.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        } else if (filter === 'past') {
+            result = result.filter((h) => !isUpcoming(h.startDate));
+            result.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        } else {
+            result.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        }
+        return result;
     }, [holidays, filter]);
 
     return (
