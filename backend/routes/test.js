@@ -31,7 +31,7 @@ router.post("/send-email", async (req, res) => {
             html: template.html
         });
 
-        console.log("Resend Response:", result);
+        console.log("Email Response:", result);
 
         return res.status(200).json({
             success: true,

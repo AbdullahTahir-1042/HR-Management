@@ -1,19 +1,32 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
 /**
- * Initialize Resend client dynamically using RESEND_API_KEY
+ * Initialize Nodemailer transporter client dynamically using SMTP configurations
  */
-const getResendClient = () => {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-        console.warn('[EmailService] Warning: RESEND_API_KEY environment variable is missing.');
+const getTransporter = () => {
+    const host = process.env.EMAIL_HOST;
+    const port = process.env.EMAIL_PORT;
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+
+    if (!host || !port || !user || !pass) {
+        console.warn('[EmailService] Warning: One or more SMTP configurations (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS) are missing.');
         return null;
     }
-    return new Resend(apiKey);
+
+    return nodemailer.createTransport({
+        host,
+        port: Number(port),
+        secure: Number(port) === 465, // true for port 465, false for other ports (like 587)
+        auth: {
+            user,
+            pass
+        }
+    });
 };
 
 /**
- * Base method to dispatch emails via Resend
+ * Base method to dispatch emails via Nodemailer
  * @param {Object} params
  * @param {string|string[]} params.to - Target recipient email(s)
  * @param {string} params.subject - Email subject line
@@ -26,47 +39,24 @@ const sendEmail = async ({ to, subject, html }) => {
             return { success: false, error: 'Recipient email address (to) is required.' };
         }
 
-        const resend = getResendClient();
-        if (!resend) {
-            return { success: false, error: 'Resend service is unconfigured. RESEND_API_KEY missing.' };
+        const transporter = getTransporter();
+        if (!transporter) {
+            return { success: false, error: 'Email service is unconfigured. SMTP credentials missing.' };
         }
 
-        const fromAddress = process.env.EMAIL_FROM || 'HR Management System <onboarding@resend.dev>';
-        let targetTo = Array.isArray(to) ? to : [to];
+        const fromAddress = process.env.EMAIL_FROM || 'HR Management System <noreply@company.com>';
+        const targetTo = Array.isArray(to) ? to.join(', ') : to;
 
-        let response = await resend.emails.send({
+        const mailOptions = {
             from: fromAddress,
             to: targetTo,
             subject: subject || 'HR Management System Notification',
             html
-        });
+        };
 
-        // If Resend free tier sandbox blocks direct external recipient delivery
-        if (response.error) {
-            const errStr = JSON.stringify(response.error);
-            if (errStr.includes('only send testing emails') || errStr.includes('resend.com/domains')) {
-                const ownerEmail = process.env.RESEND_OWNER_EMAIL || 'abdulrehmanaleem46@gmail.com';
-                console.warn(`\n⚠️ [Resend Sandbox Limitation] Resend API blocked direct delivery to "${to}".`);
-                console.warn(`   Reason: Resend unverified sandbox keys only send directly to verified account owner (${ownerEmail}).`);
-                console.warn(`   To send directly to external recipients, verify your domain at resend.com/domains.`);
-                console.warn(`   Forwarding test notification to account owner "${ownerEmail}" so it is not lost.\n`);
-
-                response = await resend.emails.send({
-                    from: fromAddress,
-                    to: [ownerEmail],
-                    subject: `[Target: ${Array.isArray(to) ? to.join(', ') : to}] ${subject || 'HR Notification'}`,
-                    html
-                });
-            }
-        }
-
-        if (response.error) {
-            console.error('[EmailService Error Response]:', response.error);
-            return { success: false, error: response.error.message || response.error };
-        }
-
-        console.log(`[EmailService] Email successfully sent. Email ID: ${response.data?.id}`);
-        return { success: true, data: response.data };
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`[EmailService] Email successfully sent. Message ID: ${info.messageId}`);
+        return { success: true, data: { id: info.messageId } };
     } catch (err) {
         console.error('[EmailService Exception]:', err.message || err);
         return { success: false, error: err.message || 'Failed to deliver email' };

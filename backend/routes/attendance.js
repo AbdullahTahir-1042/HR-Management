@@ -26,44 +26,46 @@ router.post('/check-in', auth, async (req, res) => {
         await attendance.save();
         console.log("✅ Attendance saved");
 
-        // ── Send Check-In Email Notification (With Debug Logs) ──
-        try {
-            const employee = await User.findById(req.user.id);
-            console.log("Employee:", employee);
-
-            if (employee && employee.email) {
-                const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
-                });
-                const checkInTime = new Date(attendance.checkIn).toLocaleTimeString('en-US', {
-                    hour: '2-digit', minute: '2-digit', hour12: true
-                });
-
-                const template = getCheckInEmailTemplate({
-                    name: employee.name,
-                    date: checkInDate,
-                    time: checkInTime,
-                    department: employee.department || 'N/A'
-                });
-
-                console.log("Sending email to:", employee.email);
-
-                try {
-                    const result = await sendEmail({
-                        to: employee.email,
-                        subject: template.subject,
-                        html: template.html
-                    });
-                    console.log("✅ Email sent:", result);
-                } catch (error) {
-                    console.error("❌ Email send failed:", error);
-                }
-            }
-        } catch (emailErr) {
-            console.error("❌ Email process failed:", emailErr);
-        }
-
         res.json(attendance);
+
+        // ── Send Check-In Email Notification Asynchronously afterwards ──
+        setTimeout(async () => {
+            try {
+                const employee = await User.findById(req.user.id);
+                console.log("Employee:", employee);
+
+                if (employee && employee.email) {
+                    const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
+                    });
+                    const checkInTime = new Date(attendance.checkIn).toLocaleTimeString('en-US', {
+                        hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+
+                    const template = getCheckInEmailTemplate({
+                        name: employee.name,
+                        date: checkInDate,
+                        time: checkInTime,
+                        department: employee.department || 'N/A'
+                    });
+
+                    console.log("Sending email to:", employee.email);
+
+                    try {
+                        const result = await sendEmail({
+                            to: employee.email,
+                            subject: template.subject,
+                            html: template.html
+                        });
+                        console.log("✅ Email sent:", result);
+                    } catch (error) {
+                        console.error("❌ Email send failed:", error);
+                    }
+                }
+            } catch (emailErr) {
+                console.error("❌ Email process failed:", emailErr);
+            }
+        }, 0);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

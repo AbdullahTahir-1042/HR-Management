@@ -106,7 +106,7 @@ router.post('/register', [auth, isHR], async (req, res) => {
             }
         }
 
-        // ── Dispatch Welcome Email via Resend ──
+        // ── Dispatch Welcome Email via Email Service ──
         try {
             const template = getWelcomeEmailTemplate({
                 name: user.name,
