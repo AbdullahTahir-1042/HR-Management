@@ -179,9 +179,6 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-colors">
                             <User size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-blue-100 transition-colors">
-                            {user?._id ? `EMP-${user._id.slice(-6).toUpperCase()}` : 'Profile'}
-                        </span>
                     </div>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">My Profile</p>
                     <div className="flex items-end justify-between mt-0.5">
