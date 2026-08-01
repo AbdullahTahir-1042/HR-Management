@@ -14,6 +14,9 @@ const Holiday = require('../models/Holiday');
 const Announcement = require('../models/Announcements');
 const HRRequest = require('../models/HRRequest');
 const OnboardingTask = require('../models/OnboardingTask');
+const LoanRequest = require('../models/LoanRequest');
+const MistakeReport = require('../models/MistakeReport');
+const Notification = require('../models/Notification');
 
 const PASSWORD = 'Tdc@12345';
 
@@ -90,12 +93,15 @@ const run = async () => {
     const todayStr = localToday.toISOString().slice(0, 10);
     console.log(`Preserving attendance records for today: ${todayStr}`);
 
-    // Clean up all non-today attendance, leave requests, HR requests, and onboarding tasks
+    // Clean up all non-today attendance, leave requests, HR requests, onboarding tasks, loans, mistakes, and notifications
     const deletedAtt = await Attendance.deleteMany({ date: { $ne: todayStr } });
     const deletedLeaves = await LeaveRequest.deleteMany({});
     const deletedHRReqs = await HRRequest.deleteMany({});
     const deletedOnboarding = await OnboardingTask.deleteMany({});
-    console.log(`Cleaned up database: deleted ${deletedAtt.deletedCount} legacy attendance, ${deletedLeaves.deletedCount} leaves, ${deletedHRReqs.deletedCount} HR requests, ${deletedOnboarding.deletedCount} onboarding tasks.`);
+    const deletedLoans = await LoanRequest.deleteMany({});
+    const deletedMistakes = await MistakeReport.deleteMany({});
+    const deletedNotifications = await Notification.deleteMany({});
+    console.log(`Cleaned up database: deleted ${deletedAtt.deletedCount} legacy attendance, ${deletedLeaves.deletedCount} leaves, ${deletedHRReqs.deletedCount} HR requests, ${deletedOnboarding.deletedCount} onboarding tasks, ${deletedLoans.deletedCount} loans, ${deletedMistakes.deletedCount} mistake reports, ${deletedNotifications.deletedCount} notifications.`);
 
     // Departments
     const deptByName = {};
