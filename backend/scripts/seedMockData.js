@@ -83,6 +83,20 @@ const run = async () => {
     // Remove the throwaway test HR account from earlier local setup, if present.
     await User.deleteOne({ email: 'hr@example.com' });
 
+    // Calculate today's date in local YYYY-MM-DD format
+    const today = new Date();
+    const offset = today.getTimezoneOffset();
+    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+    const todayStr = localToday.toISOString().slice(0, 10);
+    console.log(`Preserving attendance records for today: ${todayStr}`);
+
+    // Clean up all non-today attendance, leave requests, HR requests, and onboarding tasks
+    const deletedAtt = await Attendance.deleteMany({ date: { $ne: todayStr } });
+    const deletedLeaves = await LeaveRequest.deleteMany({});
+    const deletedHRReqs = await HRRequest.deleteMany({});
+    const deletedOnboarding = await OnboardingTask.deleteMany({});
+    console.log(`Cleaned up database: deleted ${deletedAtt.deletedCount} legacy attendance, ${deletedLeaves.deletedCount} leaves, ${deletedHRReqs.deletedCount} HR requests, ${deletedOnboarding.deletedCount} onboarding tasks.`);
+
     // Departments
     const deptByName = {};
     for (const d of DEPARTMENTS) {
@@ -136,8 +150,8 @@ const run = async () => {
         }
     }
 
-    // Attendance: last 5 weekdays for every employee (not the founder)
-    const days = lastNWeekdays(5);
+    // Attendance: last 5 weekdays for every employee (disabled to prevent legacy mock checkins)
+    const days = [];
     const attendanceUsers = PEOPLE.filter(p => p.email !== 'fahadtufail873@gmail.com');
     let attendanceCreated = 0;
     for (const p of attendanceUsers) {
@@ -169,14 +183,7 @@ const run = async () => {
     const sick = await LeaveType.findOne({ name: 'Sick Leave' });
     const casual = await LeaveType.findOne({ name: 'Casual Leave' });
 
-    const leaveDefs = [
-        { email: 'huzaifaras10@gmail.com', leaveType: casual, days: 1, offset: 3, reason: 'Personal errand', status: 'pending' },
-        { email: 'laiba.ajmal@tdc.com', leaveType: annual, days: 4, offset: 10, reason: 'Family trip', status: 'approved' },
-        { email: 'rahmeenfatima009@gmail.com', leaveType: sick, days: 2, offset: -2, reason: 'Fever', status: 'approved' },
-        { email: 'tahseenfatima.design@gmail.com', leaveType: casual, days: 1, offset: 5, reason: 'Personal work', status: 'pending' },
-        { email: 'saadjamil504@gmail.com', leaveType: sick, days: 1, offset: -5, reason: 'Migraine', status: 'rejected' },
-        { email: 'tahirabdullah587@gmail.com', leaveType: annual, days: 3, offset: 15, reason: 'Sibling\'s wedding', status: 'pending' },
-    ];
+    const leaveDefs = [];
     let leavesCreated = 0;
     for (const l of leaveDefs) {
         const user = userByEmail[l.email];
@@ -200,14 +207,7 @@ const run = async () => {
     console.log(`Created ${leavesCreated} leave requests.`);
 
     // HR Requests (employee help-desk tickets, for HR to triage)
-    const hrRequestDefs = [
-        { email: 'huzaifaras10@gmail.com', type: 'Salary Slip', description: 'Need my June salary slip for a bank loan application.', status: 'Pending' },
-        { email: 'saadjamil504@gmail.com', type: 'Work From Home', description: 'Requesting WFH for next Monday due to a home repair appointment.', status: 'In Review' },
-        { email: 'tahirabdullah587@gmail.com', type: 'Attendance Correction', description: 'Forgot to check out on July 10, I left around 6:30 PM.', status: 'Resolved', hrNote: 'Verified with office CCTV, attendance corrected.' },
-        { email: 'laiba.ajmal@tdc.com', type: 'Experience Letter', description: 'Need an experience letter for a visa application.', status: 'Pending' },
-        { email: 'rahmeenfatima009@gmail.com', type: 'Other', description: 'Asking about the process to update my emergency contact details.', status: 'Pending' },
-        { email: 'tahseenfatima.design@gmail.com', type: 'Work From Home', description: 'Requesting to work remotely this Friday.', status: 'Rejected', hrNote: 'Client meeting scheduled on-site this Friday, please plan to come in.' },
-    ];
+    const hrRequestDefs = [];
     let hrRequestsCreated = 0;
     for (const r of hrRequestDefs) {
         const user = userByEmail[r.email];
@@ -226,13 +226,7 @@ const run = async () => {
     console.log(`Created ${hrRequestsCreated} HR requests.`);
 
     // Onboarding tasks, with some employees marked as having completed them
-    const onboardingDefs = [
-        { title: 'Complete company laptop setup', description: 'Install required dev tools and VPN client.', category: 'IT Setup', completedBy: ['huzaifaras10@gmail.com', 'saadjamil504@gmail.com', 'tahirabdullah587@gmail.com', 'laiba.ajmal@tdc.com', 'rahmeenfatima009@gmail.com', 'tahseenfatima.design@gmail.com'] },
-        { title: 'Sign employment contract', description: 'Review and digitally sign your contract.', category: 'Paperwork', completedBy: ['huzaifaras10@gmail.com', 'saadjamil504@gmail.com', 'tahirabdullah587@gmail.com', 'laiba.ajmal@tdc.com', 'rahmeenfatima009@gmail.com', 'tahseenfatima.design@gmail.com'] },
-        { title: 'Meet your team lead', description: 'Schedule a 1:1 intro call with Ayan Tufail.', category: 'General', completedBy: ['huzaifaras10@gmail.com', 'saadjamil504@gmail.com', 'laiba.ajmal@tdc.com'] },
-        { title: 'Complete security & compliance training', description: 'Watch the onboarding security training video and pass the quiz.', category: 'Training', completedBy: ['huzaifaras10@gmail.com'] },
-        { title: 'Set up direct deposit', description: 'Submit your bank details for salary payments.', category: 'Paperwork', completedBy: ['saadjamil504@gmail.com', 'tahirabdullah587@gmail.com'] },
-    ];
+    const onboardingDefs = [];
     let onboardingCreated = 0;
     for (const t of onboardingDefs) {
         let task = await OnboardingTask.findOne({ title: t.title });
