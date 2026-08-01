@@ -44,8 +44,8 @@ router.post('/types', [auth, isHR], async (req, res) => {
             return res.status(400).json({ msg: 'Leave quota is required.' });
         }
         const numericQuota = Number(quota);
-        if (isNaN(numericQuota) || numericQuota < 0) {
-            return res.status(400).json({ msg: 'Quota must be a non-negative number.' });
+        if (isNaN(numericQuota) || numericQuota < 0 || numericQuota > 45) {
+            return res.status(400).json({ msg: 'Quota must be between 0 and 45 days.' });
         }
 
         // Duplicate name validation (case-insensitive)
@@ -80,12 +80,11 @@ router.put('/types/:id', [auth, isHR], async (req, res) => {
         if (!name || name.trim() === '') {
             return res.status(400).json({ msg: 'Leave type name is required.' });
         }
-        if (quota === undefined || quota === null || quota === '') {
-            return res.status(400).json({ msg: 'Leave quota is required.' });
-        }
-        const numericQuota = Number(quota);
-        if (isNaN(numericQuota) || numericQuota < 0) {
-            return res.status(400).json({ msg: 'Quota must be a non-negative number.' });
+        let numericQuota = Number(quota);
+        if (quota !== undefined && quota !== null && quota !== '') {
+            if (isNaN(numericQuota) || numericQuota < 0 || numericQuota > 45) {
+                return res.status(400).json({ msg: 'Quota must be between 0 and 45 days.' });
+            }
         }
 
         // Duplicate check (excluding self)
@@ -277,7 +276,7 @@ router.post('/apply', auth, async (req, res) => {
 
             if (lastLeave) {
                 const lastEnd = new Date(lastLeave.endDate);
-                const diffDays = Math.ceil((start - lastEnd) / (1000 * 60 * 60 * 24));
+                const diffDays = Math.round((start - lastEnd) / (1000 * 60 * 60 * 24));
                 if (diffDays <= leaveType.cooldownDays) {
                     return res.status(400).json({
                         msg: `Policy Violation: ${leaveType.name} requires a ${leaveType.cooldownDays}-day cooldown between requests. Please wait ${leaveType.cooldownDays - diffDays + 1} more day(s).`
