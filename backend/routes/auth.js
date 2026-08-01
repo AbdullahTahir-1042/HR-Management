@@ -344,8 +344,8 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
         }
 
         if (user.status === 'Inactive') {
-            user.isDeleted = true;
-            await user.save();
+            // Hard delete the employee completely from the database
+            await User.deleteOne({ _id: req.params.id });
         } else {
             // Shift to Inactive instead of hard delete
             user.status = 'Inactive';
