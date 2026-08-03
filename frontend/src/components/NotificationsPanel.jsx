@@ -12,7 +12,7 @@ const ICONS = {
     chat: <Bell size={16} className="text-rose-500" />
 };
 
-const NotificationsPanel = () => {
+const NotificationsPanel = ({ onNavigate }) => {
     const [notifications, setNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -56,6 +56,22 @@ const NotificationsPanel = () => {
         } catch (err) {
             console.error(err);
         }
+    };
+
+    const handleItemClick = (notif) => {
+        if (!notif.isRead) handleMarkAsRead(notif._id);
+        if (onNavigate) {
+            if (notif.type === 'LoanRequest') {
+                onNavigate('hr-requests', 'loans');
+            } else if (notif.type === 'HRRequest') {
+                onNavigate('hr-requests', 'general');
+            } else if (notif.type === 'LeaveRequest' || notif.type === 'leave') {
+                onNavigate('leaves');
+            } else if (notif.type === 'MistakeReport') {
+                onNavigate('mistake-reports');
+            }
+        }
+        setIsOpen(false);
     };
 
     const handleMarkAllRead = async () => {
@@ -117,7 +133,7 @@ const NotificationsPanel = () => {
                                     {notifications.map((notif) => (
                                         <div 
                                             key={notif._id} 
-                                            onClick={() => !notif.isRead && handleMarkAsRead(notif._id)}
+                                            onClick={() => handleItemClick(notif)}
                                             className={`p-4 flex gap-3 cursor-pointer transition-colors ${!notif.isRead ? 'bg-indigo-50/30 hover:bg-indigo-50/50' : 'hover:bg-slate-50'}`}
                                         >
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!notif.isRead ? 'bg-white shadow-sm border border-indigo-100' : 'bg-slate-100 border border-slate-200'}`}>

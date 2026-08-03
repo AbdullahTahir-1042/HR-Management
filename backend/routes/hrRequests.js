@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const HRRequest = require('../models/HRRequest');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { auth } = require('../middleware/auth');
 
 // ── Employee: Submit a new HR request ─────────────────────────────────────────
@@ -22,6 +24,24 @@ router.post('/', auth, async (req, res) => {
         });
 
         await request.save();
+
+        // Notify HR users
+        try {
+            const hrUsers = await User.find({ role: { $regex: /^hr$/i } });
+            const employeeUser = await User.findById(req.user.id);
+            for (const hr of hrUsers) {
+                await Notification.create({
+                    recipient: hr._id,
+                    type: 'HRRequest',
+                    title: 'New HR Request Submitted',
+                    message: `${employeeUser?.name || 'An employee'} submitted a ${type} request.`,
+                    relatedId: request._id
+                });
+            }
+        } catch (nErr) {
+            console.error('Error creating HR notification for request:', nErr);
+        }
+
         res.status(201).json(request);
     } catch (err) {
         console.error(err.message);
@@ -67,6 +87,19 @@ router.put('/:id', auth, async (req, res) => {
 
         if (!request) {
             return res.status(404).json({ msg: 'Request not found' });
+        }
+
+        // Notify Employee
+        try {
+            await Notification.create({
+                recipient: request.employee._id || request.employee,
+                type: 'HRRequest',
+                title: `HR Request ${status}`,
+                message: `Your ${request.type} request has been marked as ${status}.`,
+                relatedId: request._id
+            });
+        } catch (nErr) {
+            console.error('Error creating employee notification for HR request:', nErr);
         }
 
         res.json(request);

@@ -36,22 +36,22 @@ const LOAN_PURPOSES = [
 ];
 
 const STATUS_STYLES = {
-    'Pending':            { bg: 'bg-amber-50',   text: 'text-amber-600',   border: 'border-amber-200',   icon: Clock,         label: 'Pending'   },
-    'In Review':          { bg: 'bg-blue-50',    text: 'text-blue-600',    border: 'border-blue-200',    icon: AlertCircle,   label: 'In Review' },
-    'Revision Requested': { bg: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200',  icon: Info,          label: 'Revision Requested' },
-    'Approved':           { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle,   label: 'Approved'  },
-    'Active':             { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle,   label: 'Active'    },
-    'Completed':          { bg: 'bg-sky-50',     text: 'text-sky-600',     border: 'border-sky-200',     icon: ShieldCheck,   label: 'Completed' },
-    'Rejected':           { bg: 'bg-rose-50',    text: 'text-rose-600',    border: 'border-rose-200',    icon: XCircle,       label: 'Rejected'  },
-    'Cancelled':          { bg: 'bg-slate-50',   text: 'text-slate-500',   border: 'border-slate-200',   icon: X,             label: 'Cancelled' }
+    'Pending': { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', icon: Clock, label: 'Pending' },
+    'In Review': { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', icon: AlertCircle, label: 'In Review' },
+    'Revision Requested': { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200', icon: Info, label: 'Revision Requested' },
+    'Approved': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle, label: 'Approved' },
+    'Active': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle, label: 'Active' },
+    'Completed': { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-200', icon: ShieldCheck, label: 'Completed' },
+    'Rejected': { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200', icon: XCircle, label: 'Rejected' },
+    'Cancelled': { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200', icon: X, label: 'Cancelled' }
 };
 
 const TYPE_COLORS = {
     'Attendance Correction': 'bg-indigo-50 text-indigo-600 border-indigo-200',
-    'Experience Letter':     'bg-violet-50 text-violet-600 border-violet-200',
-    'Salary Slip':           'bg-emerald-50 text-emerald-600 border-emerald-200',
-    'Work From Home':        'bg-amber-50 text-amber-600 border-amber-200',
-    'Other':                 'bg-slate-50 text-slate-600 border-slate-200',
+    'Experience Letter': 'bg-violet-50 text-violet-600 border-violet-200',
+    'Salary Slip': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    'Work From Home': 'bg-amber-50 text-amber-600 border-amber-200',
+    'Other': 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
 const formatPKR = (amount) => `₨ ${(amount || 0).toLocaleString()}`;
@@ -88,13 +88,12 @@ const RequestTypeDropdown = ({ value, onChange, options, error }) => {
             <button
                 type="button"
                 onClick={() => setIsOpen(prev => !prev)}
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm flex items-center justify-between font-medium cursor-pointer transition-all ${
-                    isOpen
+                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm flex items-center justify-between font-medium cursor-pointer transition-all ${isOpen
                         ? 'border-indigo-500 bg-white ring-4 ring-indigo-500/10 shadow-xs'
                         : error
-                        ? 'border-rose-300 bg-rose-50/20'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-100/50'
-                }`}
+                            ? 'border-rose-300 bg-rose-50/20'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-100/50'
+                    }`}
             >
                 <div className="flex items-center gap-2.5 overflow-hidden">
                     {SelectedIcon ? (
@@ -135,18 +134,16 @@ const RequestTypeDropdown = ({ value, onChange, options, error }) => {
                                             onChange(type);
                                             setIsOpen(false);
                                         }}
-                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-xs font-semibold transition-all cursor-pointer ${
-                                            isSelected
+                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left text-xs font-semibold transition-all cursor-pointer ${isSelected
                                                 ? 'bg-indigo-50 text-indigo-700 font-bold'
                                                 : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
-                                        }`}
+                                            }`}
                                     >
                                         <span className="flex items-center gap-2.5">
-                                            <div className={`w-6 h-6 rounded-md flex items-center justify-center border shrink-0 transition-colors ${
-                                                isSelected
+                                            <div className={`w-6 h-6 rounded-md flex items-center justify-center border shrink-0 transition-colors ${isSelected
                                                     ? 'bg-indigo-600 text-white border-indigo-600'
                                                     : 'bg-slate-100 text-slate-500 border-slate-200/60'
-                                            }`}>
+                                                }`}>
                                                 <IconComp size={13} />
                                             </div>
                                             <span>{type}</span>
@@ -246,6 +243,21 @@ const EmployeeHRRequests = ({ user }) => {
     useEffect(() => {
         fetchRequests();
         fetchLoans();
+
+        if (!('BroadcastChannel' in window)) return;
+        let bcLoans, bcHR;
+        try {
+            bcLoans = new BroadcastChannel('loans_channel');
+            bcLoans.onmessage = () => fetchLoans();
+
+            bcHR = new BroadcastChannel('hr_requests_channel');
+            bcHR.onmessage = () => fetchRequests();
+        } catch (e) {}
+
+        return () => {
+            if (bcLoans) bcLoans.close();
+            if (bcHR) bcHR.close();
+        };
     }, [fetchRequests, fetchLoans]);
 
     const handleSubmitGeneral = async (e) => {
@@ -264,6 +276,13 @@ const EmployeeHRRequests = ({ user }) => {
             const res = await apiClient.post('/hr-requests', form);
             setRequests((prev) => [res.data, ...prev]);
             setForm({ type: '', description: '' });
+
+            try {
+                window.dispatchEvent(new CustomEvent('hr_request_event', { detail: { type: 'NEW_HR_REQUEST', request: res.data } }));
+                const bc = new BroadcastChannel('hr_requests_channel');
+                bc.postMessage({ type: 'NEW_HR_REQUEST', request: res.data });
+                bc.close();
+            } catch (e) {}
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to submit request.');
         } finally {
@@ -296,6 +315,14 @@ const EmployeeHRRequests = ({ user }) => {
                 supportingDocument: '',
                 employeeNotes: ''
             });
+
+            // Dispatch instant local + cross-tab events
+            try {
+                window.dispatchEvent(new CustomEvent('loan_event', { detail: { type: 'NEW_LOAN_REQUEST', loan: res.data } }));
+                const bc = new BroadcastChannel('loans_channel');
+                bc.postMessage({ type: 'NEW_LOAN_REQUEST', loan: res.data });
+                bc.close();
+            } catch (e) {}
         } catch (err) {
             setLoanError(err.response?.data?.msg || 'Failed to submit loan request.');
         } finally {
@@ -308,6 +335,14 @@ const EmployeeHRRequests = ({ user }) => {
         try {
             await apiClient.delete(`/loans/${loanId}`);
             fetchLoans();
+
+            // Dispatch instant local + cross-tab events
+            try {
+                window.dispatchEvent(new CustomEvent('loan_event', { detail: { type: 'LOAN_CANCELLED', loanId } }));
+                const bc = new BroadcastChannel('loans_channel');
+                bc.postMessage({ type: 'LOAN_CANCELLED', loanId });
+                bc.close();
+            } catch (e) {}
         } catch (err) {
             alert(err.response?.data?.msg || 'Failed to cancel loan request');
         }
@@ -346,11 +381,10 @@ const EmployeeHRRequests = ({ user }) => {
                     <button
                         type="button"
                         onClick={() => setActiveSubTab('general')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            activeSubTab === 'general'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeSubTab === 'general'
                                 ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/60'
                                 : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
                         <FileText size={14} /> General Requests
                     </button>
@@ -358,11 +392,10 @@ const EmployeeHRRequests = ({ user }) => {
                     <button
                         type="button"
                         onClick={() => setActiveSubTab('loans')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            activeSubTab === 'loans'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeSubTab === 'loans'
                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
                                 : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
                         <Coins size={14} /> Loan Requests
                         {loans.filter(l => l.status === 'Pending').length > 0 && (

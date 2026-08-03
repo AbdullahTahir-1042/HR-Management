@@ -33,7 +33,8 @@ const HRHeader = ({
     setAttendanceDateFilter,
     searchTerm,
     setSearchTerm,
-    setSidebarOpen
+    setSidebarOpen,
+    onNotificationNavigate
 }) => {
     const tabMeta = {
         'dashboard': { icon: <LayoutDashboard size={24} className="text-indigo-600" />, title: 'Overview' },
@@ -149,7 +150,7 @@ const HRHeader = ({
                 )}
                 
                 <div className="flex items-center ml-2">
-                    <NotificationsPanel />
+                    <NotificationsPanel onNavigate={onNotificationNavigate} />
                 </div>
             </div>
         </header>

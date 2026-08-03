@@ -11,22 +11,22 @@ import apiClient from '../../api/axiosClient';
 const STATUS_OPTIONS = ['Pending', 'In Review', 'Resolved', 'Rejected'];
 
 const STATUS_STYLES = {
-    'Pending':            { bg: 'bg-amber-50',   text: 'text-amber-600',   border: 'border-amber-200',   icon: Clock        },
-    'In Review':          { bg: 'bg-blue-50',    text: 'text-blue-600',    border: 'border-blue-200',    icon: AlertCircle  },
-    'Revision Requested': { bg: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200',  icon: Info         },
-    'Approved':           { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle  },
-    'Active':             { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle  },
-    'Completed':          { bg: 'bg-sky-50',     text: 'text-sky-600',     border: 'border-sky-200',     icon: CheckCircle  },
-    'Resolved':           { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle  },
-    'Rejected':           { bg: 'bg-rose-50',    text: 'text-rose-600',    border: 'border-rose-200',    icon: XCircle      },
+    'Pending': { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', icon: Clock },
+    'In Review': { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', icon: AlertCircle },
+    'Revision Requested': { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200', icon: Info },
+    'Approved': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle },
+    'Active': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle },
+    'Completed': { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-200', icon: CheckCircle },
+    'Resolved': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', icon: CheckCircle },
+    'Rejected': { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200', icon: XCircle },
 };
 
 const TYPE_COLORS = {
     'Attendance Correction': 'bg-indigo-50 text-indigo-600 border-indigo-200',
-    'Experience Letter':     'bg-violet-50 text-violet-600 border-violet-200',
-    'Salary Slip':           'bg-emerald-50 text-emerald-600 border-emerald-200',
-    'Work From Home':        'bg-amber-50 text-amber-600 border-amber-200',
-    'Other':                 'bg-slate-50 text-slate-600 border-slate-200',
+    'Experience Letter': 'bg-violet-50 text-violet-600 border-violet-200',
+    'Salary Slip': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    'Work From Home': 'bg-amber-50 text-amber-600 border-amber-200',
+    'Other': 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
 const formatPKR = (amount) => `₨ ${(amount || 0).toLocaleString()}`;
@@ -148,11 +148,10 @@ const RequestCard = ({ request, onUpdate }) => {
                                                     key={s}
                                                     type="button"
                                                     onClick={() => setStatus(s)}
-                                                    className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                                                        status === s
+                                                    className={`text-xs font-bold px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${status === s
                                                             ? `${style.bg} ${style.text} ${style.border} shadow-xs`
                                                             : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-slate-300'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {s}
                                                 </button>
@@ -192,16 +191,14 @@ const RequestCard = ({ request, onUpdate }) => {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-const HRRequestsManagement = ({ requests = [], onUpdate }) => {
-    const [subTab, setSubTab] = useState('general'); // 'general' | 'loans'
+const HRRequestsManagement = ({ requests = [], onUpdate, externalLoans = [], onRefreshLoans, initialSubTab = 'general' }) => {
+    const [subTab, setSubTab] = useState(initialSubTab); // 'general' | 'loans'
 
     // General Requests state
     const [statusFilter, setStatusFilter] = useState('all');
     const [search, setSearch] = useState('');
 
     // Loan Requests state (HR side)
-    const [loans, setLoans] = useState([]);
-    const [loansLoading, setLoansLoading] = useState(false);
     const [loanFilter, setLoanFilter] = useState('all');
     const [loanSearch, setLoanSearch] = useState('');
     const [reviewingLoan, setReviewingLoan] = useState(null);
@@ -217,24 +214,7 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
     });
     const [reviewing, setReviewing] = useState(false);
 
-    // Fetch all loans for HR
-    const fetchAllLoans = useCallback(async () => {
-        try {
-            setLoansLoading(true);
-            const res = await apiClient.get('/loans/all');
-            setLoans(res.data);
-        } catch (err) {
-            console.error('Error fetching HR loans:', err);
-        } finally {
-            setLoansLoading(false);
-        }
-    }, []);
 
-    useEffect(() => {
-        if (subTab === 'loans') {
-            fetchAllLoans();
-        }
-    }, [subTab, fetchAllLoans]);
 
     const openReviewModal = (loan) => {
         setReviewingLoan(loan);
@@ -289,7 +269,13 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
 
             await apiClient.put(`/loans/${reviewingLoan._id}/review`, payload);
             setReviewingLoan(null);
-            fetchAllLoans();
+
+            try {
+                window.dispatchEvent(new CustomEvent('loan_event', { detail: { type: 'LOAN_REVIEWED', loanId: reviewingLoan._id } }));
+                const bc = new BroadcastChannel('loans_channel');
+                bc.postMessage({ type: 'LOAN_REVIEWED', loanId: reviewingLoan._id });
+                bc.close();
+            } catch (e) {}
         } catch (err) {
             alert(err.response?.data?.msg || 'Failed to update loan status');
         } finally {
@@ -307,7 +293,7 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
     });
 
     // Filtered Loan Requests
-    const filteredLoans = loans.filter((l) => {
+    const filteredLoans = externalLoans.filter((l) => {
         const matchesStatus = loanFilter === 'all' || l.status === loanFilter;
         const matchesSearch =
             l.employee?.name?.toLowerCase().includes(loanSearch.toLowerCase()) ||
@@ -315,7 +301,8 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
         return matchesStatus && matchesSearch;
     });
 
-    const pendingLoanCount = loans.filter(l => l.status === 'Pending').length;
+    const pendingGeneralCount = requests.filter(r => r.status === 'Pending').length;
+    const pendingLoanCount = externalLoans.filter(l => ['Pending', 'Revision Requested'].includes(l.status)).length;
 
     return (
         <motion.div
@@ -343,27 +330,30 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
                     <button
                         type="button"
                         onClick={() => setSubTab('general')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            subTab === 'general'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${subTab === 'general'
                                 ? 'bg-white text-indigo-600 shadow-xs border border-slate-200/60'
                                 : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
-                        <FileText size={14} /> General Requests ({requests.length})
+                        <FileText size={14} /> General Requests
+                        {pendingGeneralCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white shadow-sm">
+                                {pendingGeneralCount}
+                            </span>
+                        )}
                     </button>
 
                     <button
                         type="button"
                         onClick={() => setSubTab('loans')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            subTab === 'loans'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${subTab === 'loans'
                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
                                 : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                            }`}
                     >
-                        <Coins size={14} /> Loan Requests ({loans.length})
+                        <Coins size={14} /> Loan Requests
                         {pendingLoanCount > 0 && (
-                            <span className="px-1.5 py-0.2 bg-amber-400 text-slate-900 rounded-full text-[10px] font-extrabold">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white shadow-sm">
                                 {pendingLoanCount}
                             </span>
                         )}
@@ -395,11 +385,10 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
                                     <button
                                         key={s}
                                         onClick={() => setStatusFilter(s)}
-                                        className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all cursor-pointer ${
-                                            statusFilter === s
+                                        className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all cursor-pointer ${statusFilter === s
                                                 ? 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-2xs'
                                                 : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                        }`}
+                                            }`}
                                     >
                                         {s === 'all' ? 'All' : s}
                                         <span className="ml-1.5 bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">
@@ -442,16 +431,15 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
 
                         <div className="flex flex-wrap gap-2">
                             {['all', 'Pending', 'Active', 'Completed', 'Rejected'].map((s) => {
-                                const count = s === 'all' ? loans.length : loans.filter(l => l.status === s).length;
+                                const count = s === 'all' ? externalLoans.length : externalLoans.filter(l => l.status === s).length;
                                 return (
                                     <button
                                         key={s}
                                         onClick={() => setLoanFilter(s)}
-                                        className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all cursor-pointer ${
-                                            loanFilter === s
+                                        className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all cursor-pointer ${loanFilter === s
                                                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
                                                 : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                        }`}
+                                            }`}
                                     >
                                         {s === 'all' ? 'All Loans' : s}
                                         <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${loanFilter === s ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
@@ -463,9 +451,7 @@ const HRRequestsManagement = ({ requests = [], onUpdate }) => {
                         </div>
                     </div>
 
-                    {loansLoading ? (
-                        <div className="py-8 text-center text-xs font-bold text-slate-400">Loading loan requests...</div>
-                    ) : filteredLoans.length === 0 ? (
+                    {filteredLoans.length === 0 ? (
                         <EmptyState message="No financial loan applications found" />
                     ) : (
                         <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">

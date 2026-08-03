@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle, MessageSquare } from 'lucide-react';
+import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle, MessageSquare, Coins, ClipboardList } from 'lucide-react';
 
-const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], mistakeReports = [], hrRequests = [], setActiveTab }) => {
+const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], mistakeReports = [], hrRequests = [], loans = [], setActiveTab, setHrRequestsSubTab }) => {
     return (
-        <motion.div 
+        <motion.div
             key="dashboard"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -17,8 +17,8 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     {leaves.filter(l => l.status === 'pending').length} pending leave {leaves.filter(l => l.status === 'pending').length === 1 ? 'request' : 'requests'} awaiting review.
                 </p>
                 <div className="mt-4">
-                    <button 
-                        onClick={() => setActiveTab('leaves')} 
+                    <button
+                        onClick={() => setActiveTab('leaves')}
                         className="bg-white/15 hover:bg-white/25 border border-white/20 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                     >
                         Review Leaves <ArrowRight size={14} />
@@ -30,7 +30,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
                 {/* Leave Requests Card */}
-                <motion.div 
+                <motion.div
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('leaves')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
@@ -53,7 +53,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                 </motion.div>
 
                 {/* Attendance Card */}
-                <motion.div 
+                <motion.div
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('attendance')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
@@ -76,7 +76,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                 </motion.div>
 
                 {/* Latecomers Card */}
-                <motion.div 
+                <motion.div
                     whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
                     onClick={() => setActiveTab('latecomers')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-red-200"
@@ -95,7 +95,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                 </motion.div>
 
                 {/* Total Employees Card */}
-                <motion.div 
+                <motion.div
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('employees')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-emerald-200"
@@ -117,8 +117,8 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                 </motion.div>
 
-                
-                <motion.div 
+
+                <motion.div
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('holidays')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-violet-200"
@@ -140,8 +140,8 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                 </motion.div>
 
-                 {/* Announcements Card */}
-                 <motion.div 
+                {/* Announcements Card */}
+                <motion.div
                     whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
                     onClick={() => setActiveTab('announcements')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-emerald-200"
@@ -160,7 +160,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                 </motion.div>
 
                 {/* Mistake Reports Card */}
-                <motion.div 
+                <motion.div
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('mistake-reports')}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-rose-200"
@@ -182,24 +182,27 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                 </motion.div>
 
-                {/* HR Requests Card */}
-                <motion.div 
+                {/* Combined Employee Requests Card */}
+                <motion.div
                     whileHover={{ y: -4 }}
-                    onClick={() => setActiveTab('hr-requests')}
+                    onClick={() => {
+                        setHrRequestsSubTab?.('general');
+                        setActiveTab('hr-requests');
+                    }}
                     className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
                 >
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
-                            <MessageSquare size={20} />
+                            <ClipboardList size={20} />
                         </div>
                         <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg group-hover:bg-indigo-100 transition-colors">
                             Pending
                         </span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">HR Requests</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Employee Requests</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <p className="text-xl font-bold text-slate-800">
-                            {hrRequests.filter(r => r.status === 'Pending').length}
+                            {hrRequests.filter(r => r.status === 'Pending').length + loans.filter(l => ['Pending', 'Revision Requested'].includes(l.status)).length}
                         </p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
@@ -43,6 +43,8 @@ const HRDashboard = () => {
     const [unreadMessages, setUnreadMessages] = useState(0);
 
     const [hrRequests, setHrRequests] = useState([]);
+    const [loans, setLoans] = useState([]);
+    const [hrRequestsSubTab, setHrRequestsSubTab] = useState('general');
     const [announcements, setAnnouncements] = useState([]);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isAddingEmployee, setIsAddingEmployee] = useState(false);
@@ -60,12 +62,13 @@ const HRDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, leaveTypesRes, announcementsRes, mistakeReportsRes, deptsRes] = await Promise.all([
+            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, loansRes, leaveTypesRes, announcementsRes, mistakeReportsRes, deptsRes] = await Promise.all([
                 apiClient.get('/leaves/all'),
                 apiClient.get('/attendance/all'),
                 apiClient.get('/auth/users'),
                 apiClient.get('/holidays'),
                 apiClient.get('/hr-requests'),
+                apiClient.get('/loans/all'),
                 apiClient.get('/leaves/types'),
                 apiClient.get('/announcements'),
                 apiClient.get('/mistake-reports'),
@@ -76,6 +79,7 @@ const HRDashboard = () => {
             setEmployees(employeesRes.data);
             setHolidays(holidaysRes.data);
             setHrRequests(hrRequestsRes.data);
+            setLoans(loansRes.data || []);
             setLeaveTypes(leaveTypesRes.data);
             setAnnouncements(announcementsRes.data);
             setMistakeReports(mistakeReportsRes.data);
@@ -90,6 +94,50 @@ const HRDashboard = () => {
     useEffect(() => {
         fetchDashboardData();
     }, []);
+
+    const refreshRequestsAndLoans = useCallback(async () => {
+        try {
+            const [hrRequestsRes, loansRes] = await Promise.all([
+                apiClient.get('/hr-requests'),
+                apiClient.get('/loans/all')
+            ]);
+            setHrRequests(hrRequestsRes.data || []);
+            setLoans(loansRes.data || []);
+        } catch (err) {
+            console.error('Error refreshing requests and loans:', err);
+        }
+    }, []);
+
+    // Purely event-driven real-time updates (Zero continuous API polling)
+    useEffect(() => {
+        let bcLoans, bcHR;
+
+        const handleUpdateEvent = () => {
+            refreshRequestsAndLoans();
+        };
+
+        // Window events (for same-window instant sync)
+        window.addEventListener('loan_event', handleUpdateEvent);
+        window.addEventListener('hr_request_event', handleUpdateEvent);
+
+        // BroadcastChannel (for cross-tab instant sync)
+        if ('BroadcastChannel' in window) {
+            try {
+                bcLoans = new BroadcastChannel('loans_channel');
+                bcLoans.onmessage = handleUpdateEvent;
+
+                bcHR = new BroadcastChannel('hr_requests_channel');
+                bcHR.onmessage = handleUpdateEvent;
+            } catch (e) {}
+        }
+
+        return () => {
+            window.removeEventListener('loan_event', handleUpdateEvent);
+            window.removeEventListener('hr_request_event', handleUpdateEvent);
+            if (bcLoans) bcLoans.close();
+            if (bcHR) bcHR.close();
+        };
+    }, [refreshRequestsAndLoans]);
 
     // Lightweight poll just for the sidebar's unread-messages badge
     useEffect(() => {
@@ -265,13 +313,18 @@ const HRDashboard = () => {
         }
     };
 
-    const handleUpdateHRRequest = async (id, { status, hrNote }) => {
+    const handleUpdateHRRequest = async (id, data) => {
         try {
-            await apiClient.put(`/hr-requests/${id}`, { status, hrNote });
-            fetchHRRequests();
+            const res = await apiClient.put(`/hr-requests/${id}`, data);
+            setHrRequests(prev => prev.map(r => r._id === id ? res.data : r));
+            try {
+                const bc = new BroadcastChannel('hr_requests_channel');
+                bc.postMessage({ type: 'HR_REQUEST_UPDATED', requestId: id });
+                bc.close();
+            } catch (e) {}
         } catch (err) {
             console.error('Error updating HR request:', err);
-            alert('Failed to update request.');
+            alert(err.response?.data?.msg || 'Failed to update HR request');
         }
     };
 
@@ -346,6 +399,15 @@ const HRDashboard = () => {
         return matchesSearch && matchesDate;
     });
 
+    const pendingRequestsCount = (hrRequests || []).filter(r => r.status === 'Pending').length;
+
+    const handleNotificationNavigate = (tab, subTab) => {
+        setActiveTab(tab);
+        if (tab === 'hr-requests' && subTab) {
+            setHrRequestsSubTab(subTab);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -367,6 +429,7 @@ const HRDashboard = () => {
                 isOpen={isSidebarOpen}
                 setIsOpen={setSidebarOpen}
                 unreadMessages={unreadMessages}
+                pendingRequestsCount={pendingRequestsCount}
             />
             {isSidebarOpen && (
                 <div
@@ -391,6 +454,7 @@ const HRDashboard = () => {
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     setSidebarOpen={setSidebarOpen}
+                    onNotificationNavigate={handleNotificationNavigate}
                 />
 
                 <div className="p-4 lg:p-6 max-w-full mx-auto">
@@ -407,7 +471,9 @@ const HRDashboard = () => {
                                 announcements={announcements}
                                 mistakeReports={mistakeReports}
                                 hrRequests={hrRequests}
+                                loans={loans}
                                 setActiveTab={setActiveTab}
+                                setHrRequestsSubTab={setHrRequestsSubTab}
                             />
                         )}
 
@@ -502,6 +568,9 @@ const HRDashboard = () => {
                             <HRRequestsManagement
                                 requests={hrRequests}
                                 onUpdate={handleUpdateHRRequest}
+                                initialSubTab={hrRequestsSubTab}
+                                externalLoans={loans}
+                                onRefreshLoans={(updatedLoans) => setLoans(updatedLoans)}
                             />
                         )}
 
