@@ -363,9 +363,9 @@ const HRReports = ({ employees }) => {
                 return lEmpId === empIdStr && (l.status?.toLowerCase() === 'approved');
             });
 
-            // 3. Compute total leave days taken per leave type
-            const leaveUsedByType = {};
+            // 3. Compute total leave days taken (and count unpaid days)
             let totalLeaveDays = 0;
+            let unpaidLeaveDays = 0;
 
             empLeaves.forEach(l => {
                 const leaveStart = new Date(l.startDate);
@@ -374,20 +374,10 @@ const HRReports = ({ employees }) => {
                 const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
                 totalLeaveDays += days;
 
-                const typeObj = l.leaveType;
-                const typeId = typeObj?._id || typeObj?.name || 'general';
-                const typeQuota = Number(typeObj?.maxDays) || 12;
-
-                if (!leaveUsedByType[typeId]) {
-                    leaveUsedByType[typeId] = { days: 0, quota: typeQuota };
+                const isUnpaid = l.leaveType && String(l.leaveType.name || '').toLowerCase().includes('unpaid');
+                if (isUnpaid) {
+                    unpaidLeaveDays += days;
                 }
-                leaveUsedByType[typeId].days += days;
-            });
-
-            // Calculate unpaid days (excess over quota per type)
-            let unpaidLeaveDays = 0;
-            Object.values(leaveUsedByType).forEach(({ days, quota }) => {
-                if (days > quota) unpaidLeaveDays += (days - quota);
             });
 
             const leaveDeduction = Math.round(unpaidLeaveDays * dailyRate);
@@ -1898,103 +1888,6 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                 )}
             </div>
 
-            {/* ── 4 Interactive KPI Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                {/* Gross Base Budget Card */}
-                <motion.button
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
-                    onClick={() => setDeductionFilter('all')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        deductionFilter === 'all'
-                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10'
-                            : 'border-slate-200 hover:border-indigo-300 hover:shadow-xs'
-                    }`}
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'}`}>
-                            <Wallet size={20} />
-                        </div>
-                        <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full uppercase">
-                            {payrollData.length} Staff
-                        </span>
-                    </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gross Base Budget</p>
-                    <p className="text-2xl font-black text-slate-800 tracking-tight mt-1">{formatCurrency(payrollSummary.totalBase)}</p>
-                    <p className="text-xs text-slate-400 font-medium mt-1">Total monthly committed payroll</p>
-                </motion.button>
-
-                {/* Leave Deductions Card */}
-                <motion.button
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
-                    onClick={() => setDeductionFilter('leave')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        deductionFilter === 'leave'
-                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10'
-                            : 'border-amber-100 hover:border-amber-300 hover:shadow-xs'
-                    }`}
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'leave' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-600'}`}>
-                            <Calendar size={20} />
-                        </div>
-                        <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase">
-                            {totalLeaveDays} Days
-                        </span>
-                    </div>
-                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Leave Deductions</p>
-                    <p className="text-2xl font-black text-amber-700 tracking-tight mt-1">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</p>
-                    <p className="text-xs text-slate-400 font-medium mt-1">From approved unpaid leaves</p>
-                </motion.button>
-
-                {/* Late Entry Deductions Card */}
-                <motion.button
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-                    onClick={() => setDeductionFilter('late')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        deductionFilter === 'late'
-                            ? 'border-rose-500 ring-2 ring-rose-500/10 shadow-md bg-rose-50/10'
-                            : 'border-rose-100 hover:border-rose-300 hover:shadow-xs'
-                    }`}
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'late' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600'}`}>
-                            <Clock size={20} />
-                        </div>
-                        <span className="text-[10px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full uppercase">
-                            {totalLateEntries} Late
-                        </span>
-                    </div>
-                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">Late Deductions</p>
-                    <p className="text-2xl font-black text-rose-700 tracking-tight mt-1">-{formatCurrency(payrollSummary.totalLateDeductions)}</p>
-                    <p className="text-xs text-slate-400 font-medium mt-1">0.25 day rate per late check-in</p>
-                </motion.button>
-
-                {/* Net Payout Card */}
-                <motion.button
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-                    onClick={() => setDeductionFilter('deduction')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        deductionFilter === 'deduction'
-                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10'
-                            : 'border-emerald-100 hover:border-emerald-300 hover:shadow-xs'
-                    }`}
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'deduction' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600'}`}>
-                            <CheckCircle size={20} />
-                        </div>
-                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase">
-                            {efficiencyRate}% Disbursed
-                        </span>
-                    </div>
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Net Disbursed Payout</p>
-                    <p className="text-2xl font-black text-emerald-700 tracking-tight mt-1">{formatCurrency(payrollSummary.totalNet)}</p>
-                    <p className="text-xs text-slate-400 font-medium mt-1">Total final payroll disbursement</p>
-                </motion.button>
-
-            </div>
-
             {/* ── Deductions Audit & Department Cost Row ── */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
@@ -2097,6 +1990,104 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                         </div>
                     </motion.div>
                 )}
+            </div>
+
+            
+            {/* ── 4 Interactive KPI Cards ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+
+                {/* Gross Base Budget Card */}
+                <motion.button
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
+                    onClick={() => setDeductionFilter('all')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        deductionFilter === 'all'
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10'
+                            : 'border-slate-200 hover:border-indigo-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'}`}>
+                            <Wallet size={20} />
+                        </div>
+                        <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full uppercase">
+                            {payrollData.length} Staff
+                        </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gross Base Budget</p>
+                    <p className="text-2xl font-black text-slate-800 tracking-tight mt-1">{formatCurrency(payrollSummary.totalBase)}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Total monthly committed payroll</p>
+                </motion.button>
+
+                {/* Leave Deductions Card */}
+                <motion.button
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
+                    onClick={() => setDeductionFilter('leave')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        deductionFilter === 'leave'
+                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10'
+                            : 'border-amber-100 hover:border-amber-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'leave' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-600'}`}>
+                            <Calendar size={20} />
+                        </div>
+                        <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase">
+                            {totalLeaveDays} Days
+                        </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Leave Deductions</p>
+                    <p className="text-2xl font-black text-amber-700 tracking-tight mt-1">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-1">From approved unpaid leaves</p>
+                </motion.button>
+
+                {/* Late Entry Deductions Card */}
+                <motion.button
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+                    onClick={() => setDeductionFilter('late')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        deductionFilter === 'late'
+                            ? 'border-rose-500 ring-2 ring-rose-500/10 shadow-md bg-rose-50/10'
+                            : 'border-rose-100 hover:border-rose-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'late' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600'}`}>
+                            <Clock size={20} />
+                        </div>
+                        <span className="text-[10px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full uppercase">
+                            {totalLateEntries} Late
+                        </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">Late Deductions</p>
+                    <p className="text-2xl font-black text-rose-700 tracking-tight mt-1">-{formatCurrency(payrollSummary.totalLateDeductions)}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-1">0.25 day rate per late check-in</p>
+                </motion.button>
+
+                {/* Net Payout Card */}
+                <motion.button
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+                    onClick={() => setDeductionFilter('deduction')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        deductionFilter === 'deduction'
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10'
+                            : 'border-emerald-100 hover:border-emerald-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'deduction' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-600'}`}>
+                            <CheckCircle size={20} />
+                        </div>
+                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase">
+                            {efficiencyRate}% Disbursed
+                        </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Net Disbursed Payout</p>
+                    <p className="text-2xl font-black text-emerald-700 tracking-tight mt-1">{formatCurrency(payrollSummary.totalNet)}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Total final payroll disbursement</p>
+                </motion.button>
+
             </div>
 
             {/* ── View Switcher & Counter & Search Bar ── */}
