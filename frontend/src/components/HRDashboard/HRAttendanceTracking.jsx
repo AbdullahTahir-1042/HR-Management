@@ -3,6 +3,12 @@ import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 
 const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
+    const sortedAttendance = [...filteredAttendance].sort((a, b) => {
+        const dateA = a.checkIn ? new Date(a.checkIn) : new Date(a.date);
+        const dateB = b.checkIn ? new Date(b.checkIn) : new Date(b.date);
+        return dateB - dateA;
+    });
+
     return (
         <motion.div 
             key="attendance"
@@ -22,7 +28,7 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredAttendance.map(record => (
+                        {sortedAttendance.map(record => (
                             <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-8 py-6">
                                     <div className="flex flex-col">

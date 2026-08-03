@@ -19,6 +19,10 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
 
         let totalDays = 0;
         thisMonthLeaves.forEach(l => {
+            // Deduct salary ONLY if it is an Unpaid Leave
+            const isUnpaid = l.leaveType && String(l.leaveType.name).toLowerCase().includes('unpaid');
+            if (!isUnpaid) return;
+
             const start = new Date(l.startDate);
             const end = new Date(l.endDate);
             if (!isNaN(start) && !isNaN(end)) {
