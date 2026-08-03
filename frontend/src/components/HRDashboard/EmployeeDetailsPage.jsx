@@ -119,6 +119,10 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
 
         let totalLeaveDays = 0;
         employeeLeaves.forEach(l => {
+            // Deduct salary ONLY if it is an Unpaid Leave
+            const isUnpaid = l.leaveType && String(l.leaveType.name).toLowerCase().includes('unpaid');
+            if (!isUnpaid) return;
+
             const start = new Date(l.startDate);
             const end = new Date(l.endDate);
             if (!isNaN(start) && !isNaN(end)) {

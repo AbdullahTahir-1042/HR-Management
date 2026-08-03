@@ -3,7 +3,7 @@ import axios from 'axios';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Megaphone } from 'lucide-react';
+import { X, Megaphone, AlertTriangle } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { requestForToken, onMessageListener } from '../firebase';
@@ -411,16 +411,24 @@ const EmployeeDashboard = () => {
         }
     };
 
-    const handleCheckIn = async () => {
-        await apiClient.post('/attendance/check-in');
-        fetchTodayAttendance();
-        fetchAttendanceHistory();
-    };
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
 
-    const handleCheckOut = async () => {
-        await apiClient.post('/attendance/check-out');
-        fetchTodayAttendance();
-        fetchAttendanceHistory();
+    const handleCheckIn = () => setConfirmModal({ isOpen: true, type: 'checkIn' });
+    const handleCheckOut = () => setConfirmModal({ isOpen: true, type: 'checkOut' });
+
+    const handleConfirmAction = async () => {
+        try {
+            if (confirmModal.type === 'checkIn') {
+                await apiClient.post('/attendance/check-in');
+            } else if (confirmModal.type === 'checkOut') {
+                await apiClient.post('/attendance/check-out');
+            }
+            fetchTodayAttendance();
+            fetchAttendanceHistory();
+            setConfirmModal({ isOpen: false, type: null });
+        } catch (err) {
+            alert(err.response?.data?.msg || 'Error recording attendance');
+        }
     };
 
     const handleApplyLeave = async (e) => {
@@ -612,6 +620,80 @@ const EmployeeDashboard = () => {
                     </AnimatePresence>
                 </div>
             </main>
+
+            {/* Confirmation Modal */}
+            <AnimatePresence>
+                {confirmModal.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }} 
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                            onClick={() => setConfirmModal({ isOpen: false, type: null })}
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 overflow-hidden"
+                        >
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">
+                                Confirm {confirmModal.type === 'checkIn' ? 'Check In' : 'Check Out'}
+                            </h3>
+                            <p className="text-slate-500 text-sm mb-4">
+                                Are you sure you want to {confirmModal.type === 'checkIn' ? 'check in' : 'check out'} now? This action will record your attendance for the day and cannot be undone.
+                            </p>
+                            
+                            {confirmModal.type === 'checkIn' && (() => {
+                                const now = new Date();
+                                const shiftStart = new Date();
+                                shiftStart.setHours(9, 15, 0, 0); // 9:15 AM cutoff
+                                
+                                if (now > shiftStart) {
+                                    const diffMs = now - shiftStart;
+                                    const diffMins = Math.floor(diffMs / 60000);
+                                    const hours = Math.floor(diffMins / 60);
+                                    const mins = diffMins % 60;
+                                    const timeString = hours > 0 ? `${hours} hr ${mins} min` : `${mins} min`;
+                                    
+                                    return (
+                                        <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                            <p className="text-amber-800 font-semibold text-sm mb-1 flex items-center gap-2">
+                                                <AlertTriangle size={16} /> Notice: Late Check-In
+                                            </p>
+                                            <p className="text-amber-700 text-[13px] leading-relaxed">
+                                                You are checking in <strong>{timeString} late</strong>. To maintain your full hours, you will need to compensate by working an extra {timeString} at the end of your shift today.
+                                            </p>
+                                        </div>
+                                    );
+                                }
+                                return <div className="mb-6" />;
+                            })()}
+                            
+                            {confirmModal.type === 'checkOut' && <div className="mb-6" />}
+                            
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setConfirmModal({ isOpen: false, type: null })}
+                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleConfirmAction}
+                                    className={`px-4 py-2 text-sm font-bold text-white rounded-xl shadow-md transition-all ${
+                                        confirmModal.type === 'checkIn' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-500 hover:bg-rose-600'
+                                    }`}
+                                >
+                                    Yes, {confirmModal.type === 'checkIn' ? 'Check In' : 'Check Out'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             <FirstLoginModal isOpen={authUser?.isFirstLogin === true || fullUser?.isFirstLogin === true} />
         </div>
     );
