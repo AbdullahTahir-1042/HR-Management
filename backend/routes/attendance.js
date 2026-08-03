@@ -121,12 +121,15 @@ router.get('/status', auth, async (req, res) => {
 });
 
 // @route   GET api/attendance/my-history
-// @desc    Get employee's attendance history
+// @desc    Get employee's attendance history for the current month
 // @access  Private
 router.get('/my-history', auth, async (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
-        const attendance = await Attendance.find({ employee: req.user.id, date: today }).sort({ date: -1 });
+        const currentMonthPrefix = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+        const attendance = await Attendance.find({ 
+            employee: req.user.id, 
+            date: { $regex: `^${currentMonthPrefix}` } 
+        }).sort({ date: -1 });
         res.json(attendance);
     } catch (err) {
         res.status(500).send('Server Error');

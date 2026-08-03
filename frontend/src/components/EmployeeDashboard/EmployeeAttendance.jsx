@@ -13,7 +13,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
     const getLateness = (dateObj) => {
         if (!dateObj) return null;
         const shiftStart = new Date(dateObj);
-        shiftStart.setHours(9, 30, 0, 0); // 9:30 AM cutoff
+        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
         
         if (dateObj > shiftStart) {
             const diffMs = dateObj - shiftStart;

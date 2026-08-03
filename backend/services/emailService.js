@@ -57,11 +57,31 @@ const sendEmail = async ({ to, subject, html }) => {
             html
         };
 
+        // --- Structured Logging (Pre-dispatch) ---
+        console.log(`[EmailService] 🔄 Attempting to dispatch email...`);
+        console.log(`[EmailService] ✉️ Recipient: ${targetTo}`);
+        console.log(`[EmailService] 📌 Event/Subject: ${mailOptions.subject}`);
+
         const info = await transporter.sendMail(mailOptions);
-        console.log(`[EmailService] Email successfully sent. Message ID: ${info.messageId}`);
+        
+        // --- Structured Logging (Success) ---
+        console.log(`[EmailService] ✅ Email successfully delivered. Message ID: ${info.messageId}`);
         return { success: true, data: { id: info.messageId } };
     } catch (err) {
-        console.error('[EmailService Exception]:', err.message || err);
+        // --- Structured Logging (Failure) ---
+        console.error('[EmailService] ❌ Failed to dispatch email to recipient.');
+        
+        // Log complete error safely (without exposing raw transporter credentials)
+        const safeError = {
+            message: err.message,
+            code: err.code,
+            command: err.command,
+            response: err.response,
+            responseCode: err.responseCode,
+            stack: err.stack
+        };
+        console.error('[EmailService Exception Details]:', safeError);
+        
         return { success: false, error: err.message || 'Failed to deliver email' };
     }
 };
