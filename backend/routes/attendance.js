@@ -32,39 +32,51 @@ router.post('/check-in', auth, async (req, res) => {
         // ── Send Check-In Email Notification Asynchronously afterwards ──
         setTimeout(async () => {
             try {
-                const employee = await User.findById(req.user.id).select('+notificationPreferences');
-                console.log("Employee:", employee);
+                const employee = await User.findById(req.user.id);
+                console.log(`[CheckIn Email] Processing for user ID: ${req.user.id}, Email: ${employee?.email || 'N/A'}`);
 
-                if (employee && employee.email && employee.notificationPreferences?.all !== false && employee.notificationPreferences?.attendance !== false) {
-                    const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
-                    });
-                    const checkInTime = new Date(attendance.checkIn).toLocaleTimeString('en-US', {
-                        hour: '2-digit', minute: '2-digit', hour12: true
-                    });
+                if (!employee || !employee.email) {
+                    console.warn(`[CheckIn Email] Skipped: Employee record or email address missing for ID ${req.user.id}`);
+                    return;
+                }
 
-                    const template = getCheckInEmailTemplate({
-                        name: employee.name,
-                        date: checkInDate,
-                        time: checkInTime,
-                        department: employee.department || 'N/A'
-                    });
+                const prefs = employee.notificationPreferences;
+                const isEmailEnabled = (!prefs || (prefs.all !== false && prefs.attendance !== false));
 
-                    console.log("Sending email to:", employee.email);
+                if (!isEmailEnabled) {
+                    console.log(`[CheckIn Email] Skipped: User ${employee.email} has disabled attendance email notifications.`);
+                    return;
+                }
 
-                    try {
-                        const result = await sendEmail({
-                            to: employee.email,
-                            subject: template.subject,
-                            html: template.html
-                        });
-                        console.log("✅ Email sent:", result);
-                    } catch (error) {
-                        console.error("❌ Email send failed:", error);
-                    }
+                const checkInDate = new Date(attendance.checkIn).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric', weekday: 'short'
+                });
+                const checkInTime = new Date(attendance.checkIn).toLocaleTimeString('en-US', {
+                    hour: '2-digit', minute: '2-digit', hour12: true
+                });
+
+                const template = getCheckInEmailTemplate({
+                    name: employee.name,
+                    date: checkInDate,
+                    time: checkInTime,
+                    department: employee.department || 'N/A'
+                });
+
+                console.log(`[CheckIn Email] Dispatching check-in email to ${employee.email}...`);
+
+                const result = await sendEmail({
+                    to: employee.email,
+                    subject: template.subject,
+                    html: template.html
+                });
+
+                if (result && result.success) {
+                    console.log(`✅ [CheckIn Email] Successfully sent to ${employee.email} (Message ID: ${result.data?.id})`);
+                } else {
+                    console.error(`❌ [CheckIn Email] Failed to send to ${employee.email}:`, result?.error || 'Unknown error');
                 }
             } catch (emailErr) {
-                console.error("❌ Email process failed:", emailErr);
+                console.error("❌ [CheckIn Email Exception]:", emailErr);
             }
         }, 0);
     } catch (err) {

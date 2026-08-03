@@ -7,7 +7,7 @@ const getTransporter = () => {
     const host = process.env.EMAIL_HOST;
     const port = process.env.EMAIL_PORT;
     const user = process.env.EMAIL_USER;
-    const pass = process.env.EMAIL_PASS;
+    const pass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '';
 
     if (!host || !port || !user || !pass) {
         console.warn('[EmailService] Warning: One or more SMTP configurations (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS) are missing.');
@@ -21,6 +21,9 @@ const getTransporter = () => {
         auth: {
             user,
             pass
+        },
+        tls: {
+            rejectUnauthorized: false
         }
     });
 };
