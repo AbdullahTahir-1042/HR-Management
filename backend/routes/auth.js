@@ -113,7 +113,7 @@ router.post('/register', [auth, isHR], async (req, res) => {
                 email: user.email,
                 tempPassword: rawPassword
             });
-            sendEmail({
+            await sendEmail({
                 to: user.email,
                 subject: template.subject,
                 html: template.html

@@ -648,7 +648,7 @@ const EmployeeDashboard = () => {
                             {confirmModal.type === 'checkIn' && (() => {
                                 const now = new Date();
                                 const shiftStart = new Date();
-                                shiftStart.setHours(9, 15, 0, 0); // 9:15 AM cutoff
+                                shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
                                 
                                 if (now > shiftStart) {
                                     const diffMs = now - shiftStart;
