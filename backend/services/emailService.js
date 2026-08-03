@@ -1,91 +1,104 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 /**
- * Initialize Nodemailer transporter client dynamically using SMTP configurations
+ * Initialize Nodemailer transporter
  */
 const getTransporter = () => {
     const host = process.env.EMAIL_HOST;
-    const port = process.env.EMAIL_PORT;
+    const port = Number(process.env.EMAIL_PORT);
     const user = process.env.EMAIL_USER;
-    const pass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '';
+    const pass = process.env.EMAIL_PASS
+        ? process.env.EMAIL_PASS.replace(/\s+/g, "")
+        : "";
 
     if (!host || !port || !user || !pass) {
-        console.warn('[EmailService] Warning: One or more SMTP configurations (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS) are missing.');
+        console.error("[EmailService] Missing SMTP environment variables.");
         return null;
     }
 
     return nodemailer.createTransport({
         host,
-        port: Number(port),
-        secure: Number(port) === 465, // true for port 465, false for other ports (like 587)
+        port,
+        secure: port === 465,
         auth: {
             user,
-            pass
+            pass,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
         tls: {
-            rejectUnauthorized: false
-        }
+            rejectUnauthorized: false,
+        },
     });
 };
 
 /**
- * Base method to dispatch emails via Nodemailer
- * @param {Object} params
- * @param {string|string[]} params.to - Target recipient email(s)
- * @param {string} params.subject - Email subject line
- * @param {string} params.html - Rendered HTML body content
- * @returns {Promise<{success: boolean, data?: object, error?: any}>}
+ * Send Email
  */
 const sendEmail = async ({ to, subject, html }) => {
     try {
         if (!to) {
-            return { success: false, error: 'Recipient email address (to) is required.' };
+            return {
+                success: false,
+                error: "Recipient email is required.",
+            };
         }
 
         const transporter = getTransporter();
+
         if (!transporter) {
-            return { success: false, error: 'Email service is unconfigured. SMTP credentials missing.' };
+            return {
+                success: false,
+                error: "SMTP transporter could not be created.",
+            };
         }
 
-        const fromAddress = process.env.EMAIL_FROM || 'HR Management System <noreply@company.com>';
-        const targetTo = Array.isArray(to) ? to.join(', ') : to;
+        console.log("[EmailService] Verifying SMTP connection...");
+
+        await transporter.verify();
+
+        console.log("[EmailService] SMTP connection verified successfully.");
 
         const mailOptions = {
-            from: fromAddress,
-            to: targetTo,
-            subject: subject || 'HR Management System Notification',
-            html
+            from:
+                process.env.EMAIL_FROM ||
+                `HR Management System <${process.env.EMAIL_USER}>`,
+            to,
+            subject: subject || "HR Management Notification",
+            html,
         };
 
-        // --- Structured Logging (Pre-dispatch) ---
-        console.log(`[EmailService] 🔄 Attempting to dispatch email...`);
-        console.log(`[EmailService] ✉️ Recipient: ${targetTo}`);
-        console.log(`[EmailService] 📌 Event/Subject: ${mailOptions.subject}`);
+        console.log("[EmailService] Sending email...");
+        console.log("[EmailService] To:", to);
+        console.log("[EmailService] Subject:", subject);
 
         const info = await transporter.sendMail(mailOptions);
-        
-        // --- Structured Logging (Success) ---
-        console.log(`[EmailService] ✅ Email successfully delivered. Message ID: ${info.messageId}`);
-        return { success: true, data: { id: info.messageId } };
-    } catch (err) {
-        // --- Structured Logging (Failure) ---
-        console.error('[EmailService] ❌ Failed to dispatch email to recipient.');
-        
-        // Log complete error safely (without exposing raw transporter credentials)
-        const safeError = {
-            message: err.message,
-            code: err.code,
-            command: err.command,
-            response: err.response,
-            responseCode: err.responseCode,
-            stack: err.stack
+
+        console.log("[EmailService] Email sent successfully.");
+        console.log("[EmailService] Message ID:", info.messageId);
+
+        return {
+            success: true,
+            data: info,
         };
-        console.error('[EmailService Exception Details]:', safeError);
-        
-        return { success: false, error: err.message || 'Failed to deliver email' };
+    } catch (err) {
+        console.error("========== EMAIL ERROR ==========");
+        console.error("Message:", err.message);
+        console.error("Code:", err.code);
+        console.error("Command:", err.command);
+        console.error("Response:", err.response);
+        console.error("Response Code:", err.responseCode);
+        console.error("Stack:", err.stack);
+        console.error("=================================");
+
+        return {
+            success: false,
+            error: err.message,
+        };
     }
 };
 
 module.exports = {
-    sendEmail
+    sendEmail,
 };
