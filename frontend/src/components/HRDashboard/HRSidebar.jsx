@@ -22,7 +22,7 @@ import {
     MessageCircle
 } from 'lucide-react';
 
-const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
+const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0, pendingRequestsCount = 0 }) => {
     const navigate = useNavigate();
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -127,6 +127,11 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                         >
                             <ClipboardList size={18} />
                             <span>HR Requests</span>
+                            {pendingRequestsCount > 0 && (
+                                <span className="ml-auto bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                                    {pendingRequestsCount}
+                                </span>
+                            )}
                         </button>
                     </div>
                 </div>
