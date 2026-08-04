@@ -28,7 +28,13 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {sortedAttendance.map(record => (
+                        {sortedAttendance.map(record => {
+                            const late = record.checkIn ? (() => {
+                                const shiftStart = new Date(record.checkIn);
+                                shiftStart.setHours(9, 45, 0, 0);
+                                return new Date(record.checkIn) > shiftStart;
+                            })() : false;
+                            return (
                             <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-8 py-6">
                                     <div className="flex flex-col">
@@ -38,8 +44,8 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                 </td>
                                 <td className="px-8 py-6 text-slate-600 text-sm">{record.date}</td>
                                 <td className="px-8 py-6">
-                                    <div className="flex items-center gap-2 text-slate-700 font-medium">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                    <div className={`flex items-center gap-2 font-medium ${late ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+                                        <div className={`w-2 h-2 rounded-full ${late ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
                                         {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                     </div>
                                 </td>
@@ -50,7 +56,7 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                        )})}
                     </tbody>
                 </table>
                 {filteredAttendance.length === 0 && (

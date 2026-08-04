@@ -230,13 +230,22 @@ router.post('/forgot-password', async (req, res) => {
             const hrUsers = await User.find({ role: 'hr' });
             for (let hr of hrUsers) {
                 await Notification.create({
-                    user: hr._id,
+                    recipient: hr._id,
                     type: 'system',
                     title: 'Password Reset Request',
                     message: `Employee ${user.name} (${user.email}) has requested a password reset. Please set a temporary password for them in their profile settings.`,
                     isRead: false
                 });
             }
+
+            // Create HR Request for Password Reset
+            await HRRequest.create({
+                employee: user._id,
+                type: 'Password Reset',
+                description: `Password reset requested by ${user.name} (${user.email})`,
+                status: 'Pending'
+            });
+
             return res.status(200).json({ 
                 bypassOtp: true, 
                 msg: 'A password reset request has been sent to HR directly. They will provide you with a temporary password soon.' 

@@ -142,7 +142,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                                 <td className="px-3 py-3 text-slate-700 font-medium text-sm">
                                                     {formatDate(record.date)}
                                                 </td>
-                                                <td className="px-3 py-3 text-slate-600 text-sm">
+                                                <td className={`px-3 py-3 text-sm ${recordLate ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
                                                     {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                                 </td>
                                                 <td className="px-3 py-3 text-slate-600 text-sm">
