@@ -48,7 +48,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                 </button>
             </div>
 
-            <nav className="flex-1 p-4 space-y-3 mt-2 overflow-y-auto">
+            <nav className="flex-1 p-4 space-y-3 mt-2 overflow-y-auto no-scrollbar">
                 {/* ── SECTION: OVERVIEW ── */}
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Overview</p>

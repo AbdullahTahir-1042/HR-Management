@@ -70,6 +70,12 @@ const validators = {
 
         return '';
     },
+    password: (val) => {
+        if (!val) return ''; // Optional for edits
+        if (val.length < 6) return 'Password must be at least 6 characters';
+        if (!/[a-zA-Z]/.test(val) || !/[0-9]/.test(val)) return 'Password must contain both letters and numbers';
+        return '';
+    },
     salary: (val) => {
         if (val === '' || val === null || val === undefined) return 'Salary is required';
         const num = Number(val);
@@ -401,6 +407,29 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                     {touched.phone && !fieldErrors.phone && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                 </div>
                                 <FieldError message={touched.phone ? fieldErrors.phone : ''} />
+                            </div>
+                        </div>
+
+                        {/* Security & Access */}
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2">Security & Access</h3>
+                            
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Temporary Password (Optional)</label>
+                                <div className="relative mt-1 group">
+                                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                    <input 
+                                        type="text" 
+                                        value={formData.password || ''} 
+                                        onChange={e => handleChange('password', e.target.value)} 
+                                        onBlur={() => handleBlur('password')}
+                                        placeholder="Enter to reset employee's password"
+                                        className={getInputBorderClass('password', touched, fieldErrors, BASE_INPUT)} 
+                                    />
+                                    {touched.password && !fieldErrors.password && formData.password && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1 ml-1">If provided, the employee will be forced to change this upon next login.</p>
+                                <FieldError message={touched.password ? fieldErrors.password : ''} />
                             </div>
                         </div>
 

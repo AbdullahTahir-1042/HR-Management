@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, EyeOff, Eye, Loader2, ShieldCheck } from 'lucide-react';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 const getDashboardPath = (role) => {
     if (role === 'hr') return '/hr';
@@ -11,6 +12,7 @@ const getDashboardPath = (role) => {
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [isForgotOpen, setIsForgotOpen] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const { login, user } = useContext(AuthContext);
@@ -76,6 +78,17 @@ const Login = () => {
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                     </div>
+                    
+                    <div className="flex justify-end mt-2">
+                        <button
+                            type="button"
+                            onClick={() => setIsForgotOpen(true)}
+                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-all"
+                        >
+                            Forgot Password?
+                        </button>
+                    </div>
+
                     <motion.button
                         whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
@@ -87,6 +100,11 @@ const Login = () => {
                     <p className="text-slate-500 text-sm">Contact HR if you need an account</p>
                 </div>
             </motion.div>
+
+            <ForgotPasswordModal 
+                isOpen={isForgotOpen} 
+                onClose={() => setIsForgotOpen(false)} 
+            />
         </div>
     );
 };

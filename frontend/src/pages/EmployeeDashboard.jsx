@@ -412,22 +412,55 @@ const EmployeeDashboard = () => {
     };
 
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
+    const [isLocationFetching, setIsLocationFetching] = useState(false);
 
     const handleCheckIn = () => setConfirmModal({ isOpen: true, type: 'checkIn' });
     const handleCheckOut = () => setConfirmModal({ isOpen: true, type: 'checkOut' });
 
     const handleConfirmAction = async () => {
-        try {
-            if (confirmModal.type === 'checkIn') {
-                await apiClient.post('/attendance/check-in');
-            } else if (confirmModal.type === 'checkOut') {
-                await apiClient.post('/attendance/check-out');
+        if (confirmModal.type === 'checkIn') {
+            setIsLocationFetching(true);
+            
+            if (!navigator.geolocation) {
+                setIsLocationFetching(false);
+                return alert('Geolocation is not supported by your browser.');
             }
-            fetchTodayAttendance();
-            fetchAttendanceHistory();
-            setConfirmModal({ isOpen: false, type: null });
-        } catch (err) {
-            alert(err.response?.data?.msg || 'Error recording attendance');
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        await apiClient.post('/attendance/check-in', {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        });
+                        fetchTodayAttendance();
+                        fetchAttendanceHistory();
+                        setConfirmModal({ isOpen: false, type: null });
+                    } catch (err) {
+                        alert(err.response?.data?.msg || 'Error recording attendance');
+                    } finally {
+                        setIsLocationFetching(false);
+                    }
+                },
+                (error) => {
+                    setIsLocationFetching(false);
+                    let msg = 'Failed to retrieve location.';
+                    if (error.code === 1) msg = 'Location access denied. Please allow location access in your browser to check in at the TDC office.';
+                    if (error.code === 2) msg = 'Position unavailable.';
+                    if (error.code === 3) msg = 'Location request timed out.';
+                    alert(msg);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        } else if (confirmModal.type === 'checkOut') {
+            try {
+                await apiClient.post('/attendance/check-out');
+                fetchTodayAttendance();
+                fetchAttendanceHistory();
+                setConfirmModal({ isOpen: false, type: null });
+            } catch (err) {
+                alert(err.response?.data?.msg || 'Error recording attendance');
+            }
         }
     };
 
@@ -682,11 +715,12 @@ const EmployeeDashboard = () => {
                                 </button>
                                 <button
                                     onClick={handleConfirmAction}
-                                    className={`px-4 py-2 text-sm font-bold text-white rounded-xl shadow-md transition-all ${
+                                    disabled={isLocationFetching}
+                                    className={`px-4 py-2 text-sm font-bold text-white rounded-xl shadow-md transition-all disabled:opacity-70 disabled:cursor-wait ${
                                         confirmModal.type === 'checkIn' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-500 hover:bg-rose-600'
                                     }`}
                                 >
-                                    Yes, {confirmModal.type === 'checkIn' ? 'Check In' : 'Check Out'}
+                                    {isLocationFetching ? 'Locating...' : `Yes, ${confirmModal.type === 'checkIn' ? 'Check In' : 'Check Out'}`}
                                 </button>
                             </div>
                         </motion.div>

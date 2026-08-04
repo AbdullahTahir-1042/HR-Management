@@ -3,10 +3,28 @@ const router = express.Router();
 const { auth, isHR } = require('../middleware/auth');
 const Attendance = require('../models/Attendance');
 const LeaveRequest = require('../models/LeaveRequest');
+const HRRequest = require('../models/HRRequest');
 
 const User = require('../models/User');
 const { sendEmail } = require('../services/emailService');
 const { getCheckInEmailTemplate } = require('../templates/checkInEmail');
+
+// Helper function to calculate distance using Haversine formula
+function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Earth radius in meters
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+}
 
 // @route   POST api/attendance/check-in
 // @desc    Employee Check-in
@@ -14,6 +32,45 @@ const { getCheckInEmailTemplate } = require('../templates/checkInEmail');
 router.post('/check-in', auth, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     try {
+        const { latitude, longitude } = req.body;
+        // 1. Check for WFH exemption first
+        const todayDateStart = new Date(today);
+        todayDateStart.setHours(0, 0, 0, 0);
+        const todayDateEnd = new Date(today);
+        todayDateEnd.setHours(23, 59, 59, 999);
+
+        const approvedWFH = await HRRequest.findOne({
+            employee: req.user.id,
+            type: 'Work From Home',
+            status: 'Resolved',
+            targetDate: { $gte: todayDateStart, $lte: todayDateEnd }
+        });
+
+        // 2. Geofencing Check (Only if not WFH)
+        if (!approvedWFH) {
+            const officeLat = parseFloat(process.env.OFFICE_LATITUDE);
+            const officeLng = parseFloat(process.env.OFFICE_LONGITUDE);
+            const maxRadius = parseFloat(process.env.GEOFENCE_RADIUS_METERS || 200);
+
+            if (!officeLat || !officeLng) {
+                return res.status(500).json({ msg: 'Server Configuration Error: Office location is not set.' });
+            }
+
+            if (!latitude || !longitude) {
+                return res.status(400).json({ msg: 'Location data is required for check-in.' });
+            }
+
+            const distance = getDistanceFromLatLonInM(latitude, longitude, officeLat, officeLng);
+            
+            if (distance > maxRadius) {
+                return res.status(403).json({ 
+                    msg: `You are too far from the TDC office (The Dev Corporate) to check in. (Distance: ${Math.round(distance)}m, Allowed: ${maxRadius}m)` 
+                });
+            }
+        } else {
+            console.log(`✅ User ${req.user.id} has approved WFH for today. Bypassing geofence.`);
+        }
+
         let attendance = await Attendance.findOne({ employee: req.user.id, date: today });
         if (attendance) {
             return res.status(400).json({ msg: 'Already checked in today' });

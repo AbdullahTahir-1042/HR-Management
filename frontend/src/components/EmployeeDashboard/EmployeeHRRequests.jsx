@@ -193,7 +193,7 @@ const EmployeeHRRequests = ({ user }) => {
     // General HR Requests State
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState({ type: '', description: '' });
+    const [form, setForm] = useState({ type: '', description: '', targetDate: '' });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
@@ -275,7 +275,7 @@ const EmployeeHRRequests = ({ user }) => {
             setSubmitting(true);
             const res = await apiClient.post('/hr-requests', form);
             setRequests((prev) => [res.data, ...prev]);
-            setForm({ type: '', description: '' });
+            setForm({ type: '', description: '', targetDate: '' });
 
             try {
                 window.dispatchEvent(new CustomEvent('hr_request_event', { detail: { type: 'NEW_HR_REQUEST', request: res.data } }));
@@ -429,6 +429,30 @@ const EmployeeHRRequests = ({ user }) => {
                                 />
                             </div>
 
+                            <AnimatePresence>
+                                {['Work From Home', 'Attendance Correction'].includes(form.type) && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="pt-2">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                                                Target Date *
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={form.targetDate}
+                                                onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
+                                                required
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer"
+                                            />
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                                     Description
@@ -502,6 +526,13 @@ const EmployeeHRRequests = ({ user }) => {
                                                 {formatDate(req.createdAt)}
                                             </span>
                                         </div>
+
+                                        {req.targetDate && (
+                                            <div className="mt-2 text-[11px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                                                <Calendar size={12} />
+                                                Target Date: {formatDate(req.targetDate)}
+                                            </div>
+                                        )}
 
                                         <p className="text-xs text-slate-700 font-medium mt-3 leading-relaxed">
                                             {req.description}
