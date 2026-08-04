@@ -187,7 +187,7 @@ router.get('/balances', auth, async (req, res) => {
 // @desc    Employee Apply for Leave
 // @access  Private
 router.post('/apply', auth, async (req, res) => {
-    const { startDate, endDate, reason, leaveTypeId } = req.body;
+    const { startDate, endDate, reason, leaveTypeId, isUrgent } = req.body;
 
     try {
         if (!leaveTypeId) {
@@ -255,7 +255,7 @@ router.post('/apply', auth, async (req, res) => {
         // --- Advanced Policy Validations ---
 
         // 1. Max Consecutive Days Check
-        if (leaveType.maxConsecutiveDays && leaveType.maxConsecutiveDays > 0) {
+        if (!isUrgent && leaveType.maxConsecutiveDays && leaveType.maxConsecutiveDays > 0) {
             if (duration > leaveType.maxConsecutiveDays) {
                 let msg = `Policy Violation: ${leaveType.name} allows a maximum of ${leaveType.maxConsecutiveDays} consecutive days per request.`;
                 if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
@@ -266,7 +266,7 @@ router.post('/apply', auth, async (req, res) => {
         }
 
         // 2. Cooldown Period Check
-        if (leaveType.cooldownDays && leaveType.cooldownDays > 0) {
+        if (!isUrgent && leaveType.cooldownDays && leaveType.cooldownDays > 0) {
             // Find the most recent approved or pending leave of this type
             const lastLeave = await LeaveRequest.findOne({
                 employee: req.user.id,
@@ -339,7 +339,8 @@ router.post('/apply', auth, async (req, res) => {
             startDate,
             endDate,
             reason,
-            leaveType: leaveTypeId
+            leaveType: leaveTypeId,
+            isUrgent: isUrgent || false
         });
 
         await leave.save();

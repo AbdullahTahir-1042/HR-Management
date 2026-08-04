@@ -564,6 +564,27 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
     }
 });
 
+// @route   PUT api/auth/users/:id/restore
+// @desc    Restore a user (HR only)
+// @access  Private (HR)
+router.put('/users/:id/restore', [auth, isHR], async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        user.status = 'full time';
+        user.isDeleted = false;
+        await user.save();
+
+        res.json({ msg: 'User marked as Active', user });
+    } catch (err) {
+        console.error('Restore Error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   PUT api/auth/fcm-token
 // @desc    Save the employee's browser push notification token
 // @access  Private

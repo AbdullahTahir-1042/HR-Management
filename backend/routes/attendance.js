@@ -4,6 +4,7 @@ const { auth, isHR } = require('../middleware/auth');
 const Attendance = require('../models/Attendance');
 const LeaveRequest = require('../models/LeaveRequest');
 const HRRequest = require('../models/HRRequest');
+const Holiday = require('../models/Holiday');
 
 const User = require('../models/User');
 const { sendEmail } = require('../services/emailService');
@@ -32,12 +33,41 @@ function deg2rad(deg) {
 router.post('/check-in', auth, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     try {
+        const currentDate = new Date();
+        
+        // 0. Prevent check-in on Sundays (0 = Sunday)
+        if (currentDate.getDay() === 0) {
+            return res.status(403).json({ msg: 'Check-in is disabled on Sundays (Weekly Off).' });
+        }
+
         const { latitude, longitude } = req.body;
         // 1. Check for WFH exemption first
         const todayDateStart = new Date(today);
         todayDateStart.setHours(0, 0, 0, 0);
         const todayDateEnd = new Date(today);
         todayDateEnd.setHours(23, 59, 59, 999);
+
+        // 0.5 Prevent check-in on Holidays
+        const activeHoliday = await Holiday.findOne({
+            startDate: { $lte: todayDateEnd },
+            endDate: { $gte: todayDateStart }
+        });
+
+        if (activeHoliday) {
+            return res.status(403).json({ msg: `Check-in is disabled during holidays (${activeHoliday.name}).` });
+        }
+
+        // 0.7 Prevent check-in if user has an approved leave today
+        const activeLeave = await LeaveRequest.findOne({
+            employee: req.user.id,
+            status: 'approved',
+            startDate: { $lte: todayDateEnd },
+            endDate: { $gte: todayDateStart }
+        });
+
+        if (activeLeave) {
+            return res.status(403).json({ msg: `Check-in is disabled because you have an approved leave for today.` });
+        }
 
         const approvedWFH = await HRRequest.findOne({
             employee: req.user.id,

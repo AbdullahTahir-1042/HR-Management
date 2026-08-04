@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Trash2, CalendarCheck, Megaphone, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import apiClient from '../api/axiosClient';
@@ -16,6 +17,7 @@ const NotificationsPanel = ({ onNavigate }) => {
     const [notifications, setNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [selectedNotification, setSelectedNotification] = useState(null);
     const panelRef = useRef(null);
 
     const fetchNotifications = async () => {
@@ -60,6 +62,11 @@ const NotificationsPanel = ({ onNavigate }) => {
 
     const handleItemClick = (notif) => {
         if (!notif.isRead) handleMarkAsRead(notif._id);
+        setSelectedNotification(notif);
+        setIsOpen(false);
+    };
+
+    const handleActionNavigate = (notif) => {
         if (onNavigate) {
             if (notif.type === 'LoanRequest') {
                 onNavigate('hr-requests', 'loans');
@@ -71,7 +78,7 @@ const NotificationsPanel = ({ onNavigate }) => {
                 onNavigate('mistake-reports');
             }
         }
-        setIsOpen(false);
+        setSelectedNotification(null);
     };
 
     const handleMarkAllRead = async () => {
@@ -163,6 +170,59 @@ const NotificationsPanel = ({ onNavigate }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Notification Details Modal */}
+            {typeof document !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {selectedNotification && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
+                        >
+                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center shrink-0">
+                                        {ICONS[selectedNotification.type] || ICONS.system}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-800">{selectedNotification.title}</h3>
+                                        <p className="text-[11px] font-medium text-slate-500">{new Date(selectedNotification.createdAt).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setSelectedNotification(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors shrink-0">
+                                    <X size={20} className="text-slate-500" />
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                    {selectedNotification.message}
+                                </p>
+                            </div>
+                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                                <button 
+                                    onClick={() => setSelectedNotification(null)}
+                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors"
+                                >
+                                    Close
+                                </button>
+                                {['LoanRequest', 'HRRequest', 'LeaveRequest', 'leave', 'MistakeReport'].includes(selectedNotification.type) && (
+                                    <button 
+                                        onClick={() => handleActionNavigate(selectedNotification)}
+                                        className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-md flex items-center gap-2"
+                                    >
+                                        Take Action
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };
