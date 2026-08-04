@@ -16,6 +16,7 @@ const HRReports = ({ employees, loans = [] }) => {
     // ── State ──────────────────────────────────────────────
     const [records, setRecords] = useState([]);
     const [leaveRecords, setLeaveRecords] = useState([]);
+    const [payrollDeductions, setPayrollDeductions] = useState([]);
     const [loading, setLoading] = useState(false);
 
     // Default date range: current month
@@ -91,6 +92,11 @@ const HRReports = ({ employees, loans = [] }) => {
         setLeaveRecords(res.data);
     };
 
+    const fetchPayrollDeductions = async () => {
+        const res = await apiClient.get('/payroll/deductions');
+        setPayrollDeductions(res.data);
+    };
+
     // ── Fetch data depending on active report ────────────────
     const [fetching, setFetching] = useState(false);
     const isInitialMount = React.useRef(true);
@@ -107,7 +113,8 @@ const HRReports = ({ employees, loans = [] }) => {
             // Fetch attendance with date filters, leaves without (to never miss new approvals)
             await Promise.all([
                 fetchAttendanceReport(params),
-                fetchLeaveReport(filters.employeeId)
+                fetchLeaveReport(filters.employeeId),
+                fetchPayrollDeductions()
             ]);
         } catch (err) {
             console.error('Error fetching report data:', err);
@@ -128,7 +135,8 @@ const HRReports = ({ employees, loans = [] }) => {
             if (filters.employeeId) params.employeeId = filters.employeeId;
             await Promise.all([
                 fetchAttendanceReport(params),
-                fetchLeaveReport(filters.employeeId)
+                fetchLeaveReport(filters.employeeId),
+                fetchPayrollDeductions()
             ]);
         } catch (err) {
             console.error('Error refreshing report data:', err);
@@ -394,8 +402,15 @@ const HRReports = ({ employees, loans = [] }) => {
                 }
             });
 
+            // Absence Deductions
+            const empAbsenceDeductions = payrollDeductions.filter(d => {
+                const dEmpId = String(d.employee?._id || d.employee || '');
+                return dEmpId === empIdStr;
+            });
+            const absenceDeduction = empAbsenceDeductions.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
             const leaveDeduction = Math.round(unpaidLeaveDays * dailyRate);
-            const totalDeduction = lateDeduction + leaveDeduction + loanDeduction;
+            const totalDeduction = lateDeduction + leaveDeduction + loanDeduction + absenceDeduction;
             const netSalary = Math.max(0, baseSalary - totalDeduction);
 
             return {
@@ -409,11 +424,12 @@ const HRReports = ({ employees, loans = [] }) => {
                 unpaidLeaveDays,                    // excess days that are actually deducted
                 leaveDeduction,
                 loanDeduction,
+                absenceDeduction,
                 deduction: totalDeduction,
                 netSalary
             };
         });
-    }, [filteredEmployees, filteredAttendance, leaveRecords, loans]);
+    }, [filteredEmployees, filteredAttendance, leaveRecords, loans, payrollDeductions]);
 
     const payrollSummary = useMemo(() => {
         const totalBase = payrollData.reduce((acc, curr) => acc + curr.baseSalary, 0);
@@ -421,6 +437,7 @@ const HRReports = ({ employees, loans = [] }) => {
         const totalLeaveDeductions = payrollData.reduce((acc, curr) => acc + curr.leaveDeduction, 0);
         const totalLateDeductions = payrollData.reduce((acc, curr) => acc + curr.lateDeduction, 0);
         const totalLoanDeductions = payrollData.reduce((acc, curr) => acc + curr.loanDeduction, 0);
+        const totalAbsenceDeductions = payrollData.reduce((acc, curr) => acc + curr.absenceDeduction, 0);
         const totalNet = payrollData.reduce((acc, curr) => acc + curr.netSalary, 0);
         const avgNet = payrollData.length > 0 ? Math.round(totalNet / payrollData.length) : 0;
 
@@ -431,7 +448,7 @@ const HRReports = ({ employees, loans = [] }) => {
             deptCost[dept] = (deptCost[dept] || 0) + p.netSalary;
         });
 
-        return { totalBase, totalDeductions, totalLeaveDeductions, totalLateDeductions, totalLoanDeductions, totalNet, avgNet, deptCost };
+        return { totalBase, totalDeductions, totalLeaveDeductions, totalLateDeductions, totalLoanDeductions, totalAbsenceDeductions, totalNet, avgNet, deptCost };
     }, [payrollData]);
 
     // ── 4. Employee Directory calculations ──────────────────
@@ -807,6 +824,7 @@ const HRReports = ({ employees, loans = [] }) => {
         { id: 'leave', label: 'Leave Requests', icon: Calendar },
         { id: 'payroll', label: 'Payroll', icon: DollarSign },
         { id: 'employee', label: 'Staff Directory', icon: Users },
+        { id: 'audit', label: 'Audit History', icon: AlertTriangle },
     ];
 
     return (
@@ -1222,8 +1240,15 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                         <span className="font-black text-slate-800 tabular-nums">
                                                                             {calcHours(record.checkIn, record.checkOut)}
                                                                         </span>
-                                                                        {!record.checkIn ? (
-                                                                            <Badge color="slate" label="Absent" />
+                                                                        {!record.checkIn || record.status === 'absent' ? (
+                                                                            <div className="flex flex-col items-end">
+                                                                                <Badge color="slate" label="Absent" />
+                                                                                {record.reason && (
+                                                                                    <span className="text-[9px] text-slate-400 mt-1 max-w-[150px] truncate" title={record.reason}>
+                                                                                        {record.reason}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
                                                                         ) : late ? (
                                                                             <Badge color="amber" label="Late Entry" />
                                                                         ) : active ? (
@@ -1439,6 +1464,96 @@ const HRReports = ({ employees, loans = [] }) => {
                             formatCurrency={formatCurrency}
                             filters={filters}
                         />
+                    )}
+
+                    {/* ── AUDIT HISTORY VIEW ── */}
+                    {reportType === 'audit' && (
+                        <motion.div
+                            key="audit"
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+                        >
+                            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle size={14} className="text-red-500" />
+                                    <h3 className="text-sm font-black text-slate-800">Absence & Payroll Audit History</h3>
+                                </div>
+                                <span className="text-xs text-slate-500 font-bold">
+                                    Comprehensive Automated Actions Trail
+                                </span>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[9px] font-bold uppercase tracking-widest">
+                                            <th className="px-3 py-3">Employee</th>
+                                            <th className="px-3 py-3">Warning Status</th>
+                                            <th className="px-3 py-3 text-center">Unapproved Absences</th>
+                                            <th className="px-3 py-3 text-right text-red-600">Total Deduction</th>
+                                            <th className="px-3 py-3">Deduction Reasons</th>
+                                            <th className="px-3 py-3 text-right text-emerald-600">Net Salary</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {payrollData.map((p) => {
+                                            // Find all deductions for this employee
+                                            const empDeductions = payrollDeductions.filter(d => {
+                                                const dEmpId = String(d.employee?._id || d.employee || '');
+                                                return dEmpId === String(p.employee._id);
+                                            });
+
+                                            return (
+                                                <tr key={p.employee._id} className="hover:bg-slate-50/60 transition-colors">
+                                                    <td className="px-3 py-3">
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="font-bold text-slate-800 text-xs">{p.employee.name}</span>
+                                                            <span className="text-[10px] text-slate-400">{p.employee.department}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        {p.employee.hasReceivedAbsenceWarning ? (
+                                                            <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[10px] font-bold">
+                                                                Warning Issued
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold">
+                                                                No Warning
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center">
+                                                        <span className="font-bold text-slate-700 text-xs">{empDeductions.length} recorded</span>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right">
+                                                        <span className={`font-bold text-xs tabular-nums ${p.absenceDeduction > 0 ? 'text-red-600' : 'text-slate-300'}`}>
+                                                            {p.absenceDeduction > 0 ? `-${formatCurrency(p.absenceDeduction)}` : '—'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-3">
+                                                        {empDeductions.length > 0 ? (
+                                                            <div className="flex flex-col gap-1">
+                                                                {empDeductions.map(d => (
+                                                                    <div key={d._id} className="text-[9px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 flex justify-between items-center w-full max-w-[200px]">
+                                                                        <span className="truncate mr-2" title={d.reason}>{d.reason}</span>
+                                                                        <span className="font-bold text-slate-700 whitespace-nowrap">{new Date(d.date).toLocaleDateString()}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-slate-300 font-bold text-xs">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-3 text-right">
+                                                        <span className="font-black text-emerald-600 text-xs tabular-nums">{formatCurrency(p.netSalary)}</span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
                     )}
 
                     {/* ── EMPLOYEE DIRECTORY REPORT VIEW ── */}
@@ -1844,6 +1959,8 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
         ? ((payrollSummary.totalDeductions / payrollSummary.totalBase) * 100).toFixed(1)
         : 0;
 
+    const totalAbsenceDeductionsAmount = payrollSummary.totalAbsenceDeductions || 0;
+
     const efficiencyRate = payrollSummary.totalBase > 0
         ? ((payrollSummary.totalNet / payrollSummary.totalBase) * 100).toFixed(1)
         : 100;
@@ -1851,6 +1968,7 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
     const filteredPayroll = useMemo(() => {
         if (deductionFilter === 'leave') return payrollData.filter(p => p.leaveDays > 0);
         if (deductionFilter === 'late') return payrollData.filter(p => p.lateCount > 0);
+        if (deductionFilter === 'absence') return payrollData.filter(p => p.absenceDeduction > 0);
         if (deductionFilter === 'deduction') return payrollData.filter(p => p.deduction > 0);
         return payrollData;
     }, [payrollData, deductionFilter]);
@@ -1960,6 +2078,20 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                             <div className="flex justify-between text-[10px] text-slate-400">
                                 <span>{totalLateEntries} late check-ins (&gt;12:00 PM)</span>
                                 <span>0.25x daily rate penalty</span>
+                            </div>
+                        </div>
+
+                        {/* Absence Deductions Bar */}
+                        <div className="space-y-1.5 bg-red-50/50 p-3.5 rounded-xl border border-red-100">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                    <AlertTriangle size={13} className="text-red-600" /> Unapproved Absences
+                                </span>
+                                <span className="font-black text-red-700 tabular-nums">-{formatCurrency(totalAbsenceDeductionsAmount)}</span>
+                            </div>
+                            <div className="flex justify-between text-[10px] text-slate-400">
+                                <span>Missing check-ins</span>
+                                <span>1.0x daily rate penalty</span>
                             </div>
                         </div>
 
@@ -2094,6 +2226,26 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                     <p className="text-xs text-slate-400 font-medium mt-1">0.25 day rate per late check-in</p>
                 </motion.button>
 
+                {/* Absence Deductions Card */}
+                <motion.button
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                    onClick={() => setDeductionFilter('absence')}
+                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                        deductionFilter === 'absence'
+                            ? 'border-red-500 ring-2 ring-red-500/10 shadow-md bg-red-50/10'
+                            : 'border-red-100 hover:border-red-300 hover:shadow-xs'
+                    }`}
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2.5 rounded-xl ${deductionFilter === 'absence' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600'}`}>
+                            <AlertTriangle size={20} />
+                        </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">Absence Deductions</p>
+                    <p className="text-2xl font-black text-red-700 tracking-tight mt-1">-{formatCurrency(totalAbsenceDeductionsAmount)}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Unapproved absences</p>
+                </motion.button>
+
                 {/* Net Payout Card */}
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
@@ -2221,6 +2373,15 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                             </span>
                                         </div>
 
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-red-600 font-semibold flex items-center gap-1">
+                                                <AlertTriangle size={12} /> Absence
+                                            </span>
+                                            <span className="font-bold text-red-600 tabular-nums">
+                                                {p.absenceDeduction > 0 ? `-${formatCurrency(p.absenceDeduction)}` : '—'}
+                                            </span>
+                                        </div>
+
                                         <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
                                             <span className="text-emerald-600 font-black">Net Disbursed</span>
                                             <span className="font-black text-emerald-600 text-sm tabular-nums">{formatCurrency(p.netSalary)}</span>
@@ -2262,6 +2423,7 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                         <th className="px-3 py-3 text-right">Gross Base</th>
                                         <th className="px-3 py-3 text-center text-amber-600">Leave Ded.</th>
                                         <th className="px-3 py-3 text-center text-rose-500">Late Ded.</th>
+                                        <th className="px-3 py-3 text-center text-red-500">Absence Ded.</th>
                                         <th className="px-3 py-3 text-center text-rose-500">Loan Ded.</th>
                                         <th className="px-3 py-3 text-right text-rose-600">Total Ded.</th>
                                         <th className="px-3 py-3 text-right text-emerald-600">Net Payout</th>
@@ -2317,6 +2479,15 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                                             {p.lateCount} {p.lateCount === 1 ? 'late' : 'lates'}
                                                         </span>
                                                         <span className="text-xs font-semibold text-rose-600 mt-0.5 tabular-nums">-{formatCurrency(p.lateDeduction)}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-300 font-bold text-xs">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-3 text-center">
+                                                {p.absenceDeduction > 0 ? (
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-xs font-semibold text-red-600 mt-0.5 tabular-nums">-{formatCurrency(p.absenceDeduction)}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-300 font-bold text-xs">—</span>

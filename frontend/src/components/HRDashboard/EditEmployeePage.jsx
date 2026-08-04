@@ -547,7 +547,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                             onBlur={() => handleBlur('reportingTo')}
                                             className={getInputBorderClass('reportingTo', touched, fieldErrors, BASE_INPUT)} 
                                         />
-                                        {touched.reportingTo && !fieldErrors.reportingTo && formData.reportingTo && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                        {touched.reportingTo && !fieldErrors.reportingTo && formData.reportingTo && <CheckCircle2 size={16} className="absolute right-8 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                     </div>
                                     <FieldError message={touched.reportingTo ? fieldErrors.reportingTo : ''} />
                                 </div>
@@ -584,7 +584,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                             <option value="Lead">Lead</option>
                                             <option value="Manager">Manager</option>
                                         </select>
-                                        {touched.promotionRank && !fieldErrors.promotionRank && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                        {touched.promotionRank && !fieldErrors.promotionRank && <CheckCircle2 size={16} className="absolute right-8 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                     </div>
                                     <FieldError message={touched.promotionRank ? fieldErrors.promotionRank : ''} />
                                 </div>
@@ -603,7 +603,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                             <option value="Fresh Join">Fresh Join</option>
                                             <option value="Intern">Intern</option>
                                         </select>
-                                        {touched.joiningStatus && !fieldErrors.joiningStatus && <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />}
+                                        {touched.joiningStatus && !fieldErrors.joiningStatus && <CheckCircle2 size={16} className="absolute right-8 top-1/2 -translate-y-1/2 text-emerald-500" />}
                                     </div>
                                     <FieldError message={touched.joiningStatus ? fieldErrors.joiningStatus : ''} />
                                 </div>

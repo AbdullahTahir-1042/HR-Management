@@ -61,8 +61,14 @@ app.use('/api/increments', require('./routes/increments'));
 app.use('/api/performance-reviews', require('./routes/performanceReviews'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/loans', require('./routes/loans'));
+app.use('/api/payroll', require('./routes/payroll')); // ✅ NEW
 app.use('/api/test', require('./routes/test'));
 console.log('✓ Test Route Registered');
 
+const { startCronJobs } = require('./services/cronService');
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+    startCronJobs();
+});
