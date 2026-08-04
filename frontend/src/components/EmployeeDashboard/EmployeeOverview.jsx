@@ -5,6 +5,32 @@ import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, 
 const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab }) => {
     const todayAttendance = attendance;
 
+    // Check if today is Sunday or a Holiday to disable check-in
+    const checkInDate = new Date();
+    const isSunday = checkInDate.getDay() === 0;
+    const isHoliday = holidays?.some(h => {
+        const start = new Date(h.startDate);
+        start.setHours(0,0,0,0);
+        const end = new Date(h.endDate);
+        end.setHours(23,59,59,999);
+        return checkInDate >= start && checkInDate <= end;
+    });
+
+    const isOnLeave = leaves?.some(l => {
+        if (l.status !== 'approved') return false;
+        const start = new Date(l.startDate);
+        start.setHours(0,0,0,0);
+        const end = new Date(l.endDate);
+        end.setHours(23,59,59,999);
+        return checkInDate >= start && checkInDate <= end;
+    });
+
+    const isCheckInDisabled = isSunday || isHoliday || isOnLeave;
+    let disableReason = "";
+    if (isSunday) disableReason = "Happy Sunday! (Weekly Off)";
+    else if (isHoliday) disableReason = "Today is a Holiday. Enjoy your day off!";
+    else if (isOnLeave) disableReason = "You are on an approved leave today.";
+
     const salaryStats = useMemo(() => {
         const baseSalary = Number(user?.salary) || 0;
         const now = new Date();
@@ -89,12 +115,18 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     </p>
                     <div className="mt-4 flex gap-3">
                         {!todayAttendance ? (
-                            <button 
-                                onClick={() => setActiveTab('attendance')} 
-                                className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
-                            >
-                                Check In Now <ArrowRight size={16} />
-                            </button>
+                            isCheckInDisabled ? (
+                                <div className="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 cursor-not-allowed">
+                                    <Clock size={16} /> {disableReason}
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={() => setActiveTab('attendance')} 
+                                    className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
+                                >
+                                    Check In Now <ArrowRight size={16} />
+                                </button>
+                            )
                         ) : !todayAttendance.checkOut ? (
                             <button 
                                 onClick={() => setActiveTab('attendance')} 
