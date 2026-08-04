@@ -25,6 +25,18 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         return null;
     };
 
+    const getTotalTimeWorked = (checkInStr, checkOutStr) => {
+        if (!checkInStr || !checkOutStr) return '-';
+        const inTime = new Date(checkInStr);
+        const outTime = new Date(checkOutStr);
+        const diffMs = outTime - inTime;
+        if (diffMs <= 0) return '-';
+        const diffMins = Math.floor(diffMs / 60000);
+        const hours = Math.floor(diffMins / 60);
+        const mins = diffMins % 60;
+        return `${hours}h ${mins}m`;
+    };
+
     let isLate = false;
     let lateStr = null;
 
@@ -131,6 +143,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                         <th className="px-3 py-3">Date</th>
                                         <th className="px-3 py-3">Check In</th>
                                         <th className="px-3 py-3">Check Out</th>
+                                        <th className="px-3 py-3 text-center">Work HRS</th>
                                         <th className="px-3 py-3 text-right">Late</th>
                                     </tr>
                                 </thead>
@@ -147,6 +160,9 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                                 </td>
                                                 <td className="px-3 py-3 text-slate-600 text-sm">
                                                     {record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                </td>
+                                                <td className="px-3 py-3 text-slate-600 text-sm text-center font-medium">
+                                                    {getTotalTimeWorked(record.checkIn, record.checkOut)}
                                                 </td>
                                                 <td className="px-3 py-3 text-sm text-right">
                                                     {recordLate ? (
