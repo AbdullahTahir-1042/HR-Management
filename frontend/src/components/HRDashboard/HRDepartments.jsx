@@ -761,7 +761,7 @@ const HRDepartments = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this department?')) return;
+        if (!await window.confirmModal('Are you sure you want to delete this department?')) return;
         try {
             await apiClient.delete(`/departments/${id}`);
             fetchDepartments();

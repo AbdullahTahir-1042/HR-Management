@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -331,7 +332,7 @@ const EmployeeHRRequests = ({ user }) => {
     };
 
     const handleCancelLoan = async (loanId) => {
-        if (!window.confirm('Are you sure you want to cancel this pending loan request?')) return;
+        if (!await window.confirmModal('Are you sure you want to cancel this pending loan request?')) return;
         try {
             await apiClient.delete(`/loans/${loanId}`);
             fetchLoans();
@@ -344,7 +345,7 @@ const EmployeeHRRequests = ({ user }) => {
                 bc.close();
             } catch (e) {}
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to cancel loan request');
+            toast.error(err.response?.data?.msg || 'Failed to cancel loan request');
         }
     };
 

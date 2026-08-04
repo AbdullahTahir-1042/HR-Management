@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -266,7 +267,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
-                alert("File size must be less than 5MB");
+                toast.error("File size must be less than 5MB");
                 e.target.value = null;
                 return;
             }

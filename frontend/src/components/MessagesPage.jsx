@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect, useRef, useContext, useMemo, useLayoutEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -349,12 +350,12 @@ const MessagesPage = () => {
             );
             setActiveConversation(prev => ({ ...prev, ...res.data }));
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to update admin status');
+            toast.error(err.response?.data?.msg || 'Failed to update admin status');
         }
     };
 
     const removeMember = async (userId) => {
-        if (!window.confirm('Remove this member from the group?')) return;
+        if (!await window.confirmModal('Remove this member from the group?')) return;
         try {
             const res = await axios.delete(
                 `${import.meta.env.VITE_API_URL}/conversations/${activeConversation._id}/participants/${userId}`,
@@ -362,19 +363,19 @@ const MessagesPage = () => {
             );
             setActiveConversation(prev => ({ ...prev, ...res.data }));
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to remove member');
+            toast.error(err.response?.data?.msg || 'Failed to remove member');
         }
     };
 
     const leaveGroup = async () => {
-        if (!window.confirm('Leave this group?')) return;
+        if (!await window.confirmModal('Leave this group?')) return;
         try {
             await axios.delete(`${import.meta.env.VITE_API_URL}/conversations/${activeConversation._id}/participants/me`, authHeaders());
             setConversations(prev => prev.filter(c => c._id !== activeConversation._id));
             setActiveConversation(null);
             setShowGroupSettings(false);
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to leave group');
+            toast.error(err.response?.data?.msg || 'Failed to leave group');
         }
     };
 

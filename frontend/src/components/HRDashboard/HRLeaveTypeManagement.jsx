@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarRange, Plus, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react';
@@ -280,13 +281,13 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
     const [deletingId,       setDeletingId]       = useState(null);
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this leave type? This action cannot be undone.')) return;
+        if (!await window.confirmModal('Are you sure you want to delete this leave type? This action cannot be undone.')) return;
         try {
             setDeletingId(id);
             await apiClient.delete(`/leaves/types/${id}`);
             fetchLeaveTypes();
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to delete leave type.');
+            toast.error(err.response?.data?.msg || 'Failed to delete leave type.');
         } finally {
             setDeletingId(null);
         }

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
@@ -43,7 +44,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 500 * 1024) {
-                alert("File size must be less than 500KB");
+                toast.error("File size must be less than 500KB");
                 e.target.value = null;
                 return;
             }
@@ -66,12 +67,12 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
             // Use the generic user update route
             const userId = user.id || user._id;
             const res = await apiClient.put(`/auth/users/${userId}`, formData);
-            alert('Profile updated successfully!');
+            toast.success('Profile updated successfully!');
             updateUser(res.data); // Update global auth state
             if (onUpdate) onUpdate(res.data);
             onBack();
         } catch (err) {
-            alert(err.response?.data?.msg || 'Error updating profile');
+            toast.error(err.response?.data?.msg || 'Error updating profile');
         } finally {
             setLoading(false);
         }

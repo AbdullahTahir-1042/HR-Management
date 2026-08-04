@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect, useContext } from 'react';
 import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,14 +117,14 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+        if (!await window.confirmModal('Are you sure you want to delete this announcement?')) return;
         try {
             await apiClient.delete(`/announcements/${id}`);
             setAnnouncements(prev => prev.filter(a => a._id !== id));
             if (selected?._id === id) setSelected(null);
             if (onRefreshAnnouncements) onRefreshAnnouncements();
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to delete announcement');
+            toast.error(err.response?.data?.msg || 'Failed to delete announcement');
         }
     };
 

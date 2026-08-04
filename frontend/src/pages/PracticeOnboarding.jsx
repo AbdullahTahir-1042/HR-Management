@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useRef, useEffect } from 'react';
 import apiClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
@@ -402,7 +403,7 @@ const PracticeOnboarding = () => {
       return true;
     } catch (err) {
       console.error("Error saving onboarding details:", err);
-      alert(err.response?.data?.msg || "Failed to save onboarding details to server.");
+      toast.error(err.response?.data?.msg || "Failed to save onboarding details to server.");
       return false;
     }
   };
@@ -448,7 +449,7 @@ const PracticeOnboarding = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert("File size exceeds 2MB limit.");
+        toast.error("File size exceeds 2MB limit.");
         return;
       }
       setLogoFile(file);
@@ -494,11 +495,11 @@ const PracticeOnboarding = () => {
   const handleFileSelect = (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file.');
+      toast.error('Please upload an image file.');
       return;
     }
     if (file.size > 500 * 1024) {
-      alert('Image size should not exceed 500KB.');
+      toast.error('Image size should not exceed 500KB.');
       return;
     }
     setLogoFile(file);
@@ -548,7 +549,7 @@ const PracticeOnboarding = () => {
     const saved = await savePractice(isFinished ? currentStep : nextStep, isFinished);
     if (saved) {
       if (isFinished) {
-        alert("Practice Onboarding Completed Successfully!");
+        toast.success("Practice Onboarding Completed Successfully!");
       } else {
         setCurrentStep(nextStep);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -570,7 +571,7 @@ const PracticeOnboarding = () => {
   const handleFinishLater = async () => {
     const saved = await savePractice(currentStep, false);
     if (saved) {
-      alert("Draft onboarding progress saved to server! You can resume anytime.");
+      toast.error("Draft onboarding progress saved to server! You can resume anytime.");
     }
   };
 
@@ -1322,7 +1323,7 @@ const PracticeOnboarding = () => {
                       <form onSubmit={(e) => {
                         e.preventDefault();
                         if (!newProvider.name || !newProvider.specialty) {
-                          alert("Name and Specialty are required.");
+                          toast.error("Name and Specialty are required.");
                           return;
                         }
                         const added = {
@@ -1484,7 +1485,7 @@ const PracticeOnboarding = () => {
                     type="button"
                     onClick={() => {
                       if (!newUser.name) {
-                        alert("Please fill in the staff name");
+                        toast.error("Please fill in the staff name");
                         return;
                       }
                       setUsers(prev => [...prev, { ...newUser, id: Date.now() }]);
