@@ -13,7 +13,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
     const getLateness = (dateObj) => {
         if (!dateObj) return null;
         const shiftStart = new Date(dateObj);
-        shiftStart.setHours(9, 30, 0, 0); // 9:30 AM cutoff
+        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
         
         if (dateObj > shiftStart) {
             const diffMs = dateObj - shiftStart;
@@ -142,7 +142,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                                 <td className="px-3 py-3 text-slate-700 font-medium text-sm">
                                                     {formatDate(record.date)}
                                                 </td>
-                                                <td className="px-3 py-3 text-slate-600 text-sm">
+                                                <td className={`px-3 py-3 text-sm ${recordLate ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
                                                     {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                                 </td>
                                                 <td className="px-3 py-3 text-slate-600 text-sm">
