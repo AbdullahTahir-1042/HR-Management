@@ -9,15 +9,23 @@ const Department = require('../models/Department');
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const { auth, isHR } = require('../middleware/auth');
+const HRRequest = require('../models/HRRequest');
+const LoanRequest = require('../models/LoanRequest');
+const MistakeReport = require('../models/MistakeReport');
+const Notification = require('../models/Notification');
+const Increment = require('../models/Increment');
+const TypingStatus = require('../models/TypingStatus');
 const { sendEmail } = require('../services/emailService');
 const { getWelcomeEmailTemplate } = require('../templates/welcomeEmail');
+const { getOtpEmailTemplate } = require('../templates/otpEmail');
 
 // @route   POST api/auth/register
 // @desc    Register user (HR only)
 // @access  Private (HR)
 router.post('/register', [auth, isHR], async (req, res) => {
     let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead, joiningStatus, promotionRank } = req.body;
-    if (email) email = email.toLowerCase();
+    if (email) email = email.toLowerCase().trim();
+    if (phone) phone = phone.trim();
 
     // ── Server-Side Strong Validations ───────────────────────────────────────
     if (!name || name.trim().length < 3) {
@@ -57,9 +65,20 @@ router.post('/register', [auth, isHR], async (req, res) => {
 
 
     try {
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ msg: 'An account with this email address already exists' });
+        let existingUser = await User.findOne({ 
+            $or: [
+                { email },
+                { phone: phone }
+            ]
+        });
+
+        if (existingUser) {
+            if (existingUser.email === email) {
+                return res.status(400).json({ msg: 'An account with this email address already exists' });
+            }
+            if (existingUser.phone === phone) {
+                return res.status(400).json({ msg: 'An account with this phone number already exists' });
+            }
         }
 
         let departmentId = null;
@@ -71,8 +90,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
         }
 
         const rawPassword = password;
-        user = new User({
-            name,
+        const newUser = new User({
+            name: name.trim(),
             email,
             password,
             role: role || 'employee',
@@ -88,20 +107,20 @@ router.post('/register', [auth, isHR], async (req, res) => {
             isTeamLead: !!isTeamLead,
             isFirstLogin: true
         });
-        await user.save();
+        await newUser.save();
 
         if (departmentId) {
             await Department.findByIdAndUpdate(departmentId, {
-                $addToSet: { employees: user._id }
+                $addToSet: { employees: newUser._id }
             });
 
             // If marked as team lead, update department and remove flag from previous lead
             if (isTeamLead) {
                 const dept = await Department.findById(departmentId);
-                if (dept.teamLead && dept.teamLead.toString() !== user._id.toString()) {
+                if (dept.teamLead && dept.teamLead.toString() !== newUser._id.toString()) {
                     await User.findByIdAndUpdate(dept.teamLead, { isTeamLead: false });
                 }
-                dept.teamLead = user._id;
+                dept.teamLead = newUser._id;
                 await dept.save();
             }
         }
@@ -109,31 +128,30 @@ router.post('/register', [auth, isHR], async (req, res) => {
         // ── Dispatch Welcome Email via Email Service ──
         try {
             const template = getWelcomeEmailTemplate({
-                name: user.name,
-                email: user.email,
+                name: newUser.name,
+                email: newUser.email,
                 tempPassword: rawPassword
             });
-            await sendEmail({
-                to: user.email,
+            sendEmail({
+                to: newUser.email,
                 subject: template.subject,
                 html: template.html
-            }).then(res => console.log('Welcome email dispatch result:', res))
-              .catch(e => console.error('[Welcome Email Error]:', e));
+            }).catch(e => console.error('Error sending welcome email:', e));
         } catch (wErr) {
             console.error('Error generating welcome email template:', wErr);
         }
 
-        const payload = { user: { id: user.id } };
+        const payload = { user: { id: newUser.id } };
         const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_123';
         const token = jwt.sign(payload, secret, { expiresIn: '7d' });
         res.json({
             token,
             user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                isTeamLead: user.isTeamLead,
+                id: newUser.id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role,
+                isTeamLead: newUser.isTeamLead,
                 isFirstLogin: true
             }
         });
@@ -188,6 +206,111 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// @route   POST api/auth/forgot-password
+// @desc    Generate OTP and send email
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+    try {
+        let { email } = req.body;
+        if (!email) return res.status(400).json({ msg: 'Please provide an email' });
+        email = email.toLowerCase().trim();
+
+        const user = await User.findOne({ email });
+        if (!user || user.isDeleted) {
+            return res.status(404).json({ msg: 'No account found with that email address.' });
+        }
+
+        // ==========================================
+        // TOGGLE FOR RAILWAY DEPLOYMENT VS LOCAL TESTING
+        // Set this to FALSE before deploying to Railway!
+        const LOCAL_TESTING_MODE = true; 
+        // ==========================================
+        
+        if (LOCAL_TESTING_MODE) {
+            const hrUsers = await User.find({ role: 'hr' });
+            for (let hr of hrUsers) {
+                await Notification.create({
+                    user: hr._id,
+                    type: 'system',
+                    title: 'Password Reset Request',
+                    message: `Employee ${user.name} (${user.email}) has requested a password reset. Please set a temporary password for them in their profile settings.`,
+                    isRead: false
+                });
+            }
+            return res.status(200).json({ 
+                bypassOtp: true, 
+                msg: 'A password reset request has been sent to HR directly. They will provide you with a temporary password soon.' 
+            });
+        }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = await bcrypt.hash(otp, 10);
+
+        user.resetOtp = hashedOtp;
+        user.resetOtpExpire = Date.now() + 3 * 60 * 1000; // 3 minutes
+        await user.save();
+
+        const emailTemplate = getOtpEmailTemplate({ name: user.name, otp });
+        await sendEmail({
+            to: user.email,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html
+        });
+
+        res.status(200).json({ msg: 'An OTP has been sent to your email.' });
+    } catch (err) {
+        console.error('Forgot Password Error:', err);
+        res.status(500).json({ msg: 'Server error' });
+    }
+});
+
+// @route   POST api/auth/reset-password
+// @desc    Verify OTP and reset password
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+    try {
+        let { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ msg: 'Please provide email, OTP, and new password' });
+        }
+        email = email.toLowerCase().trim();
+
+        const user = await User.findOne({ email });
+        if (!user || user.isDeleted) {
+            return res.status(400).json({ msg: 'Invalid or expired OTP' });
+        }
+
+        if (!user.resetOtp || !user.resetOtpExpire) {
+            return res.status(400).json({ msg: 'No password reset requested' });
+        }
+
+        if (Date.now() > user.resetOtpExpire) {
+            user.resetOtp = null;
+            user.resetOtpExpire = null;
+            await user.save();
+            return res.status(400).json({ msg: 'OTP has expired. Please request a new one.' });
+        }
+
+        const isMatch = await bcrypt.compare(otp.toString(), user.resetOtp);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Invalid OTP' });
+        }
+
+        // The pre('save') hook will automatically hash the password.
+        // We MUST NOT hash it here, otherwise it will get double-hashed.
+        user.password = newPassword;
+        user.resetOtp = null;
+        user.resetOtpExpire = null;
+        await user.save();
+
+        res.status(200).json({ msg: 'Password has been successfully reset.' });
+    } catch (err) {
+        console.error('Reset Password Error:', err);
+        res.status(500).json({ msg: 'Server error' });
+    }
+});
+
 // @route   GET api/auth/users
 // @desc    Get all users (HR only)
 // @access  Private (HR)
@@ -238,7 +361,12 @@ router.put('/users/:id', auth, async (req, res) => {
         if (email) user.email = email;
         if (photo !== undefined) user.photo = photo;
         if (phone !== undefined) user.phone = phone;
-        if (password) user.password = password;
+        if (password) {
+            user.password = password.trim();
+            if (isHRUser && !isSelf) {
+                user.isFirstLogin = true; // Force employee to change temporary password
+            }
+        }
         if (notificationPreferences !== undefined) {
             user.notificationPreferences = {
                 ...user.notificationPreferences,
@@ -368,6 +496,19 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
         if (user.status === 'Inactive') {
             // Hard delete the employee completely from the database
             await User.deleteOne({ _id: req.params.id });
+
+            // Cascade delete all related records to avoid null references in UI
+            await Promise.all([
+                Attendance.deleteMany({ employee: req.params.id }),
+                LeaveRequest.deleteMany({ employee: req.params.id }),
+                HRRequest.deleteMany({ employee: req.params.id }),
+                LoanRequest.deleteMany({ employee: req.params.id }),
+                MistakeReport.deleteMany({ agentId: req.params.id }),
+                Increment.deleteMany({ employee: req.params.id }),
+                Notification.deleteMany({ recipient: req.params.id }),
+                TypingStatus.deleteMany({ user: req.params.id })
+            ]);
+            
         } else {
             // Shift to Inactive instead of hard delete
             user.status = 'Inactive';
@@ -473,7 +614,10 @@ router.put('/users/:id/card-visibility', auth, async (req, res) => {
 // @desc    Change password on first login
 // @access  Private
 router.post('/change-first-password', auth, async (req, res) => {
-    const { currentPassword, newPassword, confirmPassword } = req.body;
+    let { currentPassword, newPassword, confirmPassword } = req.body;
+    if (currentPassword) currentPassword = currentPassword.trim();
+    if (newPassword) newPassword = newPassword.trim();
+    if (confirmPassword) confirmPassword = confirmPassword.trim();
 
     try {
         const user = await User.findById(req.user.id);
@@ -488,6 +632,10 @@ router.post('/change-first-password', auth, async (req, res) => {
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Incorrect current password' });
+        }
+
+        if (newPassword === currentPassword) {
+            return res.status(400).json({ msg: 'New password must be different from the current password' });
         }
 
         if (!newPassword || newPassword.length < 6 || !/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {

@@ -52,7 +52,7 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto">
+            <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto no-scrollbar">
                 {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
                     <button
                         key={id}

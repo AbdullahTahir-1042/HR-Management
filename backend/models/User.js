@@ -104,6 +104,14 @@ const UserSchema = new mongoose.Schema({
         messages: { type: Boolean, default: true },
         leaves: { type: Boolean, default: true },
         attendance: { type: Boolean, default: true }
+    },
+    resetOtp: {
+        type: String,
+        default: null
+    },
+    resetOtpExpire: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

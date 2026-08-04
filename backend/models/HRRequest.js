@@ -27,6 +27,9 @@ const HRRequestSchema = new mongoose.Schema({
         enum: ['Pending', 'In Review', 'Resolved', 'Rejected'],
         default: 'Pending'
     },
+    targetDate: {
+        type: Date
+    },
     hrNote: {
         type: String,
         default: ''

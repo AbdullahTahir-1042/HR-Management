@@ -5,10 +5,12 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { auth } = require('../middleware/auth');
 
-// ── Employee: Submit a new HR request ─────────────────────────────────────────
+// @route   POST api/hr-requests
+// @desc    Submit a new HR Request
+// @access  Private
 router.post('/', auth, async (req, res) => {
     try {
-        const { type, description } = req.body;
+        const { type, description, targetDate } = req.body;
 
         if (!type) {
             return res.status(400).json({ msg: 'Request type is required' });
@@ -17,13 +19,14 @@ router.post('/', auth, async (req, res) => {
             return res.status(400).json({ msg: 'Description is required' });
         }
 
-        const request = new HRRequest({
+        const newRequest = new HRRequest({
             employee: req.user.id,
             type,
-            description: description.trim()
+            description,
+            targetDate: targetDate ? new Date(targetDate) : undefined
         });
 
-        await request.save();
+        await newRequest.save();
 
         // Notify HR users
         try {
@@ -35,14 +38,14 @@ router.post('/', auth, async (req, res) => {
                     type: 'HRRequest',
                     title: 'New HR Request Submitted',
                     message: `${employeeUser?.name || 'An employee'} submitted a ${type} request.`,
-                    relatedId: request._id
+                    relatedId: newRequest._id
                 });
             }
         } catch (nErr) {
             console.error('Error creating HR notification for request:', nErr);
         }
 
-        res.status(201).json(request);
+        res.status(201).json(newRequest);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ msg: 'Server error' });
