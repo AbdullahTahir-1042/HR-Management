@@ -20,7 +20,7 @@ const RATING_LABELS = {
 
 const VALID_RANKS = ['Intern', 'Junior', 'Associate', 'Mid-Level', 'Senior', 'Lead', 'Manager'];
 
-const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete }) => {
+const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes = [], onBack, onEdit, onDelete, onRestore }) => {
     const employee = propEmployee || {};
     const { user: currentUser } = useContext(AuthContext);
     const [activeDetailTab, setActiveDetailTab] = useState('profile');
@@ -330,17 +330,32 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                     >
                         <Edit3 size={14} /> Edit Profile
                     </button>
-                    <button
-                        disabled={currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'}
-                        onClick={() => onDelete(employee._id)}
-                        className={`font-bold text-xs uppercase tracking-wider ${
-                            currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'
-                                ? 'btn-secondary opacity-50 cursor-not-allowed'
-                                : 'btn-danger'
-                        }`}
-                    >
-                        <Trash2 size={14} /> Mark as Inactive
-                    </button>
+                    
+                    {employee.status === 'Inactive' ? (
+                        <button
+                            disabled={currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'}
+                            onClick={() => onRestore && onRestore(employee._id)}
+                            className={`font-bold text-xs uppercase tracking-wider ${
+                                currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'
+                                    ? 'btn-secondary opacity-50 cursor-not-allowed'
+                                    : 'px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl transition-colors flex items-center gap-2'
+                            }`}
+                        >
+                            <UserCheck size={14} /> Mark as Active
+                        </button>
+                    ) : (
+                        <button
+                            disabled={currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'}
+                            onClick={() => onDelete(employee._id)}
+                            className={`font-bold text-xs uppercase tracking-wider ${
+                                currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'
+                                    ? 'btn-secondary opacity-50 cursor-not-allowed'
+                                    : 'btn-danger'
+                            }`}
+                        >
+                            <Trash2 size={14} /> Mark as Inactive
+                        </button>
+                    )}
                 </div>
             </div>
 

@@ -511,6 +511,19 @@ const HRDashboard = () => {
                                                 alert(err.response?.data?.msg || "Failed to delete employee");
                                             }
                                         }}
+                                        onRestore={async (id) => {
+                                            if (!window.confirm("Are you sure you want to mark this employee as Active?")) return;
+                                            try {
+                                                await apiClient.put(`/auth/users/${id}/restore`);
+                                                const res = await apiClient.get('/auth/users');
+                                                setEmployees(res.data);
+                                                const updatedEmp = res.data.find(e => e._id === id);
+                                                if (updatedEmp) setSelectedEmployee(updatedEmp);
+                                            } catch (err) {
+                                                console.error("Error restoring employee:", err);
+                                                alert(err.response?.data?.msg || "Failed to restore employee");
+                                            }
+                                        }}
                                     />
                                 ) : (
                                     <HREmployeeList
