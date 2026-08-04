@@ -261,11 +261,15 @@ router.post('/forgot-password', async (req, res) => {
         await user.save();
 
         const emailTemplate = getOtpEmailTemplate({ name: user.name, otp });
-        await sendEmail({
+        const emailResult = await sendEmail({
             to: user.email,
             subject: emailTemplate.subject,
             html: emailTemplate.html
         });
+
+        if (!emailResult || !emailResult.success) {
+            return res.status(500).json({ msg: 'Failed to send OTP email. Please try again or contact HR.', error: emailResult?.error });
+        }
 
         res.status(200).json({ msg: 'An OTP has been sent to your email.' });
     } catch (err) {
