@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
-const HRReports = ({ employees }) => {
+const HRReports = ({ employees, loans = [] }) => {
     // ── Report Type Tab ─────────────────────────────────────
     const [reportType, setReportType] = useState('attendance'); // 'attendance', 'leave', 'payroll', 'employee'
 
@@ -380,8 +380,21 @@ const HRReports = ({ employees }) => {
                 }
             });
 
+            const activeLoans = loans.filter(l => {
+                const lEmpId = String(l.employee?._id || l.employee || '');
+                return lEmpId === empIdStr && (l.status === 'Approved' || l.status === 'Active');
+            });
+            let loanDeduction = 0;
+            activeLoans.forEach(loan => {
+                const deduction = Number(loan.monthlyDeduction) || 0;
+                const remaining = Number(loan.remainingBalance) || 0;
+                if (remaining > 0) {
+                    loanDeduction += Math.min(deduction, remaining);
+                }
+            });
+
             const leaveDeduction = Math.round(unpaidLeaveDays * dailyRate);
-            const totalDeduction = lateDeduction + leaveDeduction;
+            const totalDeduction = lateDeduction + leaveDeduction + loanDeduction;
             const netSalary = Math.max(0, baseSalary - totalDeduction);
 
             return {
@@ -394,17 +407,19 @@ const HRReports = ({ employees }) => {
                 leaveDays: totalLeaveDays,         // total approved leave days (for display)
                 unpaidLeaveDays,                    // excess days that are actually deducted
                 leaveDeduction,
+                loanDeduction,
                 deduction: totalDeduction,
                 netSalary
             };
         });
-    }, [filteredEmployees, filteredAttendance, leaveRecords]);
+    }, [filteredEmployees, filteredAttendance, leaveRecords, loans]);
 
     const payrollSummary = useMemo(() => {
         const totalBase = payrollData.reduce((acc, curr) => acc + curr.baseSalary, 0);
         const totalDeductions = payrollData.reduce((acc, curr) => acc + curr.deduction, 0);
         const totalLeaveDeductions = payrollData.reduce((acc, curr) => acc + curr.leaveDeduction, 0);
         const totalLateDeductions = payrollData.reduce((acc, curr) => acc + curr.lateDeduction, 0);
+        const totalLoanDeductions = payrollData.reduce((acc, curr) => acc + curr.loanDeduction, 0);
         const totalNet = payrollData.reduce((acc, curr) => acc + curr.netSalary, 0);
         const avgNet = payrollData.length > 0 ? Math.round(totalNet / payrollData.length) : 0;
 
@@ -415,7 +430,7 @@ const HRReports = ({ employees }) => {
             deptCost[dept] = (deptCost[dept] || 0) + p.netSalary;
         });
 
-        return { totalBase, totalDeductions, totalLeaveDeductions, totalLateDeductions, totalNet, avgNet, deptCost };
+        return { totalBase, totalDeductions, totalLeaveDeductions, totalLateDeductions, totalLoanDeductions, totalNet, avgNet, deptCost };
     }, [payrollData]);
 
     // ── 4. Employee Directory calculations ──────────────────
@@ -1668,7 +1683,7 @@ const EmptyState = ({ msg }) => (
 // ── Payslip Receipt Modal Component ──────────────────────────────────────────
 const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
     if (!payslip) return null;
-    const { employee, baseSalary, presentDays, lateCount, lateDeduction, leaveDays, unpaidLeaveDays = 0, leaveDeduction, deduction, netSalary } = payslip;
+    const { employee, baseSalary, presentDays, lateCount, lateDeduction, leaveDays, unpaidLeaveDays = 0, leaveDeduction, loanDeduction = 0, deduction, netSalary } = payslip;
     const dailyRate = Math.round(baseSalary / 30);
 
     return (
@@ -1763,6 +1778,19 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
                                     {lateCount > 0 ? `-${formatCurrency(lateDeduction)}` : '₨ 0'}
                                 </span>
                             </div>
+
+                            {/* Loan Deduction */}
+                            {loanDeduction > 0 && (
+                                <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40">
+                                    <div>
+                                        <p className="font-bold text-slate-700">Loan Installment Deduction</p>
+                                        <p className="text-[10px] text-slate-400">Monthly installment towards active loan</p>
+                                    </div>
+                                    <span className="font-bold text-rose-600 tabular-nums">
+                                        -{formatCurrency(loanDeduction)}
+                                    </span>
+                                </div>
+                            )}
 
                             {/* Total Deductions */}
                             <div className="flex justify-between items-center pt-1.5 border-t border-rose-200/60 font-black text-rose-700 text-xs">
@@ -2233,6 +2261,7 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                         <th className="px-3 py-3 text-right">Gross Base</th>
                                         <th className="px-3 py-3 text-center text-amber-600">Leave Ded.</th>
                                         <th className="px-3 py-3 text-center text-rose-500">Late Ded.</th>
+                                        <th className="px-3 py-3 text-center text-rose-500">Loan Ded.</th>
                                         <th className="px-3 py-3 text-right text-rose-600">Total Ded.</th>
                                         <th className="px-3 py-3 text-right text-emerald-600">Net Payout</th>
                                         <th className="px-3 py-3 text-center">Payslip</th>
@@ -2288,6 +2317,13 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                                         </span>
                                                         <span className="text-xs font-semibold text-rose-600 mt-0.5 tabular-nums">-{formatCurrency(p.lateDeduction)}</span>
                                                     </div>
+                                                ) : (
+                                                    <span className="text-slate-300 font-bold text-xs">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-3 text-center">
+                                                {p.loanDeduction > 0 ? (
+                                                    <span className="text-xs font-semibold text-rose-600 tabular-nums">-{formatCurrency(p.loanDeduction)}</span>
                                                 ) : (
                                                     <span className="text-slate-300 font-bold text-xs">—</span>
                                                 )}

@@ -586,7 +586,7 @@ const HRDashboard = () => {
                         )}
 
                         {activeTab === 'reports' && (
-                            <HRReports employees={employees} />
+                            <HRReports employees={employees} loans={loans} />
                         )}
 
                         {activeTab === 'mistake-reports' && (
