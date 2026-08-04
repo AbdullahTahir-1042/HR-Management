@@ -6,6 +6,7 @@ const LeaveRequest = require('../models/LeaveRequest');
 const HRRequest = require('../models/HRRequest');
 
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { sendEmail } = require('../services/emailService');
 const { getCheckInEmailTemplate } = require('../templates/checkInEmail');
 
@@ -82,6 +83,18 @@ router.post('/check-in', auth, async (req, res) => {
         });
         await attendance.save();
         console.log("✅ Attendance saved");
+
+        // Notify HR Admins of check-in
+        const hrAdmins = await User.find({ role: { $in: ['hr', 'admin'] } });
+        const employeeName = req.user.name || (await User.findById(req.user.id))?.name || 'An employee';
+        for (const hr of hrAdmins) {
+            await Notification.create({
+                recipient: hr._id,
+                title: 'Employee Checked In',
+                message: `${employeeName} has checked in.`,
+                type: 'system'
+            });
+        }
 
         // Send response immediately so the user isn't kept waiting
         res.json(attendance);

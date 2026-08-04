@@ -73,7 +73,14 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                             <Clock size={16} className="text-indigo-600" /> Daily Attendance
                         </h3>
                         
-                        {!attendance ? (
+                        {attendance && attendance.status === 'absent' ? (
+                            <div className="text-center py-5 bg-rose-50 rounded-lg border border-rose-100 shadow-sm">
+                                <AlertTriangle size={36} className="text-rose-500 mx-auto mb-2" />
+                                <p className="font-black text-slate-800 text-sm mb-1">Marked Absent</p>
+                                <p className="text-rose-600 text-[11px] font-semibold mb-2">You missed your check-in today.</p>
+                                <p className="text-slate-500 text-[10px] px-2">{attendance.reason || 'No check-in'}</p>
+                            </div>
+                        ) : !attendance ? (
                             <div className="space-y-4">
                                 {isLate && (
                                     <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 shadow-sm">
@@ -110,7 +117,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                 </button>
                             </div>
                         ) : (
-                            <div className="text-center py-4 bg-emerald-50 rounded-lg border border-emerald-100">
+                            <div className="text-center py-4 bg-emerald-50 rounded-lg border border-emerald-100 shadow-sm">
                                 <CheckCircle size={32} className="text-emerald-500 mx-auto mb-1" />
                                 <p className="font-bold text-slate-800 text-sm">Done!</p>
                                 <p className="text-slate-500 text-[10px]">Checked out today.</p>
@@ -156,13 +163,17 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                                     {formatDate(record.date)}
                                                 </td>
                                                 <td className="px-3 py-3 text-slate-600 text-sm">
-                                                    {record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                    {record.status === 'absent' || !record.checkIn ? (
+                                                        <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-md text-xs">Absent</span>
+                                                    ) : record.checkIn ? new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                                 </td>
                                                 <td className="px-3 py-3 text-slate-600 text-sm">
-                                                    {record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                    {record.status === 'absent' || !record.checkIn ? (
+                                                        <span className="text-[10px] text-slate-400 max-w-[150px] truncate block" title={record.reason}>{record.reason || 'No check-in'}</span>
+                                                    ) : record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                                 </td>
                                                 <td className="px-3 py-3 text-slate-600 text-sm text-center font-medium">
-                                                    {getTotalTimeWorked(record.checkIn, record.checkOut)}
+                                                    {record.status === 'absent' || !record.checkIn ? '-' : getTotalTimeWorked(record.checkIn, record.checkOut)}
                                                 </td>
                                                 <td className="px-3 py-3 text-sm text-right">
                                                     {recordLate ? (

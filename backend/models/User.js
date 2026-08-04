@@ -98,6 +98,10 @@ const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    hasReceivedAbsenceWarning: {
+        type: Boolean,
+        default: false
+    },
     notificationPreferences: {
         all: { type: Boolean, default: true },
         announcements: { type: Boolean, default: true },
