@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -591,7 +592,7 @@ const HRReports = ({ employees, loans = [] }) => {
 
     // ── Export Attendance Log to CSV ────────────────────────
     const exportAttendanceCSV = () => {
-        if (!displayedAttendance.length) return alert('No attendance records to export.');
+        if (!displayedAttendance.length) return toast.error('No attendance records to export.');
         const headers = ['Employee Name', 'Email', 'Department', 'Date', 'Check In', 'Check Out', 'Hours Worked', 'Status'];
         const rows = displayedAttendance.map(r => [
             `"${r.employee?.name || ''}"`,

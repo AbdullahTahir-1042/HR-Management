@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Plus, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react';
@@ -245,13 +246,13 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this holiday?')) return;
+        if (!await window.confirmModal('Are you sure you want to delete this holiday?')) return;
         try {
             setDeletingId(id);
             await apiClient.delete(`/holidays/${id}`);
             fetchHolidays();
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to delete holiday.');
+            toast.error(err.response?.data?.msg || 'Failed to delete holiday.');
         } finally {
             setDeletingId(null);
         }

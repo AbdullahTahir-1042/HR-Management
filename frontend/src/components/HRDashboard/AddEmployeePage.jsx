@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2, Award, Trash2 } from 'lucide-react';
@@ -280,7 +281,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
-                alert("File size must be less than 5MB");
+                toast.error("File size must be less than 5MB");
                 e.target.value = null;
                 return;
             }

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
@@ -128,7 +129,7 @@ const PracticeOnboardingWizard = () => {
             !providerForm.federalTaxNumber.trim() ||
             !providerForm.specialty.trim()
         ) {
-            alert("Please fill out all required fields marked with * (First Name, Last Name, Phone, Email, License, Federal Tax, Specialty).");
+            toast.error("Please fill out all required fields marked with * (First Name, Last Name, Phone, Email, License, Federal Tax, Specialty).");
             return;
         }
 
@@ -155,19 +156,19 @@ const PracticeOnboardingWizard = () => {
             });
             setShowProviderModal(false);
         } catch (err) {
-            alert(err.response?.data?.msg || "Failed to add provider.");
+            toast.error(err.response?.data?.msg || "Failed to add provider.");
         }
     };
 
     const handleDeleteProvider = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this provider?")) return;
+        if (!await window.confirmModal("Are you sure you want to delete this provider?")) return;
 
         try {
             await apiClient.delete(`/practice/providers/${id}`);
             setProviders(providers.filter(p => p._id !== id));
         } catch (err) {
             console.error("Error deleting provider:", err);
-            alert("Failed to delete provider.");
+            toast.error("Failed to delete provider.");
         }
     };
 
@@ -178,7 +179,7 @@ const PracticeOnboardingWizard = () => {
 
         // Validation: Limit to images and check file size (e.g. 2MB)
         if (!file.type.startsWith('image/')) {
-            alert('Please upload an image file.');
+            toast.error('Please upload an image file.');
             return;
         }
 
@@ -258,7 +259,7 @@ const PracticeOnboardingWizard = () => {
                 setCurrentStep(currentStep + 1);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                alert("You have completed all onboarding steps!");
+                toast.error("You have completed all onboarding steps!");
                 redirectBack();
             }
         }

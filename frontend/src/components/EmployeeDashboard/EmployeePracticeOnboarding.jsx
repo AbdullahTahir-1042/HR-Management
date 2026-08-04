@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,7 +50,7 @@ const EmployeePracticeOnboarding = () => {
             await apiClient.post(`/onboarding/tasks/${taskId}/toggle`);
         } catch (err) {
             console.error("Error toggling task completion:", err);
-            alert("Failed to update status. Please try again.");
+            toast.error("Failed to update status. Please try again.");
             fetchTasks(); // Revert back on error
         }
     };

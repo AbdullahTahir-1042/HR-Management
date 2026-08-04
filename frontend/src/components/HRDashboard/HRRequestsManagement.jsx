@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -277,7 +278,7 @@ const HRRequestsManagement = ({ requests = [], onUpdate, externalLoans = [], onR
                 bc.close();
             } catch (e) {}
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to update loan status');
+            toast.error(err.response?.data?.msg || 'Failed to update loan status');
         } finally {
             setReviewing(false);
         }

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../api/axiosClient';
 import { motion } from 'framer-motion';
@@ -45,37 +46,37 @@ const HRPracticeOnboarding = () => {
 
     const handleSaveTask = async (e) => {
         e.preventDefault();
-        if (!taskForm.title.trim()) return alert("Title is required.");
+        if (!taskForm.title.trim()) return toast.error("Title is required.");
 
         try {
             if (editingTask) {
                 const res = await apiClient.put(`/onboarding/tasks/${editingTask._id}`, taskForm);
                 setTasks(tasks.map(t => t._id === editingTask._id ? res.data : t));
-                alert("Task updated successfully!");
+                toast.success("Task updated successfully!");
             } else {
                 const res = await apiClient.post('/onboarding/tasks', taskForm);
                 setTasks([...tasks, res.data]);
-                alert("Task created successfully!");
+                toast.success("Task created successfully!");
             }
             resetForm();
             fetchData(); // Refresh to compute progress correctly
         } catch (err) {
             console.error("Error saving task:", err);
-            alert("Failed to save task.");
+            toast.error("Failed to save task.");
         }
     };
 
     const handleDeleteTask = async (taskId) => {
-        if (!window.confirm("Are you sure you want to delete this onboarding task?")) return;
+        if (!await window.confirmModal("Are you sure you want to delete this onboarding task?")) return;
 
         try {
             await apiClient.delete(`/onboarding/tasks/${taskId}`);
             setTasks(tasks.filter(t => t._id !== taskId));
-            alert("Task deleted.");
+            toast.error("Task deleted.");
             fetchData(); // Refresh progress
         } catch (err) {
             console.error("Error deleting task:", err);
-            alert("Failed to delete task.");
+            toast.error("Failed to delete task.");
         }
     };
 

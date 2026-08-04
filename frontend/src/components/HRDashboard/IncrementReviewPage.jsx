@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useMemo, useCallback, useContext, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -443,12 +444,12 @@ const IncrementReviewPage = ({ employee }) => {
     };
 
     const handleDeleteInc = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this increment record?')) return;
+        if (!await window.confirmModal('Are you sure you want to delete this increment record?')) return;
         try {
             await apiClient.delete(`/increments/${id}`);
             fetchIncrements();
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to delete increment');
+            toast.error(err.response?.data?.msg || 'Failed to delete increment');
         }
     };
 
@@ -531,12 +532,12 @@ const IncrementReviewPage = ({ employee }) => {
     };
 
     const handleDeleteRev = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this performance review?')) return;
+        if (!await window.confirmModal('Are you sure you want to delete this performance review?')) return;
         try {
             await apiClient.delete(`/performance-reviews/${id}`);
             fetchReviews();
         } catch (err) {
-            alert(err.response?.data?.msg || 'Failed to delete review');
+            toast.error(err.response?.data?.msg || 'Failed to delete review');
         }
     };
 

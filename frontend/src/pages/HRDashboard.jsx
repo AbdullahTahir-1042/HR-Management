@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
@@ -324,7 +325,7 @@ const HRDashboard = () => {
             } catch (e) {}
         } catch (err) {
             console.error('Error updating HR request:', err);
-            alert(err.response?.data?.msg || 'Failed to update HR request');
+            toast.error(err.response?.data?.msg || 'Failed to update HR request');
         }
     };
 
@@ -348,12 +349,12 @@ const HRDashboard = () => {
             } catch (e) { /* BroadcastChannel not supported */ }
         } catch (err) {
             console.error('Error updating leave status:', err);
-            alert(err.response?.data?.msg || 'Failed to update leave status');
+            toast.error(err.response?.data?.msg || 'Failed to update leave status');
         }
     };
 
     const handleDeleteLeave = async (id) => {
-        if (window.confirm('Are you sure you want to delete this leave request?')) {
+        if (await window.confirmModal('Are you sure you want to delete this leave request?')) {
             try {
                 await apiClient.delete(`/leaves/${id}`);
                 fetchAllLeaves();
@@ -364,7 +365,7 @@ const HRDashboard = () => {
                 } catch (e) { /* BroadcastChannel not supported */ }
             } catch (err) {
                 console.error('Error deleting leave request:', err);
-                alert(err.response?.data?.msg || 'Failed to delete leave request');
+                toast.error(err.response?.data?.msg || 'Failed to delete leave request');
             }
         }
     };
@@ -501,18 +502,18 @@ const HRDashboard = () => {
                                         onBack={() => setSelectedEmployee(null)}
                                         onEdit={() => setIsEditingEmployee(true)}
                                         onDelete={async (id) => {
-                                            if (!window.confirm("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
+                                            if (!await window.confirmModal("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
                                             try {
                                                 await apiClient.delete(`/auth/users/${id}`);
                                                 setSelectedEmployee(null);
                                                 fetchAllEmployees();
                                             } catch (err) {
                                                 console.error("Error deleting employee:", err);
-                                                alert(err.response?.data?.msg || "Failed to delete employee");
+                                                toast.error(err.response?.data?.msg || "Failed to delete employee");
                                             }
                                         }}
                                         onRestore={async (id) => {
-                                            if (!window.confirm("Are you sure you want to mark this employee as Active?")) return;
+                                            if (!await window.confirmModal("Are you sure you want to mark this employee as Active?")) return;
                                             try {
                                                 await apiClient.put(`/auth/users/${id}/restore`);
                                                 const res = await apiClient.get('/auth/users');
@@ -521,7 +522,7 @@ const HRDashboard = () => {
                                                 if (updatedEmp) setSelectedEmployee(updatedEmp);
                                             } catch (err) {
                                                 console.error("Error restoring employee:", err);
-                                                alert(err.response?.data?.msg || "Failed to restore employee");
+                                                toast.error(err.response?.data?.msg || "Failed to restore employee");
                                             }
                                         }}
                                     />
@@ -532,13 +533,13 @@ const HRDashboard = () => {
                                         onAddNew={() => setIsAddingEmployee(true)}
                                         onSelect={setSelectedEmployee}
                                         onDelete={async (id) => {
-                                            if (!window.confirm("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
+                                            if (!await window.confirmModal("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
                                             try {
                                                 await apiClient.delete(`/auth/users/${id}`);
                                                 fetchAllEmployees();
                                             } catch (err) {
                                                 console.error("Error deleting employee:", err);
-                                                alert(err.response?.data?.msg || "Failed to delete employee");
+                                                toast.error(err.response?.data?.msg || "Failed to delete employee");
                                             }
                                         }}
                                     />

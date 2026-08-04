@@ -222,8 +222,8 @@ router.post('/forgot-password', async (req, res) => {
 
         // ==========================================
         // TOGGLE FOR RAILWAY DEPLOYMENT VS LOCAL TESTING
-        // Set this to FALSE before deploying to Railway!
-        const LOCAL_TESTING_MODE = true; 
+        // Controlled by .env variable LOCAL_TESTING_MODE
+        const LOCAL_TESTING_MODE = process.env.LOCAL_TESTING_MODE === 'true'; 
         // ==========================================
         
         if (LOCAL_TESTING_MODE) {

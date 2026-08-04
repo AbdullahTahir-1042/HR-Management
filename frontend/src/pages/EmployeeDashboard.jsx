@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import axios from 'axios';
 import apiClient from '../api/axiosClient';
@@ -118,20 +119,20 @@ const EmployeeDashboard = () => {
     const [unreadMessages, setUnreadMessages] = useState(0);
 
     // ── Notification Toast state ──────────────────────────────────────────────
-    const [toast, setToast] = useState(null);
+    const [notificationToast, setNotificationToast] = useState(null);
     const toastTimerRef = useRef(null);
     const notifiedAnnouncementIdsRef = useRef(new Set());
     const isInitializedRef = useRef(false);
 
     const showToast = useCallback((title, body) => {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-        setToast({ title, body });
-        toastTimerRef.current = setTimeout(() => setToast(null), 7000);
+        setNotificationToast({ title, body });
+        toastTimerRef.current = setTimeout(() => setNotificationToast(null), 7000);
     }, []);
 
     const dismissToast = useCallback(() => {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-        setToast(null);
+        setNotificationToast(null);
     }, []);
 
     // ── Initial data load ─────────────────────────────────────────────────────
@@ -405,7 +406,7 @@ const EmployeeDashboard = () => {
             setHrRequestSubmitting(false);
             return true;
         } catch (err) {
-            alert(err.response?.data?.msg || 'Error submitting request');
+            toast.error(err.response?.data?.msg || 'Error submitting request');
             setHrRequestSubmitting(false);
             return false;
         }
@@ -423,7 +424,7 @@ const EmployeeDashboard = () => {
             
             if (!navigator.geolocation) {
                 setIsLocationFetching(false);
-                return alert('Geolocation is not supported by your browser.');
+                return toast.error('Geolocation is not supported by your browser.');
             }
 
             navigator.geolocation.getCurrentPosition(
@@ -437,7 +438,7 @@ const EmployeeDashboard = () => {
                         fetchAttendanceHistory();
                         setConfirmModal({ isOpen: false, type: null });
                     } catch (err) {
-                        alert(err.response?.data?.msg || 'Error recording attendance');
+                        toast.error(err.response?.data?.msg || 'Error recording attendance');
                     } finally {
                         setIsLocationFetching(false);
                     }
@@ -448,7 +449,7 @@ const EmployeeDashboard = () => {
                     if (error.code === 1) msg = 'Location access denied. Please allow location access in your browser to check in at the TDC office.';
                     if (error.code === 2) msg = 'Position unavailable.';
                     if (error.code === 3) msg = 'Location request timed out.';
-                    alert(msg);
+                    toast.error(msg);
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
@@ -459,21 +460,21 @@ const EmployeeDashboard = () => {
                 fetchAttendanceHistory();
                 setConfirmModal({ isOpen: false, type: null });
             } catch (err) {
-                alert(err.response?.data?.msg || 'Error recording attendance');
+                toast.error(err.response?.data?.msg || 'Error recording attendance');
             }
         }
     };
 
     const handleApplyLeave = async (e) => {
         e.preventDefault();
-        if (!leaveForm.leaveTypeId) return alert('Please select a leave type.');
+        if (!leaveForm.leaveTypeId) return toast.error('Please select a leave type.');
         const start = new Date(leaveForm.startDate);
         const end = new Date(leaveForm.endDate);
-        if (start > end) return alert('Start date cannot be after the end date.');
+        if (start > end) return toast.error('Start date cannot be after the end date.');
         const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
         try {
             await apiClient.post('/leaves/apply', leaveForm);
-            alert('Leave request submitted!');
+            toast.success('Leave request submitted!');
             setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
             fetchMyLeaves();
             fetchLeaveBalances();
@@ -484,7 +485,7 @@ const EmployeeDashboard = () => {
                 bc.close();
             } catch (e) { /* BroadcastChannel not supported */ }
         } catch (err) {
-            alert(err.response?.data?.msg || 'Error applying for leave');
+            toast.error(err.response?.data?.msg || 'Error applying for leave');
         }
     };
 
@@ -536,9 +537,9 @@ const EmployeeDashboard = () => {
 
             {/* ── Announcement Toast ── */}
             <AnimatePresence>
-                {toast && (
+                {notificationToast && (
                     <AnnouncementToast
-                        notification={toast}
+                        notification={notificationToast}
                         onClose={dismissToast}
                     />
                 )}

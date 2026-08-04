@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -29,7 +30,7 @@ const Login = () => {
             const loggedInUser = await login(formData.email, formData.password);
             navigate(getDashboardPath(loggedInUser.role), { replace: true });
         } catch (err) {
-            alert(err.response?.data?.msg || 'Login failed. Please check your credentials.');
+            toast.error(err.response?.data?.msg || 'Login failed. Please check your credentials.');
         } finally {
             setLoading(false);
         }
