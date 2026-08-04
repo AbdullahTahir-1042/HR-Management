@@ -26,8 +26,8 @@ import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManageme
 import LatecomersPage from '../components/HRDashboard/LatecomersPage';
 import MessagesPage from '../components/MessagesPage';
 
-const SHIFT_START_HOUR = 12;
-const SHIFT_START_MINUTE = 0;
+const SHIFT_START_HOUR = 9;
+const SHIFT_START_MINUTE = 45;
 const SHIFT_END_HOUR = 18;
 const SHIFT_END_MINUTE = 0;
 
@@ -586,7 +586,7 @@ const HRDashboard = () => {
                         )}
 
                         {activeTab === 'reports' && (
-                            <HRReports employees={employees} />
+                            <HRReports employees={employees} loans={loans} />
                         )}
 
                         {activeTab === 'mistake-reports' && (
