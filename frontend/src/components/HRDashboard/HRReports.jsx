@@ -469,7 +469,7 @@ const HRReports = ({ employees, loans = [] }) => {
 
     // ── Formatter & Helper Functions ─────────────────────────
     const SHIFT_START_HOUR = 9;
-    const SHIFT_START_MIN = 15;
+    const SHIFT_START_MIN = 45;
     const isLate = (checkIn) => {
         if (!checkIn) return false;
         const t = new Date(checkIn);
@@ -1207,12 +1207,12 @@ const HRReports = ({ employees, loans = [] }) => {
                                                             {/* Check In */}
                                                             <td className="px-3 py-3">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${late ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                                                                    <span className={`text-xs font-bold tabular-nums ${late ? 'text-amber-700' : 'text-emerald-700'}`}>
+                                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${late ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                                                    <span className={`text-xs font-bold tabular-nums ${late ? 'text-rose-600' : 'text-emerald-700'}`}>
                                                                         {formatTime(record.checkIn)}
                                                                     </span>
                                                                     {late && (
-                                                                        <span className="text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded uppercase">
+                                                                        <span className="text-[9px] font-black text-rose-700 bg-rose-50 border border-rose-200 px-1 py-0.5 rounded uppercase">
                                                                             Late
                                                                         </span>
                                                                     )}

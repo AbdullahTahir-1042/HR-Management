@@ -127,11 +127,6 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                         >
                             <ClipboardList size={18} />
                             <span>HR Requests</span>
-                            {pendingRequestsCount > 0 && (
-                                <span className="ml-auto bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                                    {pendingRequestsCount}
-                                </span>
-                            )}
                         </button>
                     </div>
                 </div>

@@ -70,7 +70,7 @@ const EmployeeDashboard = () => {
     const [hrRequests, setHrRequests] = useState([]);
     const [hrRequestSubmitting, setHrRequestSubmitting] = useState(false);
 
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
+    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '', isUrgent: false });
     const [activeTab, setActiveTab] = useState('dashboard');
     const [navHistory, setNavHistory] = useState([]);
 

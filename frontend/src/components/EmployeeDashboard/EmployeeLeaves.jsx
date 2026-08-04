@@ -516,6 +516,20 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                     />
                                 </div>
 
+                                <div className="flex items-center gap-2 mt-4 px-1">
+                                    <input 
+                                        type="checkbox" 
+                                        id="urgent-leave"
+                                        checked={leaveForm.isUrgent || false}
+                                        onChange={(e) => setLeaveForm({ ...leaveForm, isUrgent: e.target.checked })}
+                                        className="w-4 h-4 rounded border-slate-300 text-rose-500 focus:ring-rose-500/20"
+                                    />
+                                    <label htmlFor="urgent-leave" className="text-xs font-semibold text-rose-600 flex items-center gap-1.5 cursor-pointer select-none">
+                                        <AlertTriangle size={14} />
+                                        This is an urgent/emergency request (Bypasses consecutive day limits)
+                                    </label>
+                                </div>
+
                                 {/* Booked Dates Quick Reference Tags */}
                                 {bookedDatesMap.size > 0 && (
                                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">

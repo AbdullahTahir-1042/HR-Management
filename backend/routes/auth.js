@@ -230,13 +230,22 @@ router.post('/forgot-password', async (req, res) => {
             const hrUsers = await User.find({ role: 'hr' });
             for (let hr of hrUsers) {
                 await Notification.create({
-                    user: hr._id,
+                    recipient: hr._id,
                     type: 'system',
                     title: 'Password Reset Request',
                     message: `Employee ${user.name} (${user.email}) has requested a password reset. Please set a temporary password for them in their profile settings.`,
                     isRead: false
                 });
             }
+
+            // Create HR Request for Password Reset
+            await HRRequest.create({
+                employee: user._id,
+                type: 'Password Reset',
+                description: `Password reset requested by ${user.name} (${user.email})`,
+                status: 'Pending'
+            });
+
             return res.status(200).json({ 
                 bypassOtp: true, 
                 msg: 'A password reset request has been sent to HR directly. They will provide you with a temporary password soon.' 
@@ -551,6 +560,27 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
         res.json({ msg: 'User marked as Inactive' });
     } catch (err) {
         console.error('Delete Error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/auth/users/:id/restore
+// @desc    Restore a user (HR only)
+// @access  Private (HR)
+router.put('/users/:id/restore', [auth, isHR], async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        user.status = 'full time';
+        user.isDeleted = false;
+        await user.save();
+
+        res.json({ msg: 'User marked as Active', user });
+    } catch (err) {
+        console.error('Restore Error:', err.message);
         res.status(500).send('Server Error');
     }
 });

@@ -3,11 +3,13 @@ import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 
 const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
-    const sortedAttendance = [...filteredAttendance].sort((a, b) => {
-        const dateA = a.checkIn ? new Date(a.checkIn) : new Date(a.date);
-        const dateB = b.checkIn ? new Date(b.checkIn) : new Date(b.date);
-        return dateB - dateA;
-    });
+    const sortedAttendance = [...filteredAttendance]
+        .filter(record => record.employee?.role !== 'admin' && record.employee?.role !== 'hr')
+        .sort((a, b) => {
+            const dateA = a.checkIn ? new Date(a.checkIn) : new Date(a.date);
+            const dateB = b.checkIn ? new Date(b.checkIn) : new Date(b.date);
+            return dateB - dateA;
+        });
 
     return (
         <motion.div 
@@ -28,7 +30,13 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {sortedAttendance.map(record => (
+                        {sortedAttendance.map(record => {
+                            const late = record.checkIn ? (() => {
+                                const shiftStart = new Date(record.checkIn);
+                                shiftStart.setHours(9, 45, 0, 0);
+                                return new Date(record.checkIn) > shiftStart;
+                            })() : false;
+                            return (
                             <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-8 py-6">
                                     <div className="flex flex-col">
@@ -38,12 +46,12 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                 </td>
                                 <td className="px-8 py-6 text-slate-600 text-sm">{record.date}</td>
                                 <td className="px-8 py-6">
-                                    <div className="flex items-center gap-2 text-slate-700 font-medium">
+                                    <div className={`flex items-center gap-2 font-medium ${late ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
                                         {record.status === 'absent' || !record.checkIn ? (
                                             <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-md text-xs">Absent</span>
                                         ) : (
                                             <>
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                                <div className={`w-2 h-2 rounded-full ${late ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
                                                 {new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </>
                                         )}
@@ -62,7 +70,7 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                        )})}
                     </tbody>
                 </table>
                 {filteredAttendance.length === 0 && (

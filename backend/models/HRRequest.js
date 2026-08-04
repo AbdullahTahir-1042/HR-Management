@@ -13,6 +13,7 @@ const HRRequestSchema = new mongoose.Schema({
             'Experience Letter',
             'Salary Slip',
             'Work From Home',
+            'Password Reset',
             'Other'
         ],
         required: true

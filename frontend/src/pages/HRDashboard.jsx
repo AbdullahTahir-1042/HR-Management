@@ -28,7 +28,7 @@ import MessagesPage from '../components/MessagesPage';
 
 const SHIFT_START_HOUR = 9;
 const SHIFT_START_MINUTE = 45;
-const SHIFT_END_HOUR = 18;
+const SHIFT_END_HOUR = 19;
 const SHIFT_END_MINUTE = 0;
 
 const HRDashboard = () => {
@@ -509,6 +509,19 @@ const HRDashboard = () => {
                                             } catch (err) {
                                                 console.error("Error deleting employee:", err);
                                                 alert(err.response?.data?.msg || "Failed to delete employee");
+                                            }
+                                        }}
+                                        onRestore={async (id) => {
+                                            if (!window.confirm("Are you sure you want to mark this employee as Active?")) return;
+                                            try {
+                                                await apiClient.put(`/auth/users/${id}/restore`);
+                                                const res = await apiClient.get('/auth/users');
+                                                setEmployees(res.data);
+                                                const updatedEmp = res.data.find(e => e._id === id);
+                                                if (updatedEmp) setSelectedEmployee(updatedEmp);
+                                            } catch (err) {
+                                                console.error("Error restoring employee:", err);
+                                                alert(err.response?.data?.msg || "Failed to restore employee");
                                             }
                                         }}
                                     />

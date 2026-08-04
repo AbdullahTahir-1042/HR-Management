@@ -27,6 +27,10 @@ const LeaveRequestSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
+    },
+    isUrgent: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 
