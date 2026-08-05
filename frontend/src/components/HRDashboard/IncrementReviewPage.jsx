@@ -221,32 +221,32 @@ const IncrementReviewPage = ({ employee }) => {
             label: 'Current Salary',
             value: careerSummary.currentSalary,
             icon: DollarSign,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50'
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50 dark:bg-emerald-500/10 dark:!border-emerald-500/20'
         },
         {
             id: 'rank',
             label: 'Current Rank',
             value: careerSummary.currentRank,
             icon: Award,
-            color: 'text-indigo-600',
-            bg: 'bg-indigo-50'
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bg: 'bg-indigo-50 dark:bg-indigo-500/10 dark:!border-indigo-500/20'
         },
         {
             id: 'lastIncDate',
             label: 'Last Increment',
             value: careerSummary.lastIncDate,
             icon: TrendingUp,
-            color: 'text-sky-600',
-            bg: 'bg-sky-50'
+            color: 'text-sky-600 dark:text-sky-400',
+            bg: 'bg-sky-50 dark:bg-sky-500/10 dark:!border-sky-500/20'
         },
         {
             id: 'lastIncAmount',
             label: 'Last Inc. Amount',
             value: careerSummary.lastIncAmount,
             icon: ArrowUpRight,
-            color: 'text-violet-600',
-            bg: 'bg-violet-50'
+            color: 'text-violet-600 dark:text-violet-400',
+            bg: 'bg-violet-50 dark:bg-violet-500/10 dark:!border-violet-500/20'
         },
         {
             id: 'currentRating',
@@ -256,16 +256,16 @@ const IncrementReviewPage = ({ employee }) => {
                 : 'No reviews',
             subtext: performanceSummary?.totalComplaints > 0 ? `-${(performanceSummary.totalComplaints * 0.2).toFixed(1)} penalty` : (careerSummary.currentRating ? RATING_LABELS[Math.round(careerSummary.currentRating)] : ''),
             icon: performanceSummary?.totalComplaints > 0 ? AlertCircle : Star,
-            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-amber-600',
-            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50' : 'bg-amber-50'
+            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
+            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 dark:bg-rose-500/10 dark:!border-rose-500/20' : 'bg-amber-50 dark:bg-amber-500/10 dark:!border-amber-500/20'
         },
         {
             id: 'lastRevDate',
             label: 'Last Review',
             value: careerSummary.lastRevDate,
             icon: Calendar,
-            color: 'text-rose-600',
-            bg: 'bg-rose-50'
+            color: 'text-rose-600 dark:text-rose-400',
+            bg: 'bg-rose-50 dark:bg-rose-500/10 dark:!border-rose-500/20'
         }
     ], [careerSummary]);
 
@@ -662,7 +662,7 @@ const IncrementReviewPage = ({ employee }) => {
                                         <X size={10} />
                                     </button>
                                     <IconComp size={16} className={kpi.color} />
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
+                                    <span className="text-[9px] font-bold text-[#94a3b8] dark:!text-slate-300 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
                                     <span className={`text-[11px] font-bold ${kpi.color} leading-tight`}>{kpi.value}</span>
                                 </div>
                             );
