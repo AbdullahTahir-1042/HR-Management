@@ -138,13 +138,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     <div className="mt-4 flex gap-3">
                         {!todayAttendance ? (
                             isCheckInDisabled ? (
-                                <div className="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 cursor-not-allowed">
+                                <div className="bg-white dark:bg-slate-800/20 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 cursor-not-allowed">
                                     <Clock size={16} /> {disableReason}
                                 </div>
                             ) : (
                                 <button 
                                     onClick={() => setActiveTab('attendance')} 
-                                    className="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
+                                    className="bg-white dark:bg-slate-800 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
                                 >
                                     Check In Now <ArrowRight size={16} />
                                 </button>
@@ -152,14 +152,14 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                         ) : !todayAttendance.checkOut ? (
                             <button 
                                 onClick={() => setActiveTab('attendance')} 
-                                className="bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
+                                className="bg-rose-50 dark:bg-rose-500/100 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
                             >
                                 Check Out <ArrowRight size={16} />
                             </button>
                         ) : (
                             <button 
                                 onClick={() => setActiveTab('leaves')} 
-                                className="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center gap-2"
+                                className="bg-white dark:bg-slate-800/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white dark:bg-slate-800/30 transition-colors flex items-center gap-2"
                             >
                                 Request Leave <Calendar size={16} />
                             </button>
@@ -171,13 +171,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
             {/* ── Today's & Upcoming Working Hours ── */}
             <div className="flex flex-col lg:flex-row gap-4 max-w-6xl">
                 {todaySchedule && (
-                    <div className="flex-1 bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm flex items-center gap-4">
-                        <div className="p-2.5 bg-violet-50 text-violet-600 rounded-xl shrink-0">
+                    <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 shadow-sm flex items-center gap-4">
+                        <div className="p-2.5 bg-violet-50 dark:bg-violet-500/10 text-violet-600 rounded-xl shrink-0">
                             <Clock size={20} />
                         </div>
                         <div className="flex-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today's Working Hours</p>
-                            <p className="text-base font-bold text-slate-800 mt-0.5">
+                            <p className="text-base font-bold text-slate-800 dark:text-white mt-0.5">
                                 {formatTime12hr(todaySchedule.startTime)} – {formatTime12hr(todaySchedule.endTime)}
                             </p>
                             {todaySchedule.reason && (
@@ -185,7 +185,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             )}
                         </div>
                         {!todaySchedule.isDefault && todaySchedule.reason && (
-                            <span className="text-[10px] font-bold bg-violet-50 text-violet-600 px-2 py-1 rounded-lg shrink-0">Custom Schedule</span>
+                            <span className="text-[10px] font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 px-2 py-1 rounded-lg shrink-0">Custom Schedule</span>
                         )}
                     </div>
                 )}
@@ -198,19 +198,19 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                         </div>
                         <div className="space-y-3 mt-3">
                             {upcomingSchedules.slice(0, 2).map((schedule) => (
-                                <div key={schedule._id} className="flex justify-between items-center bg-white/70 backdrop-blur border border-white px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                <div key={schedule._id} className="flex justify-between items-center bg-white dark:bg-slate-800/70 backdrop-blur border border-white px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold text-slate-800 text-sm">
+                                            <span className="font-bold text-slate-800 dark:text-white text-sm">
                                                 {new Date(schedule.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                                             </span>
                                             {schedule.reason && (
-                                                <span className="text-[9px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                                <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
                                                     {schedule.reason}
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                                             <Clock size={12} />
                                             <span className="font-medium text-xs">
                                                 {formatTime12hr(schedule.startTime)} – {formatTime12hr(schedule.endTime)}
@@ -231,19 +231,19 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('performance')}
-                    className={`bg-white p-5 rounded-2xl border ${performanceSummary?.totalComplaints > 0 ? 'border-rose-200 hover:border-rose-300' : 'border-amber-200 hover:border-amber-300'} shadow-sm cursor-pointer transition-all group`}
+                    className={`bg-white dark:bg-slate-800 p-5 rounded-2xl border ${performanceSummary?.totalComplaints > 0 ? 'border-rose-200 hover:border-rose-300' : 'border-amber-200 hover:border-amber-300'} shadow-sm cursor-pointer transition-all group`}
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className={`p-2 rounded-xl transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'}`}>
+                        <div className={`p-2 rounded-xl transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 group-hover:bg-amber-100'}`}>
                             {performanceSummary?.totalComplaints > 0 ? <AlertCircle size={20} /> : <Star size={20} />}
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 group-hover:bg-amber-100'}`}>
                             {performanceSummary?.hasReviews ? 'Rated' : 'Pending'}
                         </span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Performance</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Performance</p>
                     <div className="flex items-end justify-between mt-0.5">
-                        <p className={`text-xl font-bold ${performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                        <p className={`text-xl font-bold ${performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-slate-900 dark:text-white'}`}>
                             {performanceSummary ? `${performanceSummary.adjustedRating}/5` : '-'}
                         </p>
                     </div>
@@ -253,27 +253,27 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('attendance')}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <Clock size={20} />
                         </div>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
                             todayAttendance 
                                 ? (todayAttendance.checkOut 
-                                    ? 'bg-emerald-50 text-emerald-600' 
-                                    : 'bg-amber-50 text-amber-600') 
-                                : 'bg-slate-50 text-slate-500'
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' 
+                                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600') 
+                                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400'
                         }`}>
                             {todayAttendance 
                                 ? (todayAttendance.checkOut ? 'Completed' : 'On Shift') 
                                 : 'Absent'}
                         </span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Today's Status</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Today's Status</p>
                     <div className="flex items-end justify-between mt-0.5">
-                        <p className="text-xl font-bold text-slate-800">
+                        <p className="text-xl font-bold text-slate-800 dark:text-white">
                             {todayAttendance 
                                 ? (todayAttendance.checkIn 
                                     ? new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
@@ -288,19 +288,19 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('leaves')}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-colors">
+                        <div className="p-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-colors">
                             <Calendar size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg group-hover:bg-amber-100 transition-colors">
+                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-lg group-hover:bg-amber-100 transition-colors">
                             Month
                         </span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Leaves Taken</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Leaves Taken</p>
                     <div className="flex items-end justify-between mt-0.5">
-                        <p className="text-xl font-bold text-slate-800">{salaryStats.totalDays} Days</p>
+                        <p className="text-xl font-bold text-slate-800 dark:text-white">{salaryStats.totalDays} Days</p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
                     </div>
                 </motion.div>
@@ -309,7 +309,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('hr-requests')}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-blue-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-blue-200"
                 >
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-colors">
@@ -319,10 +319,10 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             Support
                         </span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">HR Requests</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">HR Requests</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <div>
-                            <p className="text-xl font-bold text-slate-900">Get Help</p>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">Get Help</p>
                             <p className="text-[10px] text-slate-400 font-medium">Contact HR Department</p>
                         </div>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
@@ -333,17 +333,17 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('announcements')}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <Megaphone size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-indigo-100 transition-colors">All</span>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">All</span>
                     </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Announcements</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Announcements</p>
                     <div className="flex items-end justify-between mt-0.5">
-                        <p className="text-xl font-bold text-slate-900">{announcements.length}</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{announcements.length}</p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                 </motion.div>
@@ -354,25 +354,25 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
             <motion.div
                 whileHover={{ y: -2 }}
                 onClick={() => setActiveTab('holidays')}
-                className="bg-white rounded-2xl border border-indigo-100 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md p-5 max-w-6xl"
+                className="bg-white dark:bg-slate-800 rounded-2xl border border-indigo-100 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md p-5 max-w-6xl"
             >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                        <div className="p-3 bg-indigo-50 rounded-xl group-hover:bg-indigo-100 transition-colors shrink-0">
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors shrink-0">
                             <PartyPopper size={22} className="text-indigo-600" />
                         </div>
                         <div>
-                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
+                            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">
                                 Next Upcoming Holiday
                             </p>
                             {nextHoliday ? (
                                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                                    <p className="text-base font-bold text-slate-800">{nextHoliday.name}</p>
-                                    <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                    <p className="text-base font-bold text-slate-800 dark:text-white">{nextHoliday.name}</p>
+                                    <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 px-2 py-0.5 rounded-full">
                                         {formatShortDate(nextHoliday.startDate)}
                                     </span>
                                     {nextHoliday.type && (
-                                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
+                                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">
                                             {nextHoliday.type}
                                         </span>
                                     )}
@@ -382,9 +382,9 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             )}
                         </div>
                     </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-700">
                         {upcomingCount > 0 && (
-                            <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
+                            <span className="text-sm font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 px-3 py-1.5 rounded-xl">
                                 {upcomingCount} upcoming
                             </span>
                         )}

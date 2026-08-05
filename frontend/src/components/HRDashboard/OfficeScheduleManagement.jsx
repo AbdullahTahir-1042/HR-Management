@@ -141,8 +141,8 @@ const OfficeScheduleManagement = () => {
         }
     };
 
-    const defaultSchedule = schedules.find(s => s.isDefault);
-    const customSchedules = schedules.filter(s => !s.isDefault);
+    const defaultSchedule = Array.isArray(schedules) ? schedules.find(s => s.isDefault) : null;
+    const customSchedules = Array.isArray(schedules) ? schedules.filter(s => !s.isDefault) : [];
 
     const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const DAY_FULL_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -178,8 +178,8 @@ const OfficeScheduleManagement = () => {
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Office Schedule Management</h1>
-                    <p className="text-slate-500 mt-1">Configure default working hours and date-specific overrides.</p>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Office Schedule Management</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Configure default working hours and date-specific overrides.</p>
                 </div>
                 <button 
                     onClick={() => handleOpenModal(null, false)}
@@ -191,18 +191,18 @@ const OfficeScheduleManagement = () => {
             </div>
 
             {/* Default Schedule Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                             <Clock className="w-5 h-5 text-indigo-500" />
                             Default Office Timings
                         </h2>
-                        <p className="text-sm text-slate-500 mt-1">This schedule applies to all employees unless a custom override exists.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">This schedule applies to all employees unless a custom override exists.</p>
                     </div>
                     <button 
                         onClick={() => handleOpenModal(defaultSchedule, true)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:bg-indigo-500/10 rounded-lg transition"
                         title="Edit Default Schedule"
                     >
                         <Edit2 className="w-5 h-5" />
@@ -211,28 +211,28 @@ const OfficeScheduleManagement = () => {
 
                 {defaultSchedule ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-slate-50 p-4 rounded-lg">
-                            <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Working Hours</p>
-                            <p className="text-lg font-medium text-slate-800">
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold mb-1">Working Hours</p>
+                            <p className="text-lg font-medium text-slate-800 dark:text-white">
                                 {formatTime12hr(defaultSchedule.startTime)} - {formatTime12hr(defaultSchedule.endTime)}
                             </p>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-lg">
-                            <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Grace Period</p>
-                            <p className="text-lg font-medium text-slate-800">
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold mb-1">Grace Period</p>
+                            <p className="text-lg font-medium text-slate-800 dark:text-white">
                                 {defaultSchedule.gracePeriod} Minutes
                             </p>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-lg">
-                            <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Working Days</p>
-                            <p className="text-lg font-medium text-slate-800">
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold mb-1">Working Days</p>
+                            <p className="text-lg font-medium text-slate-800 dark:text-white">
                                 {formatWorkingDays(defaultSchedule.workingDays)}
                             </p>
                         </div>
                     </div>
                 ) : (
-                    <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-                        <p className="text-slate-500 mb-4">No default schedule configured.</p>
+                    <div className="text-center py-6 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
+                        <p className="text-slate-500 dark:text-slate-400 mb-4">No default schedule configured.</p>
                         <button 
                             onClick={() => handleOpenModal(null, true)}
                             className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition text-sm font-medium"
@@ -244,8 +244,8 @@ const OfficeScheduleManagement = () => {
             </div>
 
             {/* Custom Schedules List */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-6">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2 mb-6">
                     <Calendar className="w-5 h-5 text-indigo-500" />
                     Upcoming Schedule Overrides
                 </h2>
@@ -254,40 +254,40 @@ const OfficeScheduleManagement = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-slate-200">
-                                    <th className="pb-3 font-medium text-slate-500">Date</th>
-                                    <th className="pb-3 font-medium text-slate-500">Working Hours</th>
-                                    <th className="pb-3 font-medium text-slate-500">Grace Period</th>
-                                    <th className="pb-3 font-medium text-slate-500">Reason</th>
-                                    <th className="pb-3 font-medium text-slate-500 text-right">Actions</th>
+                                <tr className="border-b border-slate-200 dark:border-slate-700">
+                                    <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Date</th>
+                                    <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Working Hours</th>
+                                    <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Grace Period</th>
+                                    <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Reason</th>
+                                    <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {customSchedules.map(schedule => (
-                                    <tr key={schedule._id} className="border-b border-slate-100 last:border-0">
-                                        <td className="py-4 font-medium text-slate-800">
+                                    <tr key={schedule._id} className="border-b border-slate-100 dark:border-slate-700 last:border-0">
+                                        <td className="py-4 font-medium text-slate-800 dark:text-white">
                                             {new Date(schedule.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                                         </td>
-                                        <td className="py-4 text-slate-600">
+                                        <td className="py-4 text-slate-600 dark:text-slate-300">
                                             {formatTime12hr(schedule.startTime)} - {formatTime12hr(schedule.endTime)}
                                         </td>
-                                        <td className="py-4 text-slate-600">
+                                        <td className="py-4 text-slate-600 dark:text-slate-300">
                                             {schedule.gracePeriod} min
                                         </td>
-                                        <td className="py-4 text-slate-600">
+                                        <td className="py-4 text-slate-600 dark:text-slate-300">
                                             {schedule.reason || '-'}
                                         </td>
                                         <td className="py-4 flex justify-end gap-2">
                                             <button 
                                                 onClick={() => handleOpenModal(schedule, false)}
-                                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:bg-indigo-500/10 rounded-lg transition"
                                                 title="Edit Schedule"
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button 
                                                 onClick={() => handleDelete(schedule._id)}
-                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:bg-rose-500/10 rounded-lg transition"
                                                 title="Delete Schedule"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -299,13 +299,13 @@ const OfficeScheduleManagement = () => {
                         </table>
                     </div>
                 ) : (
-                    <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
                         <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium text-slate-800 mb-1">No Custom Schedules</h3>
-                        <p className="text-slate-500 mb-4">You haven't set any specific date overrides.</p>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-white mb-1">No Custom Schedules</h3>
+                        <p className="text-slate-500 dark:text-slate-400 mb-4">You haven't set any specific date overrides.</p>
                         <button 
                             onClick={() => handleOpenModal(null, false)}
-                            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium"
+                            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 dark:bg-slate-900/50 transition font-medium"
                         >
                             Add Override
                         </button>
@@ -316,12 +316,12 @@ const OfficeScheduleManagement = () => {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                            <h3 className="text-lg font-semibold text-slate-800">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
                                 {formData.isDefault ? 'Edit Default Schedule' : (editingId ? 'Edit Schedule Override' : 'New Schedule Override')}
                             </h3>
-                            <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 dark:text-slate-300">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -329,12 +329,12 @@ const OfficeScheduleManagement = () => {
                         <form className="p-6 space-y-4">
                             {!formData.isDefault && editingId && (
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Date *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Date *</label>
                                     <input 
                                         type="date"
                                         required
                                         disabled={true}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                                         value={formData.date}
                                         min={new Date().toISOString().split('T')[0]}
                                     />
@@ -344,22 +344,22 @@ const OfficeScheduleManagement = () => {
                             {!formData.isDefault && !editingId && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Start Date *</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Start Date *</label>
                                         <input 
                                             type="date"
                                             required
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                             value={formData.startDate}
                                             onChange={e => setFormData({ ...formData, startDate: e.target.value })}
                                             min={new Date().toISOString().split('T')[0]}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">End Date *</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">End Date *</label>
                                         <input 
                                             type="date"
                                             required
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                             value={formData.endDate}
                                             onChange={e => setFormData({ ...formData, endDate: e.target.value, startDate: formData.startDate || e.target.value })}
                                             min={formData.startDate || new Date().toISOString().split('T')[0]}
@@ -370,21 +370,21 @@ const OfficeScheduleManagement = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Time *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Start Time *</label>
                                     <input 
                                         type="time"
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                         value={formData.startTime}
                                         onChange={e => setFormData({ ...formData, startTime: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">End Time *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">End Time *</label>
                                     <input 
                                         type="time"
                                         required
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                         value={formData.endTime}
                                         onChange={e => setFormData({ ...formData, endTime: e.target.value })}
                                     />
@@ -392,12 +392,12 @@ const OfficeScheduleManagement = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Late Grace Period (Minutes) *</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Late Grace Period (Minutes) *</label>
                                 <input 
                                     type="number"
                                     min="0"
                                     required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     value={formData.gracePeriod}
                                     onChange={e => setFormData({ ...formData, gracePeriod: parseInt(e.target.value) })}
                                 />
@@ -405,11 +405,11 @@ const OfficeScheduleManagement = () => {
 
                             {!formData.isDefault && (
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Reason (Optional)</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Reason (Optional)</label>
                                     <input 
                                         type="text"
                                         placeholder="e.g. Company Event"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                         value={formData.reason}
                                         onChange={e => setFormData({ ...formData, reason: e.target.value })}
                                     />
@@ -418,7 +418,7 @@ const OfficeScheduleManagement = () => {
 
                             {formData.isDefault && (
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">Working Days *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Working Days *</label>
                                     <div className="flex flex-wrap gap-2">
                                         {DAY_FULL_NAMES.map((name, idx) => (
                                             <button
@@ -428,7 +428,7 @@ const OfficeScheduleManagement = () => {
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                                                     (formData.workingDays || []).includes(idx)
                                                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                                                        : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400 hover:text-indigo-600'
+                                                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400 hover:text-indigo-600'
                                                 }`}
                                             >
                                                 {name}
@@ -444,7 +444,7 @@ const OfficeScheduleManagement = () => {
                                     type="button"
                                     onClick={(e) => handleSubmit(e, false)}
                                     disabled={isSaving}
-                                    className="flex-1 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center justify-center gap-2"
+                                    className="flex-1 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 dark:bg-slate-900/50 flex items-center justify-center gap-2"
                                 >
                                     <Save className="w-4 h-4" />
                                     Save Only
