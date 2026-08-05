@@ -219,24 +219,24 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
             id: 'salary',
             label: 'Current Salary',
             value: formatSalary(employee.salary),
-            color: 'text-indigo-600',
-            bg: 'bg-indigo-50/50',
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bg: 'bg-indigo-50/50 dark:bg-indigo-500/10 dark:!border-indigo-500/20',
             icon: DollarSign
         },
         {
             id: 'lastIncrement',
             label: 'Last Increment',
             value: latestApprovedInc ? `+${formatSalary(latestApprovedInc.incrementAmount)}` : '-',
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50/50',
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50/50 dark:bg-emerald-500/10 dark:!border-emerald-500/20',
             icon: TrendingUp
         },
         {
             id: 'lastIncDate',
             label: 'Last Inc. Date',
             value: latestApprovedInc ? formatDate(latestApprovedInc.incrementDate) : 'No raise',
-            color: 'text-violet-600',
-            bg: 'bg-violet-50/50',
+            color: 'text-violet-600 dark:text-violet-400',
+            bg: 'bg-violet-50/50 dark:bg-violet-500/10 dark:!border-violet-500/20',
             icon: Calendar
         },
         {
@@ -244,8 +244,8 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
             label: 'Adjusted Rating',
             value: (performanceSummary?.hasReviews || performanceSummary?.totalComplaints > 0) ? `${performanceSummary.adjustedRating}/5` : 'No rating',
             subtext: performanceSummary?.totalComplaints > 0 ? `-${(performanceSummary.totalComplaints * 0.2).toFixed(1)} penalty (${performanceSummary.totalComplaints} complaints)` : (latestReview ? RATING_LABELS[Math.round(performanceSummary?.adjustedRating || latestReview.overallRating)] : ''),
-            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-amber-600',
-            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50/50' : 'bg-amber-50/50',
+            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
+            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50/50 dark:bg-rose-500/10 dark:!border-rose-500/20' : 'bg-amber-50/50 dark:bg-amber-500/10 dark:!border-amber-500/20',
             icon: performanceSummary?.totalComplaints > 0 ? AlertCircle : Star
         }
     ], [employee.salary, latestApprovedInc, latestReview, performanceSummary]);
@@ -541,9 +541,9 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                         <>
                             {/* ── PROFILE & SALARY SUMMARY ── */}
                             <div className="card relative overflow-visible">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/40 blur-2xl rounded-full" />
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/40 dark:hidden blur-2xl rounded-full" />
                                 <div className="flex items-center justify-between mb-5 border-b border-indigo-50 pb-3">
-                                    <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest">
+                                    <h3 className="text-xs font-bold text-indigo-600 dark:text-indigo-400/70 flex items-center gap-2 uppercase tracking-widest">
                                         <DollarSign size={16} /> Salary & Review Summary
                                     </h3>
                                     {removedProfileCards.length > 0 && (
@@ -637,9 +637,9 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                                         <X size={10} />
                                                     </button>
                                                     <IconComp size={16} className={card.color} />
-                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{card.label}</span>
+                                                    <span className="text-[9px] font-bold text-[#94a3b8] dark:!text-slate-300 uppercase tracking-wider leading-none mb-0.5">{card.label}</span>
                                                     <span className={`text-[11px] font-extrabold ${card.color} leading-tight`}>{card.value}</span>
-                                                    {card.subtext && <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter leading-none mt-0.5">{card.subtext}</span>}
+                                                    {card.subtext && <span className="text-[8px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-tighter leading-none mt-0.5">{card.subtext}</span>}
                                                 </div>
                                             );
                                         })}
@@ -670,31 +670,31 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                                 <Wallet size={18} className="text-indigo-600" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold text-slate-800">Monthly Net Salary Estimation</h3>
+                                                <h3 className="text-sm font-bold text-slate-800 dark:!text-slate-400">Monthly Net Salary Estimation</h3>
                                                 <p className="text-slate-400 text-[9px] uppercase tracking-widest font-bold">
                                                     For {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50/50 border border-indigo-100 px-3 py-1 rounded-xl">
+                                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-3 py-1 rounded-xl">
                                                 Base: {formatSalary(salaryData.baseSalary)}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Leaves Taken</p>
-                                            <p className="text-base font-black text-slate-800">{salaryData.totalLeaveDays} Days</p>
+                                            <p className="text-base font-black text-slate-800 dark:text-slate-200">{salaryData.totalLeaveDays} Days</p>
                                         </div>
-                                        <div className="bg-rose-50/40 p-3 rounded-2xl border border-rose-100">
+                                        <div className="bg-rose-50/40 dark:bg-rose-500/10 p-3 rounded-2xl border border-rose-100 dark:border-rose-500/20">
                                             <p className="text-rose-500 text-[9px] font-bold uppercase tracking-wider mb-0.5">Leave Deduction</p>
-                                            <p className="text-base font-black text-rose-600">-{formatSalary(salaryData.leaveDeduction)}</p>
+                                            <p className="text-base font-black text-rose-600 dark:text-rose-400">-{formatSalary(salaryData.leaveDeduction)}</p>
                                         </div>
-                                        <div className="bg-amber-50/40 p-3 rounded-2xl border border-amber-100">
+                                        <div className="bg-amber-50/40 dark:bg-amber-500/10 p-3 rounded-2xl border border-amber-100 dark:border-amber-500/20">
                                             <p className="text-amber-600 text-[9px] font-bold uppercase tracking-wider mb-0.5">Loan Installment</p>
-                                            <p className="text-base font-black text-amber-700">-{formatSalary(salaryData.loanDeduction)}</p>
+                                            <p className="text-base font-black text-amber-700 dark:text-amber-400">-{formatSalary(salaryData.loanDeduction)}</p>
                                         </div>
                                     </div>
 
