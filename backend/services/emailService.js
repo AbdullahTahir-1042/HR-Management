@@ -23,7 +23,14 @@ const getTransporter = async () => {
         auth: {
             user,
             pass,
-        }
+        },
+        localAddress: '0.0.0.0',
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        tls: {
+            rejectUnauthorized: false,
+        },
     });
 };
 
