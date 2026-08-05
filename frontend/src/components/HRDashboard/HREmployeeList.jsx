@@ -365,13 +365,8 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                                 )}
                                                 {onDelete && (
                                                     <button
-                                                        disabled={currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'}
                                                         onClick={() => onDelete(emp._id)}
-                                                        className={`p-1 rounded-lg transition-all ${
-                                                            currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'
-                                                                ? 'text-slate-300 cursor-not-allowed'
-                                                                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                                        }`}
+                                                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                                                         title="Delete Employee"
                                                     >
                                                         <Trash2 size={15} />
@@ -484,13 +479,8 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                     )}
                                     {onDelete && (
                                         <button
-                                            disabled={currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'}
                                             onClick={() => onDelete(emp._id)}
-                                            className={`p-2 rounded-xl transition-all ${
-                                                currentUser?.role === 'hr' && (emp.role === 'hr' || emp.role === 'admin') && currentUser?.role !== 'admin'
-                                                    ? 'text-slate-300 cursor-not-allowed'
-                                                    : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                            }`}
+                                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                             title="Delete Employee"
                                         >
                                             <Trash2 size={17} />

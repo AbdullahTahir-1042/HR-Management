@@ -1,34 +1,19 @@
 const nodemailer = require("nodemailer");
-const dns = require("dns");
-const { promisify } = require("util");
-const lookup = promisify(dns.lookup);
 
 /**
  * Initialize Nodemailer transporter
  */
 const getTransporter = async () => {
-    const originalHost = process.env.EMAIL_HOST;
+    const host = process.env.EMAIL_HOST;
     const port = Number(process.env.EMAIL_PORT);
     const user = process.env.EMAIL_USER;
     const pass = process.env.EMAIL_PASS
         ? process.env.EMAIL_PASS.replace(/\s+/g, "")
         : "";
 
-    if (!originalHost || !port || !user || !pass) {
+    if (!host || !port || !user || !pass) {
         console.error("[EmailService] Missing SMTP environment variables.");
         return null;
-    }
-
-    let host = originalHost;
-    try {
-        // Manually force IPv4 resolution to prevent ENETUNREACH on cloud providers
-        const { address } = await lookup(originalHost, { family: 4 });
-        if (address) {
-            host = address;
-            console.log(`[EmailService] Resolved ${originalHost} to IPv4: ${address}`);
-        }
-    } catch (e) {
-        console.warn(`[EmailService] DNS lookup failed for ${originalHost}, falling back to original host`, e.message);
     }
 
     return nodemailer.createTransport({
@@ -38,15 +23,7 @@ const getTransporter = async () => {
         auth: {
             user,
             pass,
-        },
-        family: 4,
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-        tls: {
-            rejectUnauthorized: false,
-            servername: originalHost, // Required for SSL validation when host is an IP
-        },
+        }
     });
 };
 

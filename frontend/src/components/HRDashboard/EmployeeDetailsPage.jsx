@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Mail, Shield, Briefcase, Building2, UserCheck,
     Calendar, DollarSign, User, Phone, Edit3, Wallet,
-    AlertCircle, Trash2, ClipboardList, TrendingUp, Star, Award, Award as RankIcon, CheckCircle2, Clock, X, Plus, LayoutGrid, Coins
+    AlertCircle, Trash2, ClipboardList, TrendingUp, Star, Award, Award as RankIcon, CheckCircle2, Clock, X, Plus, LayoutGrid, Coins, FileText, ArrowRight
 } from 'lucide-react';
+import ContractModal from '../ContractModal';
 import IncrementReviewPage from './IncrementReviewPage';
 import apiClient from '../../api/axiosClient';
 import RestoreCardModal from './RestoreCardModal';
@@ -24,8 +25,10 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
     const employee = propEmployee || {};
     const { user: currentUser } = useContext(AuthContext);
     const [activeDetailTab, setActiveDetailTab] = useState('profile');
+    const [isContractModalOpen, setIsContractModalOpen] = useState(false);
     const [increments, setIncrements] = useState([]);
     const [reviews, setReviews] = useState([]);
+    const [performanceSummary, setPerformanceSummary] = useState(null);
     const [loadingSummary, setLoadingSummary] = useState(false);
 
     // Scroll to top on detail sub-tab changes
@@ -51,6 +54,12 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                 setReviews(revRes.data || []);
             } catch (e) {
                 console.error('Error fetching reviews summary:', e);
+            }
+            try {
+                const summaryRes = await apiClient.get(`/performance-reviews/summary/${employee._id}`);
+                setPerformanceSummary(summaryRes.data || null);
+            } catch (e) {
+                console.error('Error fetching performance summary:', e);
             } finally {
                 setLoadingSummary(false);
             }
@@ -232,14 +241,14 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
         },
         {
             id: 'currentRating',
-            label: 'Current Rating',
-            value: latestReview ? `${latestReview.overallRating}/5` : 'No reviews',
-            subtext: latestReview ? RATING_LABELS[latestReview.overallRating] : '',
-            color: 'text-amber-600',
-            bg: 'bg-amber-50/50',
-            icon: Star
+            label: 'Adjusted Rating',
+            value: (performanceSummary?.hasReviews || performanceSummary?.totalComplaints > 0) ? `${performanceSummary.adjustedRating}/5` : 'No rating',
+            subtext: performanceSummary?.totalComplaints > 0 ? `-${(performanceSummary.totalComplaints * 0.2).toFixed(1)} penalty (${performanceSummary.totalComplaints} complaints)` : (latestReview ? RATING_LABELS[Math.round(performanceSummary?.adjustedRating || latestReview.overallRating)] : ''),
+            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-amber-600',
+            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50/50' : 'bg-amber-50/50',
+            icon: performanceSummary?.totalComplaints > 0 ? AlertCircle : Star
         }
-    ], [employee.salary, latestApprovedInc, latestReview]);
+    ], [employee.salary, latestApprovedInc, latestReview, performanceSummary]);
 
     const [hiddenProfileCards, setHiddenProfileCards] = useState([]);
     const [showAddProfileDropdown, setShowAddProfileDropdown] = useState(false);
@@ -333,25 +342,15 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                     
                     {employee.status === 'Inactive' ? (
                         <button
-                            disabled={currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'}
                             onClick={() => onRestore && onRestore(employee._id)}
-                            className={`font-bold text-xs uppercase tracking-wider ${
-                                currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'
-                                    ? 'btn-secondary opacity-50 cursor-not-allowed'
-                                    : 'px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl transition-colors flex items-center gap-2'
-                            }`}
+                            className="font-bold text-xs uppercase tracking-wider px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl transition-colors flex items-center gap-2"
                         >
                             <UserCheck size={14} /> Mark as Active
                         </button>
                     ) : (
                         <button
-                            disabled={currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'}
                             onClick={() => onDelete(employee._id)}
-                            className={`font-bold text-xs uppercase tracking-wider ${
-                                currentUser?.role === 'hr' && (employee.role === 'hr' || employee.role === 'admin') && currentUser?.role !== 'admin'
-                                    ? 'btn-secondary opacity-50 cursor-not-allowed'
-                                    : 'btn-danger'
-                            }`}
+                            className="font-bold text-xs uppercase tracking-wider btn-danger"
                         >
                             <Trash2 size={14} /> Mark as Inactive
                         </button>
@@ -401,6 +400,25 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                 <ProfileDetailItem label="Joining Status" value={employee.joiningStatus || 'Fresh Join'} icon={Calendar} />
                                 <ProfileDetailItem label="Promotion Rank" value={employee.promotionRank || 'Junior'} icon={RankIcon} />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Employment Contract Quick Card */}
+                    <div className="card">
+                        <div 
+                            onClick={() => setIsContractModalOpen(true)}
+                            className="bg-slate-50 hover:bg-slate-100 transition-colors p-4 rounded-xl cursor-pointer flex items-center justify-between border border-slate-200 group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-700 flex items-center justify-center shadow-sm">
+                                    <FileText size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800 text-sm">Employment Contract</h3>
+                                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Click to view details</p>
+                                </div>
+                            </div>
+                            <ArrowRight size={18} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
                         </div>
                     </div>
 
@@ -758,6 +776,36 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                 </div>
                             </div>
 
+                            {/* Team Lead Complaints Summary */}
+                            {performanceSummary?.complaints?.length > 0 && (
+                                <div className="card">
+                                    <h3 className="text-xs font-bold text-rose-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-rose-50 pb-3">
+                                        <AlertCircle size={16} /> Team Lead Complaints
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {performanceSummary.complaints.map(c => (
+                                            <div key={c._id} className="bg-rose-50/50 p-4 rounded-2xl border border-rose-100 flex flex-col gap-2">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="text-[10px] font-black text-rose-600 bg-white border border-rose-200 px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
+                                                        {c.dateOfMistake ? formatDate(c.dateOfMistake) : 'Date Unknown'}
+                                                    </span>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg ${c.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {c.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-slate-700 font-medium">{c.mistakeDescription}</p>
+                                                {(c.learning || c.improvement) && (
+                                                    <div className="mt-1 pt-2 border-t border-rose-100/50 space-y-1">
+                                                        {c.learning && <p className="text-xs text-slate-600"><span className="font-bold">Learning:</span> {c.learning}</p>}
+                                                        {c.improvement && <p className="text-xs text-slate-600"><span className="font-bold">Improvement:</span> {c.improvement}</p>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Leave Balances Summary */}
                             <div className="card">
                                 <h3 className="text-xs font-bold text-indigo-600 mb-5 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
@@ -836,6 +884,12 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                 </div>
             </div>
 
+            <ContractModal 
+                isOpen={isContractModalOpen} 
+                onClose={() => setIsContractModalOpen(false)} 
+                contractDetails={employee?.contractDetails} 
+                employeeName={employee?.name} 
+            />
         </motion.div>
     );
 };
