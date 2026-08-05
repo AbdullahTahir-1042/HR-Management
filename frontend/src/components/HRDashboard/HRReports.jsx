@@ -862,7 +862,7 @@ const HRReports = ({ employees, loans = [] }) => {
                 </div>
 
                 {/* Report Type Tabs */}
-                <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 overflow-x-auto">
+                <div className="flex items-center bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 gap-1 overflow-x-auto">
                     {reportTypesMeta.map((type) => {
                         const Icon = type.icon;
                         const isActive = reportType === type.id;
@@ -872,8 +872,8 @@ const HRReports = ({ employees, loans = [] }) => {
                                 onClick={() => setReportType(type.id)}
                                 className={`flex-1 min-w-[110px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                                     isActive
-                                        ? 'bg-white text-indigo-600 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+                                        ? 'bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50'
                                 }`}
                             >
                                 <Icon size={14} />

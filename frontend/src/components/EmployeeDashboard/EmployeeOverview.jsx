@@ -150,12 +150,12 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                 </button>
                             )
                         ) : !todayAttendance.checkOut ? (
-                            <button 
-                                onClick={() => setActiveTab('attendance')} 
-                                className="bg-rose-50 dark:bg-rose-500/100 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
-                            >
-                                Check Out <ArrowRight size={16} />
-                            </button>
+                                <button 
+                                    onClick={() => setActiveTab('attendance')} 
+                                    className="bg-rose-500 dark:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-rose-600 dark:hover:bg-rose-700 hover:scale-105 transition-all flex items-center gap-2"
+                                >
+                                    Check Out <ArrowRight size={16} />
+                                </button>
                         ) : (
                             <button 
                                 onClick={() => setActiveTab('leaves')} 
