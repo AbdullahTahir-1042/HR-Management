@@ -21,7 +21,7 @@ import {
     X,
     MessageCircle,
     MonitorPlay,
-    CalendarClock
+    CalendarClock,
     Sun,
     Moon
 } from 'lucide-react';

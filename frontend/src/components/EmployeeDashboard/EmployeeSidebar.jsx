@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
-    Sparkles, GraduationCap, BookOpen, X, MessageCircle, MonitorPlay
-    Sparkles, GraduationCap, BookOpen, X, MessageCircle,
+    Sparkles, GraduationCap, BookOpen, X, MessageCircle, MonitorPlay,
     Sun, Moon
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';

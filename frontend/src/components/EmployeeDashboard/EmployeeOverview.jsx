@@ -1,9 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare, Star, AlertCircle } from 'lucide-react';
-
 const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab, performanceSummary }) => {
     const todayAttendance = attendance;
 
