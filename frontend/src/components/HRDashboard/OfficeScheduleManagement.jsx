@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../../api/axiosClient';
 import { Calendar, Clock, Edit2, Trash2, Plus, Save, Bell, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -30,10 +30,7 @@ const OfficeScheduleManagement = () => {
     const fetchSchedules = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const res = await axios.get('/api/office-schedule', {
-                headers: { 'x-auth-token': token }
-            });
+            const res = await apiClient.get('/office-schedule');
             setSchedules(res.data);
         } catch (error) {
             console.error(error);
@@ -103,15 +100,13 @@ const OfficeScheduleManagement = () => {
 
         setIsSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { 'x-auth-token': token } };
             const payload = { ...formData, notifyEmployees };
 
             if (editingId && !formData.isDefault) {
-                await axios.put(`/api/office-schedule/${editingId}`, payload, config);
+                await apiClient.put(`/office-schedule/${editingId}`, payload);
                 toast.success('Schedule updated successfully');
             } else {
-                await axios.post('/api/office-schedule', payload, config);
+                await apiClient.post('/office-schedule', payload);
                 toast.success(formData.isDefault ? 'Default schedule updated' : 'Schedule override created');
             }
             
@@ -129,10 +124,7 @@ const OfficeScheduleManagement = () => {
         if (!window.confirm('Are you sure you want to delete this custom schedule?')) return;
         
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`/api/office-schedule/${id}`, {
-                headers: { 'x-auth-token': token }
-            });
+            await apiClient.delete(`/office-schedule/${id}`);
             toast.success('Schedule deleted');
             fetchSchedules();
         } catch (error) {
