@@ -404,12 +404,10 @@ const MyTeamSection = () => {
     const [sortField, setSortField] = useState('createdAt');
     const [sortDir, setSortDir] = useState('desc');
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 5;
 
-    // Reset pagination when filters change
-    useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
+    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
 
     useEffect(() => {
         fetchMyDept();
@@ -470,14 +468,9 @@ const MyTeamSection = () => {
 
     // ── Filtering ────────────────────────────────────────
     const filteredReports = useMemo(() => history.filter(report => {
-        const term = searchTerm.toLowerCase();
-        const matchesSearch = !term ||
-            report.agentName?.toLowerCase().includes(term);
-
-        const matchesStatus = !statusFilter || report.status === statusFilter;
-
-        return matchesSearch && matchesStatus;
-    }), [history, searchTerm, statusFilter]);
+        const matchesSearch = !searchTerm || report.agentName?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
+    }), [history, searchTerm]);
 
     // ── Sorting ──────────────────────────────────────────
     const sorted = useMemo(() => [...filteredReports].sort((a, b) => {
@@ -639,18 +632,10 @@ const MyTeamSection = () => {
                                         className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-400 text-xs transition-all w-48"
                                     />
                                 </div>
-                                <select
-                                    value={statusFilter}
-                                    onChange={e => setStatusFilter(e.target.value)}
-                                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-400 text-xs cursor-pointer"
-                                >
-                                    <option value="">All Statuses</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="resolved">Resolved</option>
-                                </select>
-                                {(searchTerm || statusFilter) && (
+
+                                {(searchTerm) && (
                                     <button 
-                                        onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
+                                        onClick={() => { setSearchTerm(''); }}
                                         className="text-xs text-rose-500 font-bold hover:underline"
                                     >
                                         Clear
@@ -679,7 +664,6 @@ const MyTeamSection = () => {
                                             {[
                                                 { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[150px]' },
                                                 { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[110px]' },
-                                                { key: 'status',        label: 'Status',           minW: 'min-w-[100px]' },
                                             ].map(col => (
                                                 <th
                                                     key={col.key}
@@ -729,9 +713,7 @@ const MyTeamSection = () => {
                                                         <td className="px-4 py-3 text-slate-500 text-[13px]">
                                                             {new Date(report.dateOfMistake).toLocaleDateString()}
                                                         </td>
-                                                        <td className="px-4 py-3">
-                                                            <StatusBadge status={report.status || 'pending'} />
-                                                        </td>
+
                                                         <td className="px-4 py-3 text-center">
                                                             <button
                                                                 className={`p-1.5 rounded-lg transition-all ${
