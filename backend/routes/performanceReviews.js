@@ -35,34 +35,33 @@ router.get('/summary/:employeeId', auth, async (req, res) => {
         }
 
         const reviews = await PerformanceReview.find({ employee: employeeId });
-        let averageBaseRating = 0;
         let hasReviews = reviews.length > 0;
-        if (hasReviews) {
-            const sum = reviews.reduce((acc, rev) => acc + rev.overallRating, 0);
-            averageBaseRating = sum / reviews.length;
-        }
+        
+        let sum = hasReviews ? reviews.reduce((acc, rev) => acc + rev.overallRating, 0) : 5.0;
+        let count = hasReviews ? reviews.length : 1;
+        let averageBaseRating = sum / count;
 
         const MistakeReport = require('../models/MistakeReport');
         const mistakeReports = await MistakeReport.find({ agentId: employeeId });
         const totalComplaints = mistakeReports.length;
 
-        // Base is 5.0. Team lead reviews can replace it.
-        let base = hasReviews ? averageBaseRating : 5.0;
-        
-        let adjustedRating = base;
-        
         // Sum mistake severities
         let totalPenalty = 0;
         mistakeReports.forEach(report => {
             totalPenalty += (report.severityPoints || 0);
         });
 
-        adjustedRating = base - totalPenalty;
-        if (adjustedRating < 0.0) adjustedRating = 0.0;
+        // Penalties deduct from the TOTAL sum of points across all reviews,
+        // so acquiring more good reviews will dilute the penalty and raise the average.
+        let adjustedSum = sum - totalPenalty;
+        if (adjustedSum < 0) adjustedSum = 0;
+
+        let adjustedRating = adjustedSum / count;
+        if (adjustedRating > 5.0) adjustedRating = 5.0;
 
         res.json({
             hasReviews,
-            averageBaseRating: base.toFixed(1),
+            averageBaseRating: averageBaseRating.toFixed(1),
             totalComplaints,
             adjustedRating: adjustedRating.toFixed(1),
             complaints: mistakeReports
