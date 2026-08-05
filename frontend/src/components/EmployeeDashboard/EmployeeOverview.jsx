@@ -191,14 +191,14 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 )}
 
                 {upcomingSchedules && upcomingSchedules.length > 0 && (
-                    <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl px-5 py-4 shadow-sm">
+                    <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800/80 dark:to-slate-800/90 border border-indigo-100 dark:border-slate-700/50 rounded-2xl px-5 py-4 shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
-                            <Calendar size={14} className="text-indigo-500" />
-                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Upcoming Schedule Changes</p>
+                            <Calendar size={14} className="text-indigo-500 dark:text-indigo-400" />
+                            <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Upcoming Schedule Changes</p>
                         </div>
                         <div className="space-y-3 mt-3">
                             {upcomingSchedules.slice(0, 2).map((schedule) => (
-                                <div key={schedule._id} className="flex justify-between items-center bg-white dark:bg-slate-800/70 backdrop-blur border border-white px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                <div key={schedule._id} className="flex justify-between items-center bg-white/70 dark:bg-slate-900/50 backdrop-blur border border-white dark:border-slate-700/50 px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-bold text-slate-800 dark:text-white text-sm">

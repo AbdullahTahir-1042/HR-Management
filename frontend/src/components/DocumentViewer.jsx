@@ -30,14 +30,14 @@ const DocumentViewer = ({ documentUrl, title }) => {
             {/* The Thumbnail / Trigger Card */}
             <div 
                 onClick={() => setIsViewing(true)}
-                className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
+                className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-slate-800 dark:to-slate-800/80 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
                 style={{ paddingTop: '56.25%' }}
             >
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
-                        <FileText className="w-8 h-8 text-indigo-500" />
+                    <div className="w-16 h-16 bg-white dark:bg-slate-700 rounded-2xl shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+                        <FileText className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
                     </div>
-                    <span className="text-sm font-medium text-indigo-900 line-clamp-2 px-4">
+                    <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100 line-clamp-2 px-4">
                         Click to view document
                     </span>
                 </div>
