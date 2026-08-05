@@ -155,8 +155,8 @@ const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick })
 // ─── Submit Report Modal ──────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
+    agentId: '',
     agentName: '',
-    dateOfMistake: '',
     dateOfMistake: '',
     mistakeDescription: '',
     severityPoints: 0,
@@ -171,7 +171,12 @@ const ReportModal = ({ members, onClose, onSuccess }) => {
     const [submitted, setSubmitted] = useState(false);
 
     const handleChange = (e) => {
-        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        if (e.target.name === 'agentId') {
+            const member = members.find(m => m._id === e.target.value || m.id === e.target.value);
+            setForm(prev => ({ ...prev, agentId: e.target.value, agentName: member ? member.name : '' }));
+        } else {
+            setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        }
         if (error) setError('');
     };
 
@@ -252,15 +257,15 @@ const ReportModal = ({ members, onClose, onSuccess }) => {
                                 <div className="relative">
                                     <UserCircle size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                     <select
-                                        name="agentName"
-                                        value={form.agentName}
+                                        name="agentId"
+                                        value={form.agentId}
                                         onChange={handleChange}
                                         required
                                         className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white appearance-none transition-all"
                                     >
                                         <option value="">— Select team member —</option>
                                         {members.map(m => (
-                                            <option key={m._id} value={m.name}>{m.name}</option>
+                                            <option key={m._id} value={m._id || m.id}>{m.name}</option>
                                         ))}
                                     </select>
                                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
