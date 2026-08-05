@@ -48,18 +48,18 @@ const cardVariants = {
 const StatCard = ({ icon: Icon, label, value, active, color, onClick }) => (
     <button
         onClick={onClick}
-        className={`text-left bg-white rounded-2xl border p-5 flex items-center gap-4 transition-all cursor-pointer group ${
+        className={`text-left bg-white dark:bg-slate-800 rounded-2xl border p-5 flex items-center gap-4 transition-all cursor-pointer group ${
             active 
-                ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10' 
-                : 'border-slate-200 hover:border-indigo-300 hover:shadow-xs'
+                ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10 dark:bg-indigo-500/10' 
+                : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-400 hover:shadow-xs'
         }`}
     >
         <div className={`p-3 rounded-xl transition-all ${color}`}>
             <Icon size={20} className="text-white" />
         </div>
         <div>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{label}</p>
-            <p className="text-2xl font-black text-slate-800">{value}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">{label}</p>
+            <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{value}</p>
         </div>
     </button>
 );
@@ -88,7 +88,7 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                className="relative bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md p-6 overflow-hidden z-10 space-y-6"
+                className="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md p-6 overflow-hidden z-10 space-y-6"
             >
                 {/* Close Button */}
                 <button
@@ -105,7 +105,7 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
                     </div>
                     <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h2 className="text-xl font-bold text-slate-800">{holiday.name}</h2>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">{holiday.name}</h2>
                             <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
                                 {holiday.type || 'Public'}
                             </span>
@@ -123,28 +123,28 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
                 </div>
 
                 {/* Details list */}
-                <div className="space-y-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                <div className="space-y-3 bg-slate-50/80 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400 font-medium flex items-center gap-2">
-                            <CalendarDays size={16} className="text-slate-400" /> Start Date
+                        <span className="text-slate-400 dark:text-slate-500 font-medium flex items-center gap-2">
+                            <CalendarDays size={16} className="text-slate-400 dark:text-slate-500" /> Start Date
                         </span>
-                        <span className="font-semibold text-slate-700">{formatDate(holiday.startDate)}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{formatDate(holiday.startDate)}</span>
                     </div>
 
                     {holiday.endDate && holiday.endDate !== holiday.startDate && (
-                        <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200/60">
-                            <span className="text-slate-400 font-medium flex items-center gap-2">
-                                <Clock size={16} className="text-slate-400" /> End Date
+                        <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200/60 dark:border-slate-700/50">
+                            <span className="text-slate-400 dark:text-slate-500 font-medium flex items-center gap-2">
+                                <Clock size={16} className="text-slate-400 dark:text-slate-500" /> End Date
                             </span>
-                            <span className="font-semibold text-slate-700">{formatDate(holiday.endDate)}</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">{formatDate(holiday.endDate)}</span>
                         </div>
                     )}
 
-                    <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200/60">
-                        <span className="text-slate-400 font-medium flex items-center gap-2">
-                            <Tag size={16} className="text-slate-400" /> Total Duration
+                    <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-200/60 dark:border-slate-700/50">
+                        <span className="text-slate-400 dark:text-slate-500 font-medium flex items-center gap-2">
+                            <Tag size={16} className="text-slate-400 dark:text-slate-500" /> Total Duration
                         </span>
-                        <span className="font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100">
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-500/30">
                             {getDurationDays(holiday.startDate, holiday.endDate || holiday.startDate)}
                         </span>
                     </div>
@@ -152,10 +152,10 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
 
                 {/* Description */}
                 <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <Info size={14} className="text-slate-400" /> Description & Details
+                    <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Info size={14} className="text-slate-400 dark:text-slate-500" /> Description & Details
                     </h3>
-                    <p className="text-sm text-slate-600 leading-relaxed bg-slate-50/50 p-4 rounded-2xl border border-slate-100 min-h-[70px]">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50/50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 min-h-[70px]">
                         {holiday.description || 'No additional description provided for this holiday.'}
                     </p>
                 </div>
@@ -180,11 +180,11 @@ const HolidayCard = ({ holiday, onClick }) => {
         <motion.div
             variants={cardVariants}
             onClick={() => onClick(holiday)}
-            className={`relative overflow-hidden bg-white rounded-2xl border ${upcoming ? 'border-indigo-100 shadow-lg shadow-indigo-50/50 hover:shadow-indigo-100/50' : 'border-slate-100 shadow-sm'} p-6 flex flex-col gap-4 hover:-translate-y-1.5 hover:border-indigo-300 cursor-pointer transition-all duration-300 group`}
+            className={`relative overflow-hidden bg-white dark:bg-slate-800 rounded-2xl border ${upcoming ? 'border-indigo-100 dark:border-indigo-500/30 shadow-lg shadow-indigo-50/50 dark:shadow-none hover:shadow-indigo-100/50 dark:hover:shadow-indigo-500/10' : 'border-slate-100 dark:border-slate-700 shadow-sm dark:shadow-none'} p-6 flex flex-col gap-4 hover:-translate-y-1.5 hover:border-indigo-300 dark:hover:border-indigo-400 cursor-pointer transition-all duration-300 group`}
         >
             {/* Subtle Gradient Background for Upcoming */}
             {upcoming && (
-                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-gradient-to-br from-indigo-50 to-fuchsia-50 rounded-full blur-2xl opacity-70 pointer-events-none" />
+                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-gradient-to-br from-indigo-50 to-fuchsia-50 dark:from-indigo-500/10 dark:to-fuchsia-500/10 rounded-full blur-2xl opacity-70 pointer-events-none" />
             )}
 
             {/* Header row */}
@@ -194,9 +194,9 @@ const HolidayCard = ({ holiday, onClick }) => {
                         <CalendarDays size={18} className={style.text} />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="font-bold text-slate-800 text-sm truncate group-hover:text-indigo-600 transition-colors">{holiday.name}</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{holiday.name}</h3>
                         {upcoming && (
-                            <span className="text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-semibold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full">
                                 Upcoming
                             </span>
                         )}
@@ -210,24 +210,24 @@ const HolidayCard = ({ holiday, onClick }) => {
             </div>
 
             {/* Date & duration */}
-            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+            <div className="flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1.5">
-                    <Clock size={13} className="text-slate-400" />
+                    <Clock size={13} className="text-slate-400 dark:text-slate-500" />
                     {formatDate(holiday.startDate)}
                     {holiday.endDate && holiday.endDate !== holiday.startDate && (
                         <> → {formatDate(holiday.endDate)}</>
                     )}
                 </span>
-                <span className="flex items-center gap-1.5 font-semibold text-slate-600">
-                    <Tag size={13} className="text-slate-400" />
+                <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-300">
+                    <Tag size={13} className="text-slate-400 dark:text-slate-500" />
                     {getDurationDays(holiday.startDate, holiday.endDate || holiday.startDate)}
                 </span>
             </div>
 
             {/* Description preview */}
             {holiday.description && (
-                <p className="text-xs text-slate-400 line-clamp-2 flex items-start gap-1.5 pt-1 border-t border-slate-50">
-                    <Info size={13} className="mt-0.5 shrink-0 text-slate-300" />
+                <p className="text-xs text-slate-400 line-clamp-2 flex items-start gap-1.5 pt-1 border-t border-slate-50 dark:border-slate-700/50">
+                    <Info size={13} className="mt-0.5 shrink-0 text-slate-400 dark:text-slate-500" />
                     {holiday.description}
                 </p>
             )}

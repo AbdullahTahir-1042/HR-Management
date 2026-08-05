@@ -360,12 +360,12 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, x: -16 }}
                                         transition={{ delay: index * 0.04 }}
-                                        className="grid grid-cols-12 px-6 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition-colors items-center group table-body"
+                                        className="grid grid-cols-12 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors items-center group"
                                     >
                                         <span className="col-span-1 text-sm text-slate-400 font-bold">{index + 1}</span>
 
                                         <div className="col-span-2">
-                                            <p className="text-sm font-bold text-slate-800">{lt.name}</p>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{lt.name}</p>
                                         </div>
 
                                         <div className="col-span-2 text-center">
@@ -375,25 +375,25 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                         </div>
 
                                         <div className="col-span-2 text-center">
-                                            <span className="text-sm font-semibold text-slate-600">
+                                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                                                 {lt.maxConsecutiveDays ? `${lt.maxConsecutiveDays} Days` : 'No Limit'}
                                             </span>
                                         </div>
 
                                         <div className="col-span-2 text-center">
-                                            <span className="text-sm font-semibold text-slate-600">
+                                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                                                 {lt.cooldownDays ? `${lt.cooldownDays} Days` : 'None'}
                                             </span>
                                         </div>
 
-                                        <span className="col-span-2 text-xs text-slate-500 font-medium line-clamp-2 pr-4">
+                                        <span className="col-span-2 text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2 pr-4">
                                             {lt.description || '—'}
                                         </span>
 
                                         <div className="col-span-1 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => openEdit(lt)}
-                                                className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                                className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                                                 title="Edit Config"
                                             >
                                                 <Pencil size={14} />
@@ -401,8 +401,8 @@ const HRLeaveTypeManagement = ({ leaveTypes, fetchLeaveTypes }) => {
                                             <button
                                                 onClick={() => handleDelete(lt._id)}
                                                 disabled={deletingId === lt._id}
-                                                className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors disabled:opacity-40"
-                                                title="Delete Config"
+                                                className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-colors disabled:opacity-50"
+                                                title="Delete Type"
                                             >
                                                 <Trash2 size={14} />
                                             </button>

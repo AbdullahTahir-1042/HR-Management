@@ -520,22 +520,22 @@ const MessagesPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm shadow-slate-100 overflow-hidden flex h-[calc(100vh-180px)] min-h-[600px]">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex h-[calc(100vh-180px)] min-h-[600px]">
                 {/* Conversation list */}
-                <div className={`w-full sm:w-80 shrink-0 border-r border-slate-100 flex flex-col bg-slate-50/40 ${activeConversation ? 'hidden sm:flex' : 'flex'}`}>
-                    <div className="p-3.5 border-b border-slate-100">
+                <div className={`w-full sm:w-80 shrink-0 border-r border-slate-100 dark:border-slate-600 flex flex-col bg-slate-50/40 dark:bg-slate-900/40 ${activeConversation ? 'hidden sm:flex' : 'flex'}`}>
+                    <div className="p-3.5 border-b border-slate-100 dark:border-slate-600">
                         <div className="relative">
                             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Search conversations..."
-                                className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-300 transition-all"
+                                className="w-full pl-9 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-500/50 transition-all"
                             />
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto divide-y divide-slate-100/80">
+                    <div className="flex-1 overflow-y-auto divide-y divide-slate-100/80 dark:divide-slate-600">
                         {loadingConversations ? (
                             <div className="p-10 text-center text-slate-400">
                                 <Loader2 size={24} className="mx-auto mb-2 animate-spin opacity-40" />
@@ -557,7 +557,7 @@ const MessagesPage = () => {
                                         layout
                                         key={conv._id}
                                         onClick={() => openConversation(conv)}
-                                        className={`group w-full text-left px-3.5 py-3 flex items-center gap-3 transition-colors ${isActive ? 'bg-white shadow-sm' : 'hover:bg-white/70'
+                                        className={`group w-full text-left px-3.5 py-3 flex items-center gap-3 transition-colors ${isActive ? 'bg-white dark:bg-slate-800 shadow-sm dark:shadow-none' : 'hover:bg-white/70 dark:hover:bg-slate-800/60'
                                             }`}
                                     >
                                         <div className="relative shrink-0">
@@ -567,16 +567,16 @@ const MessagesPage = () => {
                                             {conv.type === 'dm' && isOnline(conv.otherUser?.lastSeenAt) && (
                                                 <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                                    <span className="relative inline-flex w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+                                                    <span className="relative inline-flex w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full" />
                                                 </span>
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-2">
-                                                <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-slate-800' : 'font-semibold text-slate-600'}`}>{conv.name}</p>
-                                                <span className="text-[10px] text-slate-400 font-medium shrink-0">{formatTime(conv.lastMessageAt)}</span>
+                                                <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-slate-800 dark:text-slate-100' : 'font-semibold text-slate-600 dark:text-slate-300'}`}>{conv.name}</p>
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">{formatTime(conv.lastMessageAt)}</span>
                                             </div>
-                                            <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>
+                                            <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'text-slate-500 dark:text-slate-400 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
                                                 {conv.lastMessageFromMe && conv.lastMessage ? 'You: ' : ''}
                                                 {conv.lastMessage || (conv.type === 'group' ? `${conv.memberCount} members` : 'No messages yet')}
                                             </p>
@@ -602,16 +602,16 @@ const MessagesPage = () => {
                 {/* Thread */}
                 <div className={`flex-1 flex-col ${activeConversation ? 'flex' : 'hidden sm:flex'}`}>
                     {!activeConversation ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-gradient-to-b from-white to-slate-50/60">
-                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
-                                <MessageCircle size={28} className="text-indigo-300" />
+                        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-gradient-to-b from-white to-slate-50/60 dark:from-slate-800 dark:to-slate-900/50">
+                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
+                                <MessageCircle size={28} className="text-indigo-300 dark:text-indigo-400/80" />
                             </div>
-                            <p className="text-sm font-semibold text-slate-500">Select a conversation</p>
-                            <p className="text-xs text-slate-400 mt-1">Pick a chat from the list to start messaging.</p>
+                            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Select a conversation</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Pick a chat from the list to start messaging.</p>
                         </div>
                     ) : (
                         <>
-                            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-3 bg-white/80 backdrop-blur-sm">
+                            <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-600 flex items-center gap-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                                 <button
                                     onClick={() => setActiveConversation(null)}
                                     className="sm:hidden text-slate-400 hover:text-slate-600"
@@ -620,7 +620,7 @@ const MessagesPage = () => {
                                 </button>
                                 <button
                                     onClick={openConversationInfo}
-                                    className="flex items-center gap-3 flex-1 min-w-0 text-left rounded-xl -mx-2 px-2 py-1 cursor-pointer hover:bg-slate-50 transition-colors"
+                                    className="flex items-center gap-3 flex-1 min-w-0 text-left rounded-xl -mx-2 px-2 py-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                                 >
                                     <div className="relative shrink-0">
                                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${avatarColor(activeConversation.type === 'group' ? activeConversation._id : (activeConversation.otherUser?._id || activeConversation._id)).bg
@@ -635,7 +635,7 @@ const MessagesPage = () => {
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-bold text-slate-800 truncate">{activeConversation.name}</p>
+                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{activeConversation.name}</p>
                                         {activeConversation.type === 'group' ? (
                                             <p className="text-[11px] text-slate-400 truncate">
                                                 {activeConversation.participants?.map(p => p.name).join(', ')}
@@ -708,7 +708,7 @@ const MessagesPage = () => {
                                                         )}
                                                         <div className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-transform hover:-translate-y-0.5 ${isMine
                                                                 ? `bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-2xl ${isConsecutive ? 'rounded-tr-md' : ''} rounded-br-md`
-                                                                : `bg-white text-slate-700 border border-slate-100 rounded-2xl ${isConsecutive ? 'rounded-tl-md' : ''} rounded-bl-md`
+                                                                : `bg-white dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-600/50 rounded-2xl ${isConsecutive ? 'rounded-tl-md' : ''} rounded-bl-md`
                                                             }`}>
                                                             {msg.replyTo && (
                                                                 <div className={`mb-1.5 pl-2 border-l-2 text-xs rounded-sm ${isMine ? 'border-white/40 text-white/70' : 'border-indigo-300 text-slate-400'}`}>
@@ -781,12 +781,12 @@ const MessagesPage = () => {
                                 )}
                             </AnimatePresence>
 
-                            <form onSubmit={handleSend} className="p-4 border-t border-slate-100 flex items-center gap-2 bg-white">
+                            <form onSubmit={handleSend} className="p-4 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
                                 <input
                                     value={messageText}
                                     onChange={handleInputChange}
                                     placeholder="Type a message..."
-                                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-300 focus:bg-white transition-all"
+                                    className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-200 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all"
                                 />
                                 <motion.button
                                     type="submit"

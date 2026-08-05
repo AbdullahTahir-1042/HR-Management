@@ -219,9 +219,9 @@ const HolidayModal = ({ holiday, onClose, onSaved }) => {
 
 // ─── Type Badge ──────────────────────────────────────────────────────────────
 const TYPE_STYLES = {
-    public:     'bg-emerald-50 text-emerald-600 border-emerald-200',
-    optional:   'bg-amber-50   text-amber-600   border-amber-200',
-    restricted: 'bg-rose-50    text-rose-600    border-rose-200',
+    public:     'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+    optional:   'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-200 dark:border-amber-500/20',
+    restricted: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
                 {/* Top Bar */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">Company Holidays</h2>
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">Company Holidays</h2>
                         <p className="text-sm text-slate-400 mt-0.5">
                             {holidays.length} holiday{holidays.length !== 1 ? 's' : ''} on the calendar
                         </p>
@@ -295,23 +295,23 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
 
                 {/* Holiday List */}
                 {holidays.length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-16 flex flex-col items-center text-center">
-                        <div className="p-4 bg-indigo-50 rounded-2xl mb-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 flex flex-col items-center text-center">
+                        <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl mb-4">
                             <Calendar size={32} className="text-indigo-400" />
                         </div>
-                        <p className="text-slate-700 font-bold text-lg">No holidays added yet</p>
+                        <p className="text-slate-700 dark:text-slate-200 font-bold text-lg">No holidays added yet</p>
                         <p className="text-slate-400 text-sm mt-1">Click "Add Holiday" to create your first entry.</p>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                         {/* Table Header */}
-                        <div className="grid grid-cols-12 px-6 py-3 bg-slate-50 border-b border-slate-100">
-                            <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">#</span>
-                            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Holiday</span>
-                            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">From</span>
-                            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">To</span>
-                            <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Days</span>
-                            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</span>
+                        <div className="grid grid-cols-12 px-6 py-3 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                            <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">#</span>
+                            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Holiday</span>
+                            <span className="col-span-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Start Date</span>
+                            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">End Date</span>
+                            <span className="col-span-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Duration</span>
+                            <span className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 text-right">Actions</span>
                         </div>
 
                         {/* Rows */}
@@ -323,40 +323,40 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, x: -16 }}
                                     transition={{ delay: index * 0.04 }}
-                                    className="grid grid-cols-12 px-6 py-4 border-b border-slate-50 hover:bg-slate-50/70 transition-colors items-center group"
+                                    className="grid grid-cols-12 px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors items-center group"
                                 >
-                                    <span className="col-span-1 text-sm text-slate-400 font-bold">{index + 1}</span>
+                                    <span className="col-span-1 text-sm text-slate-400 dark:text-slate-500 font-bold">{index + 1}</span>
 
                                     <div className="col-span-3">
-                                        <p className="text-sm font-bold text-slate-800">{h.name}</p>
+                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{h.name}</p>
                                         <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-lg border ${TYPE_STYLES[h.type] || TYPE_STYLES.public}`}>
                                             {h.type}
                                         </span>
                                     </div>
 
-                                    <span className="col-span-3 text-sm text-slate-600 font-medium">
+                                    <span className="col-span-3 text-sm text-slate-600 dark:text-slate-300 font-medium">
                                         {formatDate(h.startDate)}
                                     </span>
 
-                                    <span className="col-span-2 text-sm text-slate-600 font-medium">
+                                    <span className="col-span-2 text-sm text-slate-600 dark:text-slate-300 font-medium">
                                         {formatDate(h.endDate)}
                                     </span>
 
-                                    <span className="col-span-1 text-sm font-bold text-indigo-600">
+                                    <span className="col-span-1 text-sm font-bold text-indigo-600 dark:text-indigo-400">
                                         {calculateDays(h.startDate, h.endDate)}d
                                     </span>
 
                                     <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={() => openEdit(h)}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                            className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                                         >
                                             <Pencil size={14} />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(h._id)}
                                             disabled={deletingId === h._id}
-                                            className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors disabled:opacity-40"
+                                            className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-40"
                                         >
                                             <Trash2 size={14} />
                                         </button>

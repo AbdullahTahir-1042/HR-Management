@@ -1471,14 +1471,14 @@ const HRReports = ({ employees, loans = [] }) => {
                         <motion.div
                             key="audit"
                             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                            className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden"
                         >
-                            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-800/80">
                                 <div className="flex items-center gap-2">
-                                    <AlertTriangle size={14} className="text-red-500" />
-                                    <h3 className="text-sm font-black text-slate-800">Absence & Payroll Audit History</h3>
+                                    <AlertTriangle size={14} className="text-red-500 dark:text-red-400" />
+                                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-200">Absence & Payroll Audit History</h3>
                                 </div>
-                                <span className="text-xs text-slate-500 font-bold">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
                                     Comprehensive Automated Actions Trail
                                 </span>
                             </div>
@@ -1486,16 +1486,16 @@ const HRReports = ({ employees, loans = [] }) => {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[9px] font-bold uppercase tracking-widest">
+                                        <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[9px] font-bold uppercase tracking-widest">
                                             <th className="px-3 py-3">Employee</th>
                                             <th className="px-3 py-3">Warning Status</th>
                                             <th className="px-3 py-3 text-center">Unapproved Absences</th>
-                                            <th className="px-3 py-3 text-right text-red-600">Total Deduction</th>
+                                            <th className="px-3 py-3 text-right text-red-600 dark:text-red-400">Total Deduction</th>
                                             <th className="px-3 py-3">Deduction Reasons</th>
-                                            <th className="px-3 py-3 text-right text-emerald-600">Net Salary</th>
+                                            <th className="px-3 py-3 text-right text-emerald-600 dark:text-emerald-400">Net Salary</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                         {payrollData.map((p) => {
                                             // Find all deductions for this employee
                                             const empDeductions = payrollDeductions.filter(d => {
@@ -1504,29 +1504,29 @@ const HRReports = ({ employees, loans = [] }) => {
                                             });
 
                                             return (
-                                                <tr key={p.employee._id} className="hover:bg-slate-50/60 transition-colors">
+                                                <tr key={p.employee._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
                                                     <td className="px-3 py-3">
                                                         <div className="flex flex-col min-w-0">
-                                                            <span className="font-bold text-slate-800 text-xs">{p.employee.name}</span>
-                                                            <span className="text-[10px] text-slate-400">{p.employee.department}</span>
+                                                            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">{p.employee.name}</span>
+                                                            <span className="text-[10px] text-slate-400 dark:text-slate-500">{p.employee.department}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-3 py-3">
                                                         {p.employee.hasReceivedAbsenceWarning ? (
-                                                            <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[10px] font-bold">
+                                                            <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-500 border border-amber-200 dark:border-amber-500/20 rounded-md text-[10px] font-bold">
                                                                 Warning Issued
                                                             </span>
                                                         ) : (
-                                                            <span className="px-2 py-0.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-md text-[10px] font-bold">
+                                                            <span className="px-2 py-0.5 bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 rounded-md text-[10px] font-bold">
                                                                 No Warning
                                                             </span>
                                                         )}
                                                     </td>
                                                     <td className="px-3 py-3 text-center">
-                                                        <span className="font-bold text-slate-700 text-xs">{empDeductions.length} recorded</span>
+                                                        <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{empDeductions.length} recorded</span>
                                                     </td>
                                                     <td className="px-3 py-3 text-right">
-                                                        <span className={`font-bold text-xs tabular-nums ${p.absenceDeduction > 0 ? 'text-red-600' : 'text-slate-300'}`}>
+                                                        <span className={`font-bold text-xs tabular-nums ${p.absenceDeduction > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-300 dark:text-slate-600'}`}>
                                                             {p.absenceDeduction > 0 ? `-${formatCurrency(p.absenceDeduction)}` : '—'}
                                                         </span>
                                                     </td>
@@ -1534,18 +1534,18 @@ const HRReports = ({ employees, loans = [] }) => {
                                                         {empDeductions.length > 0 ? (
                                                             <div className="flex flex-col gap-1">
                                                                 {empDeductions.map(d => (
-                                                                    <div key={d._id} className="text-[9px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 flex justify-between items-center w-full max-w-[200px]">
+                                                                    <div key={d._id} className="text-[9px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-600 flex justify-between items-center w-full max-w-[200px]">
                                                                         <span className="truncate mr-2" title={d.reason}>{d.reason}</span>
-                                                                        <span className="font-bold text-slate-700 whitespace-nowrap">{new Date(d.date).toLocaleDateString()}</span>
+                                                                        <span className="font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{new Date(d.date).toLocaleDateString()}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-slate-300 font-bold text-xs">—</span>
+                                                            <span className="text-slate-300 dark:text-slate-600 font-bold text-xs">—</span>
                                                         )}
                                                     </td>
                                                     <td className="px-3 py-3 text-right">
-                                                        <span className="font-black text-emerald-600 text-xs tabular-nums">{formatCurrency(p.netSalary)}</span>
+                                                        <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs tabular-nums">{formatCurrency(p.netSalary)}</span>
                                                     </td>
                                                 </tr>
                                             );
@@ -1597,21 +1597,21 @@ const HRReports = ({ employees, loans = [] }) => {
 
                             {/* Department Breakdown Visual */}
                             {Object.keys(employeeSummary.deptCount).length > 0 && (
-                                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                                    <h2 className="text-sm font-black text-slate-800 mb-6 flex items-center gap-2">
-                                        <Building2 size={16} className="text-indigo-600" />
+                                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+                                    <h2 className="text-sm font-black text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
+                                        <Building2 size={16} className="text-indigo-600 dark:text-indigo-400" />
                                         Department Employee Distribution
                                     </h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         {Object.entries(employeeSummary.deptCount).map(([dept, count]) => {
                                             const pct = Math.round((count / employeeSummary.total) * 100);
                                             return (
-                                                <div key={dept} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
+                                                <div key={dept} className="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-600 flex items-center justify-between">
                                                     <div>
-                                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{dept}</p>
-                                                        <p className="text-2xl font-black text-slate-800 mt-1">{count} <span className="text-xs font-semibold text-slate-400">staff</span></p>
+                                                        <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{dept}</p>
+                                                        <p className="text-2xl font-black text-slate-800 dark:text-slate-200 mt-1">{count} <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">staff</span></p>
                                                     </div>
-                                                    <div className="w-12 h-12 rounded-full border-4 border-indigo-100 border-t-indigo-600 flex items-center justify-center font-bold text-xs text-indigo-600">
+                                                    <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-500/20 border-t-indigo-600 dark:border-t-indigo-400 flex items-center justify-center font-bold text-xs text-indigo-600 dark:text-indigo-400">
                                                         {pct}%
                                                     </div>
                                                 </div>
@@ -1622,23 +1622,23 @@ const HRReports = ({ employees, loans = [] }) => {
                             )}
 
                             {/* Directory Listing Table */}
-                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden space-y-0">
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden space-y-0">
                                 {/* Header Controls & Search Bar */}
-                                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+                                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/80">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
                                             <Users size={18} />
                                         </div>
                                         <div>
-                                            <h2 className="text-sm font-black text-slate-800">Staff Directory Index</h2>
-                                            <p className="text-xs text-slate-400">Showing {displayedEmployees.length} of {employees.length} total staff profiles</p>
+                                            <h2 className="text-sm font-black text-slate-800 dark:text-slate-200">Staff Directory Index</h2>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500">Showing {displayedEmployees.length} of {employees.length} total staff profiles</p>
                                         </div>
                                     </div>
 
                                     {/* Filters & Search */}
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {/* Status Pills */}
-                                        <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-2xs">
+                                        <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1 gap-1 shadow-2xs">
                                             {[
                                                 { id: 'all', label: 'All' },
                                                 { id: 'full time', label: 'Full Time' },
@@ -1651,7 +1651,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                                         directoryStatusFilter === pill.id
                                                             ? 'bg-indigo-600 text-white shadow-2xs'
-                                                            : 'text-slate-600 hover:bg-slate-100'
+                                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                                                     }`}
                                                 >
                                                     {pill.label}
@@ -1661,13 +1661,13 @@ const HRReports = ({ employees, loans = [] }) => {
 
                                         {/* Search Input */}
                                         <div className="relative min-w-[200px]">
-                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                                             <input
                                                 type="text"
                                                 placeholder="Search staff, email, phone..."
                                                 value={directorySearch}
                                                 onChange={e => setDirectorySearch(e.target.value)}
-                                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
+                                                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
                                             />
                                         </div>
                                     </div>
@@ -1679,45 +1679,45 @@ const HRReports = ({ employees, loans = [] }) => {
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 uppercase text-[9px] font-extrabold tracking-wider">
+                                                <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 uppercase text-[9px] font-extrabold tracking-wider">
                                                     <th className="px-4 py-3">Employee</th>
                                                     <th className="px-3 py-3">Department</th>
                                                     <th className="px-3 py-3">Contact Info</th>
-                                                    <th className="px-3 py-3 text-indigo-600">Base Salary</th>
+                                                    <th className="px-3 py-3 text-indigo-600 dark:text-indigo-400">Base Salary</th>
                                                     <th className="px-3 py-3">Status</th>
                                                     <th className="px-3 py-3">Hired Date</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100">
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                                 {displayedEmployees.map(emp => (
-                                                    <tr key={emp._id} className="hover:bg-slate-50/60 transition-colors">
+                                                    <tr key={emp._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
                                                         <td className="px-4 py-3">
                                                             <div className="flex items-center gap-2.5">
                                                                 {emp.photo ? (
-                                                                    <img src={emp.photo} alt={emp.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0" />
+                                                                    <img src={emp.photo} alt={emp.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
                                                                 ) : (
-                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs shrink-0 border border-indigo-200">
+                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-black text-xs shrink-0 border border-indigo-200 dark:border-indigo-500/20">
                                                                         {emp.name?.[0]?.toUpperCase() || 'U'}
                                                                     </div>
                                                                 )}
                                                                 <div className="flex flex-col min-w-0">
-                                                                    <span className="font-bold text-slate-800 text-xs truncate">{emp.name}</span>
-                                                                    <span className="text-[10px] text-slate-400 capitalize">{emp.role}</span>
+                                                                    <span className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">{emp.name}</span>
+                                                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 capitalize">{emp.role}</span>
                                                                 </div>
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-3">
-                                                            <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded-lg truncate inline-block">
+                                                            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 capitalize bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg truncate inline-block">
                                                                 {emp.department || 'General'}
                                                             </span>
                                                         </td>
                                                         <td className="px-3 py-3">
-                                                            <div className="flex flex-col text-slate-600 text-[11px] leading-normal min-w-0">
+                                                            <div className="flex flex-col text-slate-600 dark:text-slate-400 text-[11px] leading-normal min-w-0">
                                                                 <span className="font-medium truncate">{emp.email}</span>
                                                                 <span className="truncate">{emp.phone || 'No phone'}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 text-slate-800 text-xs font-bold tabular-nums">{formatCurrency(emp.salary)}</td>
+                                                        <td className="px-3 py-3 text-slate-800 dark:text-slate-200 text-xs font-bold tabular-nums">{formatCurrency(emp.salary)}</td>
                                                         <td className="px-3 py-3">
                                                             {emp.status === 'full time' ? (
                                                                 <Badge color="emerald" label="Full Time" />
@@ -1727,7 +1727,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                 <Badge color="slate" label="Internship" />
                                                             )}
                                                         </td>
-                                                        <td className="px-3 py-3 text-slate-500 text-[11px] font-semibold">
+                                                        <td className="px-3 py-3 text-slate-500 dark:text-slate-400 text-[11px] font-semibold">
                                                             {emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : '—'}
                                                         </td>
                                                     </tr>
@@ -1748,24 +1748,24 @@ const HRReports = ({ employees, loans = [] }) => {
 // ── Summary Card Component ───────────────────────────────
 const SummaryCard = ({ icon: Icon, label, value, color, isActive = false, onClick }) => {
     const colors = {
-        indigo: { bg: 'bg-indigo-50/50', text: 'text-indigo-600', icon: 'text-indigo-500', border: 'border-indigo-100/50', activeBorder: 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md bg-indigo-50/20' },
-        emerald: { bg: 'bg-emerald-50/50', text: 'text-emerald-600', icon: 'text-emerald-500', border: 'border-emerald-100/50', activeBorder: 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/20' },
-        amber: { bg: 'bg-amber-50/50', text: 'text-amber-600', icon: 'text-amber-500', border: 'border-amber-100/50', activeBorder: 'border-amber-500 ring-2 ring-amber-500/20 shadow-md bg-amber-50/20' },
-        rose: { bg: 'bg-rose-50/50', text: 'text-rose-600', icon: 'text-rose-500', border: 'border-rose-100/50', activeBorder: 'border-rose-500 ring-2 ring-rose-500/20 shadow-md bg-rose-50/20' },
-        slate: { bg: 'bg-slate-50/50', text: 'text-slate-600', icon: 'text-slate-500', border: 'border-slate-100/50', activeBorder: 'border-slate-500 ring-2 ring-slate-500/20 shadow-md bg-slate-50/20' },
+        indigo: { bg: 'bg-indigo-50/50 dark:bg-indigo-500/10', text: 'text-indigo-600 dark:text-indigo-400', icon: 'text-indigo-500 dark:text-indigo-400', border: 'border-indigo-100/50 dark:border-indigo-500/20', activeBorder: 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md bg-indigo-50/20 dark:bg-indigo-500/20 dark:border-indigo-400' },
+        emerald: { bg: 'bg-emerald-50/50 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', icon: 'text-emerald-500 dark:text-emerald-400', border: 'border-emerald-100/50 dark:border-emerald-500/20', activeBorder: 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/20 dark:bg-emerald-500/20 dark:border-emerald-400' },
+        amber: { bg: 'bg-amber-50/50 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-500', icon: 'text-amber-500 dark:text-amber-400', border: 'border-amber-100/50 dark:border-amber-500/20', activeBorder: 'border-amber-500 ring-2 ring-amber-500/20 shadow-md bg-amber-50/20 dark:bg-amber-500/20 dark:border-amber-400' },
+        rose: { bg: 'bg-rose-50/50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', icon: 'text-rose-500 dark:text-rose-400', border: 'border-rose-100/50 dark:border-rose-500/20', activeBorder: 'border-rose-500 ring-2 ring-rose-500/20 shadow-md bg-rose-50/20 dark:bg-rose-500/20 dark:border-rose-400' },
+        slate: { bg: 'bg-slate-50/50 dark:bg-slate-500/10', text: 'text-slate-600 dark:text-slate-400', icon: 'text-slate-500 dark:text-slate-400', border: 'border-slate-100/50 dark:border-slate-500/20', activeBorder: 'border-slate-500 ring-2 ring-slate-500/20 shadow-md bg-slate-50/20 dark:bg-slate-500/20 dark:border-slate-400' },
     };
     const c = colors[color] || colors.slate;
     const Component = onClick ? 'button' : 'div';
     return (
         <Component
             onClick={onClick}
-            className={`w-full text-left bg-white border ${isActive ? c.activeBorder : c.border} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 ${onClick ? 'cursor-pointer group' : ''}`}
+            className={`w-full text-left bg-white dark:bg-slate-800 border ${isActive ? c.activeBorder : c.border} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4 ${onClick ? 'cursor-pointer group' : ''}`}
         >
             <div className={`w-11 h-11 ${c.bg} rounded-2xl flex items-center justify-center shrink-0`}>
                 <Icon size={20} className={c.icon} />
             </div>
             <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{label}</p>
                 <p className={`text-xl font-black mt-0.5 tracking-tight ${c.text}`}>{value}</p>
             </div>
         </Component>
@@ -1775,10 +1775,10 @@ const SummaryCard = ({ icon: Icon, label, value, color, isActive = false, onClic
 // ── Badge Component ────────────────────────────────────────
 const Badge = ({ color, label }) => {
     const colors = {
-        emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        amber: 'bg-amber-50  text-amber-700  border-amber-100',
-        rose: 'bg-rose-50   text-rose-700   border-rose-100',
-        slate: 'bg-slate-50  text-slate-500  border-slate-100',
+        emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20',
+        amber: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-500 border-amber-100 dark:border-amber-500/20',
+        rose: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/20',
+        slate: 'bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-600',
     };
     return (
         <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider border shadow-sm ${colors[color] || colors.slate}`}>
@@ -2041,64 +2041,64 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                 {/* Deductions Detailed Audit Box (2 cols) */}
                 <motion.div
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5"
+                    className="lg:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-5"
                 >
                     <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                            <AlertTriangle size={16} className="text-rose-500" /> Deductions Audit
+                        <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                            <AlertTriangle size={16} className="text-rose-500 dark:text-rose-400" /> Deductions Audit
                         </h3>
-                        <span className="text-[10px] text-slate-400 font-bold bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg uppercase">
+                        <span className="text-[10px] text-slate-400 font-bold bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600 px-2.5 py-1 rounded-lg uppercase">
                             {deductionRate}% of Budget
                         </span>
                     </div>
 
                     <div className="space-y-4">
                         {/* Leave Deductions Bar */}
-                        <div className="space-y-1.5 bg-amber-50/50 p-3.5 rounded-xl border border-amber-100">
+                        <div className="space-y-1.5 bg-amber-50/50 dark:bg-amber-500/10 p-3.5 rounded-xl border border-amber-100 dark:border-amber-500/20">
                             <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                                    <Calendar size={13} className="text-amber-600" /> Unpaid Leave Deductions
+                                <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                    <Calendar size={13} className="text-amber-600 dark:text-amber-400" /> Unpaid Leave Deductions
                                 </span>
-                                <span className="font-black text-amber-700 tabular-nums">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</span>
+                                <span className="font-black text-amber-700 dark:text-amber-400 tabular-nums">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</span>
                             </div>
-                            <div className="flex justify-between text-[10px] text-slate-400">
+                            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                                 <span>{totalLeaveDays} approved leave days</span>
                                 <span>1.0x daily rate deduction</span>
                             </div>
                         </div>
 
                         {/* Late Deductions Bar */}
-                        <div className="space-y-1.5 bg-rose-50/50 p-3.5 rounded-xl border border-rose-100">
+                        <div className="space-y-1.5 bg-rose-50/50 dark:bg-rose-500/10 p-3.5 rounded-xl border border-rose-100 dark:border-rose-500/20">
                             <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                                    <Clock size={13} className="text-rose-600" /> Late Arrival Penalty
+                                <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                    <Clock size={13} className="text-rose-600 dark:text-rose-400" /> Late Arrival Penalty
                                 </span>
-                                <span className="font-black text-rose-700 tabular-nums">-{formatCurrency(payrollSummary.totalLateDeductions)}</span>
+                                <span className="font-black text-rose-700 dark:text-rose-400 tabular-nums">-{formatCurrency(payrollSummary.totalLateDeductions)}</span>
                             </div>
-                            <div className="flex justify-between text-[10px] text-slate-400">
+                            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                                 <span>{totalLateEntries} late check-ins (&gt;12:00 PM)</span>
                                 <span>0.25x daily rate penalty</span>
                             </div>
                         </div>
 
                         {/* Absence Deductions Bar */}
-                        <div className="space-y-1.5 bg-red-50/50 p-3.5 rounded-xl border border-red-100">
+                        <div className="space-y-1.5 bg-red-50/50 dark:bg-red-500/10 p-3.5 rounded-xl border border-red-100 dark:border-red-500/20">
                             <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                                    <AlertTriangle size={13} className="text-red-600" /> Unapproved Absences
+                                <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                    <AlertTriangle size={13} className="text-red-600 dark:text-red-400" /> Unapproved Absences
                                 </span>
-                                <span className="font-black text-red-700 tabular-nums">-{formatCurrency(totalAbsenceDeductionsAmount)}</span>
+                                <span className="font-black text-red-700 dark:text-red-400 tabular-nums">-{formatCurrency(totalAbsenceDeductionsAmount)}</span>
                             </div>
-                            <div className="flex justify-between text-[10px] text-slate-400">
+                            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                                 <span>Missing check-ins</span>
                                 <span>1.0x daily rate penalty</span>
                             </div>
                         </div>
 
                         {/* Total Audit Summary */}
-                        <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-black">
-                            <span className="text-slate-700">Combined Deductions Total</span>
-                            <span className="text-rose-600 text-sm tabular-nums">-{formatCurrency(payrollSummary.totalDeductions)}</span>
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs font-black">
+                            <span className="text-slate-700 dark:text-slate-200">Combined Deductions Total</span>
+                            <span className="text-rose-600 dark:text-rose-400 text-sm tabular-nums">-{formatCurrency(payrollSummary.totalDeductions)}</span>
                         </div>
                     </div>
                 </motion.div>
@@ -2399,14 +2399,14 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                 <motion.div
                     key="table"
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                    className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden"
                 >
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/80">
                         <div className="flex items-center gap-2">
-                            <ClipboardList size={14} className="text-indigo-500" />
-                            <h3 className="text-sm font-black text-slate-800">Monthly Salary Audit Sheet</h3>
+                            <ClipboardList size={14} className="text-indigo-500 dark:text-indigo-400" />
+                            <h3 className="text-sm font-black text-slate-800 dark:text-slate-200">Monthly Salary Audit Sheet</h3>
                         </div>
-                        <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100">
+                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
                             {searchedPayroll.length} entries
                         </span>
                     </div>
@@ -2417,56 +2417,56 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[9px] font-bold uppercase tracking-widest">
+                                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[9px] font-bold uppercase tracking-widest">
                                         <th className="px-3 py-3">Employee</th>
                                         <th className="px-3 py-3">Dept</th>
                                         <th className="px-3 py-3 text-right">Gross Base</th>
-                                        <th className="px-3 py-3 text-center text-amber-600">Leave Ded.</th>
-                                        <th className="px-3 py-3 text-center text-rose-500">Late Ded.</th>
-                                        <th className="px-3 py-3 text-center text-red-500">Absence Ded.</th>
-                                        <th className="px-3 py-3 text-center text-rose-500">Loan Ded.</th>
-                                        <th className="px-3 py-3 text-right text-rose-600">Total Ded.</th>
-                                        <th className="px-3 py-3 text-right text-emerald-600">Net Payout</th>
+                                        <th className="px-3 py-3 text-center text-amber-600 dark:text-amber-500">Leave Ded.</th>
+                                        <th className="px-3 py-3 text-center text-rose-500 dark:text-rose-400">Late Ded.</th>
+                                        <th className="px-3 py-3 text-center text-red-500 dark:text-red-400">Absence Ded.</th>
+                                        <th className="px-3 py-3 text-center text-rose-500 dark:text-rose-400">Loan Ded.</th>
+                                        <th className="px-3 py-3 text-right text-rose-600 dark:text-rose-400">Total Ded.</th>
+                                        <th className="px-3 py-3 text-right text-emerald-600 dark:text-emerald-400">Net Payout</th>
                                         <th className="px-3 py-3 text-center">Payslip</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                     {searchedPayroll.map((p) => (
                                         <tr
                                             key={p.employee._id}
-                                            className="hover:bg-slate-50/60 transition-colors cursor-pointer"
+                                            className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
                                             onClick={() => setSelectedPayslip(p)}
                                         >
                                             <td className="px-3 py-3">
                                                 <div className="flex items-center gap-2">
                                                     {p.employee.photo ? (
-                                                        <img src={p.employee.photo} alt={p.employee.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 flex-shrink-0" />
+                                                        <img src={p.employee.photo} alt={p.employee.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0" />
                                                     ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs flex-shrink-0">
+                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-black text-xs flex-shrink-0">
                                                             {getInitials(p.employee.name)}
                                                         </div>
                                                     )}
                                                     <div className="min-w-0">
-                                                        <p className="font-bold text-slate-800 text-xs truncate">{p.employee.name}</p>
-                                                        <p className="text-[10px] text-slate-400 truncate">{p.employee.email}</p>
+                                                        <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">{p.employee.name}</p>
+                                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{p.employee.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <span className="text-[11px] font-semibold text-slate-600 capitalize bg-slate-100 px-2 py-0.5 rounded-lg">
+                                                <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 capitalize bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg">
                                                     {p.employee.department || '—'}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-3 text-right">
-                                                <span className="font-bold text-slate-800 text-xs tabular-nums">{formatCurrency(p.baseSalary)}</span>
+                                                <span className="font-bold text-slate-800 dark:text-slate-200 text-xs tabular-nums">{formatCurrency(p.baseSalary)}</span>
                                             </td>
                                             <td className="px-3 py-3 text-center">
                                                 {p.leaveDays > 0 ? (
                                                     <div className="flex flex-col items-center">
-                                                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-bold text-[10px] rounded-md border border-amber-100">
+                                                        <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-500 font-bold text-[10px] rounded-md border border-amber-100 dark:border-amber-500/20">
                                                             {p.leaveDays} {p.leaveDays === 1 ? 'day' : 'days'}
                                                         </span>
-                                                        <span className="text-xs font-semibold text-amber-600 mt-0.5 tabular-nums">-{formatCurrency(p.leaveDeduction)}</span>
+                                                        <span className="text-xs font-semibold text-amber-600 dark:text-amber-500 mt-0.5 tabular-nums">-{formatCurrency(p.leaveDeduction)}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-300 font-bold text-xs">—</span>
@@ -2475,10 +2475,10 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                             <td className="px-3 py-3 text-center">
                                                 {p.lateCount > 0 ? (
                                                     <div className="flex flex-col items-center">
-                                                        <span className="px-2 py-0.5 bg-rose-50 text-rose-700 font-bold text-[10px] rounded-md border border-rose-100">
+                                                        <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 font-bold text-[10px] rounded-md border border-rose-100 dark:border-rose-500/20">
                                                             {p.lateCount} {p.lateCount === 1 ? 'late' : 'lates'}
                                                         </span>
-                                                        <span className="text-xs font-semibold text-rose-600 mt-0.5 tabular-nums">-{formatCurrency(p.lateDeduction)}</span>
+                                                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-0.5 tabular-nums">-{formatCurrency(p.lateDeduction)}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-300 font-bold text-xs">—</span>
@@ -2487,7 +2487,7 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                             <td className="px-3 py-3 text-center">
                                                 {p.absenceDeduction > 0 ? (
                                                     <div className="flex flex-col items-center">
-                                                        <span className="text-xs font-semibold text-red-600 mt-0.5 tabular-nums">-{formatCurrency(p.absenceDeduction)}</span>
+                                                        <span className="text-xs font-semibold text-red-600 dark:text-red-400 mt-0.5 tabular-nums">-{formatCurrency(p.absenceDeduction)}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-300 font-bold text-xs">—</span>
@@ -2495,23 +2495,23 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                             </td>
                                             <td className="px-3 py-3 text-center">
                                                 {p.loanDeduction > 0 ? (
-                                                    <span className="text-xs font-semibold text-rose-600 tabular-nums">-{formatCurrency(p.loanDeduction)}</span>
+                                                    <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 tabular-nums">-{formatCurrency(p.loanDeduction)}</span>
                                                 ) : (
-                                                    <span className="text-slate-300 font-bold text-xs">—</span>
+                                                    <span className="text-slate-300 dark:text-slate-600 font-bold text-xs">—</span>
                                                 )}
                                             </td>
                                             <td className="px-3 py-3 text-right">
-                                                <span className={`font-bold text-xs tabular-nums ${p.deduction > 0 ? 'text-rose-600' : 'text-slate-300'}`}>
+                                                <span className={`font-bold text-xs tabular-nums ${p.deduction > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-300 dark:text-slate-600'}`}>
                                                     {p.deduction > 0 ? `-${formatCurrency(p.deduction)}` : '—'}
                                                 </span>
                                             </td>
                                             <td className="px-3 py-3 text-right">
-                                                <span className="font-black text-emerald-600 text-xs tabular-nums">{formatCurrency(p.netSalary)}</span>
+                                                <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs tabular-nums">{formatCurrency(p.netSalary)}</span>
                                             </td>
                                             <td className="px-3 py-3 text-center">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setSelectedPayslip(p); }}
-                                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-[11px] rounded-lg border border-indigo-100 transition-colors cursor-pointer"
+                                                    className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold text-[11px] rounded-lg border border-indigo-100 dark:border-indigo-500/20 transition-colors cursor-pointer"
                                                 >
                                                     Payslip
                                                 </button>
@@ -2519,16 +2519,16 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                                <tfoot className="bg-slate-50 dark:bg-slate-800/80 border-t-2 border-slate-200 dark:border-slate-600">
                                     <tr>
-                                        <td className="px-3 py-3 font-black text-slate-800 text-xs" colSpan={2}>Totals & Averages</td>
-                                        <td className="px-3 py-3 text-right font-black text-slate-800 text-xs tabular-nums">{formatCurrency(payrollSummary.totalBase)}</td>
-                                        <td className="px-3 py-3 text-center font-bold text-amber-600 text-[11px] tabular-nums">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</td>
-                                        <td className="px-3 py-3 text-center font-bold text-rose-600 text-[11px] tabular-nums">-{formatCurrency(payrollSummary.totalLateDeductions)}</td>
-                                        <td className="px-3 py-3 text-right font-black text-rose-600 text-xs tabular-nums">-{formatCurrency(payrollSummary.totalDeductions)}</td>
-                                        <td className="px-3 py-3 text-right font-black text-emerald-600 text-xs tabular-nums">{formatCurrency(payrollSummary.totalNet)}</td>
+                                        <td className="px-3 py-3 font-black text-slate-800 dark:text-slate-200 text-xs" colSpan={2}>Totals & Averages</td>
+                                        <td className="px-3 py-3 text-right font-black text-slate-800 dark:text-slate-200 text-xs tabular-nums">{formatCurrency(payrollSummary.totalBase)}</td>
+                                        <td className="px-3 py-3 text-center font-bold text-amber-600 dark:text-amber-500 text-[11px] tabular-nums">-{formatCurrency(payrollSummary.totalLeaveDeductions)}</td>
+                                        <td className="px-3 py-3 text-center font-bold text-rose-600 dark:text-rose-400 text-[11px] tabular-nums">-{formatCurrency(payrollSummary.totalLateDeductions)}</td>
+                                        <td className="px-3 py-3 text-right font-black text-rose-600 dark:text-rose-400 text-xs tabular-nums">-{formatCurrency(payrollSummary.totalDeductions)}</td>
+                                        <td className="px-3 py-3 text-right font-black text-emerald-600 dark:text-emerald-400 text-xs tabular-nums">{formatCurrency(payrollSummary.totalNet)}</td>
                                         <td className="px-3 py-3 text-center">
-                                            <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                                            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-2 py-0.5 rounded-lg">
                                                 {efficiencyRate}%
                                             </span>
                                         </td>
