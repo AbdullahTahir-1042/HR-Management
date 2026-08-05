@@ -85,12 +85,14 @@ router.get('/:employeeId', auth, async (req, res) => {
         if (!emp) return res.status(404).json({ msg: 'Employee not found' });
         
         const isSelf = req.user.id === req.params.employeeId;
-        const isHR = req.user.role === 'hr';
+        const reqUser = await User.findById(req.user.id);
+        if (!reqUser) return res.status(401).json({ msg: 'User not found' });
+        
+        const isHR = reqUser.role === 'hr' || reqUser.role === 'admin';
         
         let isLead = false;
         if (!isSelf && !isHR) {
-            const reqUser = await User.findById(req.user.id);
-            if (reqUser && reqUser.departmentId?.toString() === emp.departmentId?.toString() && reqUser.isTeamLead) {
+            if (reqUser.departmentId?.toString() === emp.departmentId?.toString() && reqUser.isTeamLead) {
                 isLead = true;
             }
         }
@@ -103,6 +105,7 @@ router.get('/:employeeId', auth, async (req, res) => {
             .populate('createdBy', 'name email')
             .populate('updatedBy', 'name email')
             .sort({ reviewDate: -1 });
+        console.log(`Fetched ${reviews.length} reviews for employee ${req.params.employeeId}`);
         res.json(reviews);
     } catch (err) {
         console.error('Error fetching performance reviews:', err.message);

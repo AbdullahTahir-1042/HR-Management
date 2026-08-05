@@ -155,6 +155,7 @@ const IncrementReviewPage = ({ employee }) => {
     });
     const [revErrors, setRevErrors] = useState({});
     const [revSubmitting, setRevSubmitting] = useState(false);
+    const [performanceSummary, setPerformanceSummary] = useState(null);
 
     // ── Fetch Data ────────────────────────────────────────────────────────
     const fetchIncrements = useCallback(async () => {
@@ -183,10 +184,21 @@ const IncrementReviewPage = ({ employee }) => {
         }
     }, [employee?._id]);
 
+    const fetchSummary = useCallback(async () => {
+        if (!employee?._id) return;
+        try {
+            const res = await apiClient.get(`/performance-reviews/summary/${employee._id}`);
+            setPerformanceSummary(res.data);
+        } catch (err) {
+            console.error('Error fetching performance summary:', err);
+        }
+    }, [employee?._id]);
+
     useEffect(() => {
         fetchIncrements();
         fetchReviews();
-    }, [fetchIncrements, fetchReviews]);
+        fetchSummary();
+    }, [fetchIncrements, fetchReviews, fetchSummary]);
 
     // ── Career Summary KPIs ──────────────────────────────────────────────
     const careerSummary = useMemo(() => {
@@ -197,10 +209,10 @@ const IncrementReviewPage = ({ employee }) => {
             currentRank: employee?.promotionRank || 'Junior',
             lastIncDate: lastInc ? formatDate(lastInc.incrementDate) : 'No records',
             lastIncAmount: lastInc ? formatSalary(lastInc.incrementAmount) : '-',
-            currentRating: lastRev ? lastRev.overallRating : null,
+            currentRating: performanceSummary ? performanceSummary.adjustedRating : (lastRev ? lastRev.overallRating : null),
             lastRevDate: lastRev ? formatDate(lastRev.reviewDate) : 'No records'
         };
-    }, [employee, increments, reviews]);
+    }, [employee, increments, reviews, performanceSummary]);
 
     // ── Predefined Career Summary Cards ──────────────────────────────────
     const predefinedCareerCards = useMemo(() => [
@@ -240,11 +252,12 @@ const IncrementReviewPage = ({ employee }) => {
             id: 'currentRating',
             label: 'Current Rating',
             value: careerSummary.currentRating
-                ? `${careerSummary.currentRating}/5 — ${RATING_LABELS[careerSummary.currentRating]}`
+                ? `${careerSummary.currentRating}/5`
                 : 'No reviews',
-            icon: Star,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50'
+            subtext: performanceSummary?.totalComplaints > 0 ? `-${(performanceSummary.totalComplaints * 0.2).toFixed(1)} penalty` : (careerSummary.currentRating ? RATING_LABELS[Math.round(careerSummary.currentRating)] : ''),
+            icon: performanceSummary?.totalComplaints > 0 ? AlertCircle : Star,
+            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-amber-600',
+            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50' : 'bg-amber-50'
         },
         {
             id: 'lastRevDate',
