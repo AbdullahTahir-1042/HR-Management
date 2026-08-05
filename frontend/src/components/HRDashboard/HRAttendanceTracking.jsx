@@ -17,19 +17,19 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+            className="table-container"
         >
             <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="table-base">
                     <thead>
-                        <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-[0.1em]">
-                            <th className="px-8 py-4">Employee</th>
-                            <th className="px-8 py-4">Date</th>
-                            <th className="px-8 py-4 text-emerald-600">Check In</th>
-                            <th className="px-8 py-4 text-amber-600">Check Out</th>
+                        <tr className="table-header">
+                            <th className="table-cell px-8 py-4">Employee</th>
+                            <th className="table-cell px-8 py-4">Date</th>
+                            <th className="table-cell px-8 py-4 text-emerald-600">Check In</th>
+                            <th className="table-cell px-8 py-4 text-amber-600">Check Out</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="table-body">
                         {sortedAttendance.map(record => {
                             const late = record.checkIn ? (() => {
                                 const shiftStart = new Date(record.checkIn);
@@ -37,18 +37,18 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                 return new Date(record.checkIn) > shiftStart;
                             })() : false;
                             return (
-                            <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-8 py-6">
+                            <tr key={record._id} className="table-row">
+                                <td className="table-cell px-8 py-6">
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-slate-800">{record.employee?.name}</span>
+                                        <span className="font-bold text-slate-800 dark:text-slate-200">{record.employee?.name}</span>
                                         <span className="text-xs text-slate-400">{record.employee?.email}</span>
                                     </div>
                                 </td>
-                                <td className="px-8 py-6 text-slate-600 text-sm">{record.date}</td>
-                                <td className="px-8 py-6">
-                                    <div className={`flex items-center gap-2 font-medium ${late ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+                                <td className="table-cell px-8 py-6 text-slate-600 dark:text-slate-400 text-sm">{record.date}</td>
+                                <td className="table-cell px-8 py-6">
+                                    <div className={`flex items-center gap-2 font-medium ${late ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                                         {record.status === 'absent' || !record.checkIn ? (
-                                            <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-md text-xs">Absent</span>
+                                            <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md text-xs">Absent</span>
                                         ) : (
                                             <>
                                                 <div className={`w-2 h-2 rounded-full ${late ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
@@ -57,10 +57,10 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-8 py-6">
-                                    <div className="flex items-center gap-2 text-slate-700 font-medium">
+                                <td className="table-cell px-8 py-6">
+                                    <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
                                         {record.status === 'absent' || !record.checkIn ? (
-                                            <span className="text-[10px] text-slate-400 max-w-[150px] truncate block" title={record.reason}>{record.reason || 'No check-in'}</span>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 max-w-[150px] truncate block" title={record.reason}>{record.reason || 'No check-in'}</span>
                                         ) : (
                                             <>
                                                 <div className="w-2 h-2 rounded-full bg-amber-500"></div>

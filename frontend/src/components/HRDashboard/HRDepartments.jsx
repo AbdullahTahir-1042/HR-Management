@@ -9,7 +9,7 @@ import {
 // ─── Small reusable components ───────────────────────────────────────────────
 
 const TeamLeadBadge = () => (
-    <span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+    <span className="bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs font-semibold px-2 py-0.5 rounded-full">
         Team Lead
     </span>
 );
@@ -230,17 +230,17 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
             <motion.div
                 onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+                className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto border border-transparent dark:border-slate-700"
             >
                 <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-bold text-slate-800 text-lg">New Department</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">New Department</h3>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                         <X size={18} />
                     </button>
                 </div>
@@ -645,20 +645,20 @@ const DepartmentDetailsModal = ({ dept, onEdit, onDelete, onClose }) => {
                         <div>
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Team Lead</h4>
                             {dept.teamLead ? (
-                                <div className="flex items-center gap-3 p-4 bg-amber-50/50 border border-amber-100 rounded-xl">
-                                    <div className="p-2 rounded-xl bg-amber-100 text-amber-600 shrink-0">
+                                <div className="flex items-center gap-3 p-4 bg-amber-50/50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl">
+                                    <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
                                         <Crown size={20} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-800">{dept.teamLead.name}</p>
-                                        <p className="text-xs text-slate-400">{dept.teamLead.email}</p>
+                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{dept.teamLead.name}</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500">{dept.teamLead.email}</p>
                                     </div>
-                                    <span className="ml-auto bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                                    <span className="ml-auto bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                                         Lead
                                     </span>
                                 </div>
                             ) : (
-                                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs text-slate-400 italic">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50 rounded-xl text-center text-xs text-slate-400 dark:text-slate-500 italic">
                                     No team lead assigned
                                 </div>
                             )}
@@ -786,6 +786,7 @@ const HRDepartments = () => {
                     </div>
                 </div>
                 <button
+                    onClick={() => setShowAddModal(true)}
                     className="btn-primary"
                 >
                     <Plus size={18} />
@@ -856,18 +857,18 @@ const HRDepartments = () => {
                             </div>
 
                             {/* Team Lead Row */}
-                            <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                                <Crown size={14} className="text-amber-500 shrink-0" />
+                            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl px-3 py-2">
+                                <Crown size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />
                                 {dept.teamLead ? (
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <MemberAvatar name={dept.teamLead.name} isLead />
-                                        <span className="text-sm font-semibold text-slate-700 truncate">
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
                                             {dept.teamLead.name}
                                         </span>
                                         <TeamLeadBadge />
                                     </div>
                                 ) : (
-                                    <span className="text-xs text-slate-400 italic">No team lead assigned</span>
+                                    <span className="text-xs text-slate-400 dark:text-slate-500 italic">No team lead assigned</span>
                                 )}
                             </div>
 
@@ -885,14 +886,14 @@ const HRDepartments = () => {
                                             <div
                                                 key={emp._id}
                                                 title={emp.name}
-                                                className={`w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold
-                                                    ${dept.teamLead?._id === emp._id ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}
+                                                className={`w-7 h-7 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] font-bold
+                                                    ${dept.teamLead?._id === emp._id ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
                                             >
                                                 {emp.name?.[0]?.toUpperCase()}
                                             </div>
                                         ))}
                                         {dept.employees.length > 5 && (
-                                            <div className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                            <div className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-slate-400">
                                                 +{dept.employees.length - 5}
                                             </div>
                                         )}
@@ -921,7 +922,7 @@ const HRDepartments = () => {
                         allEmployees={allEmployees}
                         existingDepartments={departments}
                         onClose={() => setShowAddModal(false)}
-                        onSuccess={() => { fetchDepartments(); showMessage('Department created successfully!'); }}
+                        onSuccess={() => { setShowAddModal(false); fetchDepartments(); showMessage('Department created successfully!'); }}
                     />
                 )}
                 {selectedDept && (

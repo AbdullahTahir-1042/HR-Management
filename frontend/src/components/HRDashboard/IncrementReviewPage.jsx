@@ -155,6 +155,7 @@ const IncrementReviewPage = ({ employee }) => {
     });
     const [revErrors, setRevErrors] = useState({});
     const [revSubmitting, setRevSubmitting] = useState(false);
+    const [performanceSummary, setPerformanceSummary] = useState(null);
 
     // ── Fetch Data ────────────────────────────────────────────────────────
     const fetchIncrements = useCallback(async () => {
@@ -183,10 +184,21 @@ const IncrementReviewPage = ({ employee }) => {
         }
     }, [employee?._id]);
 
+    const fetchSummary = useCallback(async () => {
+        if (!employee?._id) return;
+        try {
+            const res = await apiClient.get(`/performance-reviews/summary/${employee._id}`);
+            setPerformanceSummary(res.data);
+        } catch (err) {
+            console.error('Error fetching performance summary:', err);
+        }
+    }, [employee?._id]);
+
     useEffect(() => {
         fetchIncrements();
         fetchReviews();
-    }, [fetchIncrements, fetchReviews]);
+        fetchSummary();
+    }, [fetchIncrements, fetchReviews, fetchSummary]);
 
     // ── Career Summary KPIs ──────────────────────────────────────────────
     const careerSummary = useMemo(() => {
@@ -197,10 +209,10 @@ const IncrementReviewPage = ({ employee }) => {
             currentRank: employee?.promotionRank || 'Junior',
             lastIncDate: lastInc ? formatDate(lastInc.incrementDate) : 'No records',
             lastIncAmount: lastInc ? formatSalary(lastInc.incrementAmount) : '-',
-            currentRating: lastRev ? lastRev.overallRating : null,
+            currentRating: performanceSummary ? performanceSummary.adjustedRating : (lastRev ? lastRev.overallRating : null),
             lastRevDate: lastRev ? formatDate(lastRev.reviewDate) : 'No records'
         };
-    }, [employee, increments, reviews]);
+    }, [employee, increments, reviews, performanceSummary]);
 
     // ── Predefined Career Summary Cards ──────────────────────────────────
     const predefinedCareerCards = useMemo(() => [
@@ -209,50 +221,51 @@ const IncrementReviewPage = ({ employee }) => {
             label: 'Current Salary',
             value: careerSummary.currentSalary,
             icon: DollarSign,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50'
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50 dark:bg-emerald-500/10 dark:!border-emerald-500/20'
         },
         {
             id: 'rank',
             label: 'Current Rank',
             value: careerSummary.currentRank,
             icon: Award,
-            color: 'text-indigo-600',
-            bg: 'bg-indigo-50'
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bg: 'bg-indigo-50 dark:bg-indigo-500/10 dark:!border-indigo-500/20'
         },
         {
             id: 'lastIncDate',
             label: 'Last Increment',
             value: careerSummary.lastIncDate,
             icon: TrendingUp,
-            color: 'text-sky-600',
-            bg: 'bg-sky-50'
+            color: 'text-sky-600 dark:text-sky-400',
+            bg: 'bg-sky-50 dark:bg-sky-500/10 dark:!border-sky-500/20'
         },
         {
             id: 'lastIncAmount',
             label: 'Last Inc. Amount',
             value: careerSummary.lastIncAmount,
             icon: ArrowUpRight,
-            color: 'text-violet-600',
-            bg: 'bg-violet-50'
+            color: 'text-violet-600 dark:text-violet-400',
+            bg: 'bg-violet-50 dark:bg-violet-500/10 dark:!border-violet-500/20'
         },
         {
             id: 'currentRating',
             label: 'Current Rating',
             value: careerSummary.currentRating
-                ? `${careerSummary.currentRating}/5 — ${RATING_LABELS[careerSummary.currentRating]}`
+                ? `${careerSummary.currentRating}/5`
                 : 'No reviews',
-            icon: Star,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50'
+            subtext: performanceSummary?.totalComplaints > 0 ? `-${(performanceSummary.totalComplaints * 0.2).toFixed(1)} penalty` : (careerSummary.currentRating ? RATING_LABELS[Math.round(careerSummary.currentRating)] : ''),
+            icon: performanceSummary?.totalComplaints > 0 ? AlertCircle : Star,
+            color: performanceSummary?.totalComplaints > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
+            bg: performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 dark:bg-rose-500/10 dark:!border-rose-500/20' : 'bg-amber-50 dark:bg-amber-500/10 dark:!border-amber-500/20'
         },
         {
             id: 'lastRevDate',
             label: 'Last Review',
             value: careerSummary.lastRevDate,
             icon: Calendar,
-            color: 'text-rose-600',
-            bg: 'bg-rose-50'
+            color: 'text-rose-600 dark:text-rose-400',
+            bg: 'bg-rose-50 dark:bg-rose-500/10 dark:!border-rose-500/20'
         }
     ], [careerSummary]);
 
@@ -649,7 +662,7 @@ const IncrementReviewPage = ({ employee }) => {
                                         <X size={10} />
                                     </button>
                                     <IconComp size={16} className={kpi.color} />
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
+                                    <span className="text-[9px] font-bold text-[#94a3b8] dark:!text-slate-300 uppercase tracking-wider leading-none mb-0.5">{kpi.label}</span>
                                     <span className={`text-[11px] font-bold ${kpi.color} leading-tight`}>{kpi.value}</span>
                                 </div>
                             );
@@ -956,140 +969,7 @@ const IncrementReviewPage = ({ employee }) => {
                             <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-2">
                                 <Star size={16} /> Performance Review History
                             </h3>
-                            {/* Hide Add Review button when form is currently open */}
-                            {!showRevForm && (
-                                <button
-                                    onClick={() => openRevForm()}
-                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-200 transition-all cursor-pointer"
-                                >
-                                    <Plus size={14} /> Add Review
-                                </button>
-                            )}
                         </div>
-
-                        {/* Review Form */}
-                        <AnimatePresence>
-                            {showRevForm && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="mb-8 overflow-hidden"
-                                >
-                                    <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
-                                                <Star size={16} className="text-amber-500 fill-amber-500" />
-                                                {editingRev ? 'Edit Performance Review' : 'New Performance Review'}
-                                            </h4>
-                                            <button onClick={closeRevForm} className="p-2 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer">
-                                                <X size={16} className="text-slate-400" />
-                                            </button>
-                                        </div>
-
-                                        {revErrors._server && (
-                                            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl flex items-center gap-2">
-                                                <AlertCircle size={16} /> {revErrors._server}
-                                            </div>
-                                        )}
-
-                                        <form onSubmit={handleRevSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Review Date (Read-only) */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Review Date (Auto Today)</label>
-                                                <input
-                                                    type="text"
-                                                    value={formatDate(revForm.reviewDate)}
-                                                    readOnly
-                                                    className={READONLY_INPUT}
-                                                />
-                                            </div>
-
-                                            {/* Custom Star Rating Selector (Redesigned rating dropdown) */}
-                                            <StarRatingSelector
-                                                value={revForm.overallRating}
-                                                onChange={val => setRevForm(p => ({ ...p, overallRating: val }))}
-                                                error={revErrors.overallRating}
-                                            />
-
-                                            {/* Reviewer (Auto-populated, Read-only) */}
-                                            <div>
-                                                <label className={LABEL_CLASS}>Reviewer (Auto)</label>
-                                                <input
-                                                    type="text"
-                                                    value={revForm.reviewer}
-                                                    readOnly
-                                                    className={READONLY_INPUT}
-                                                />
-                                            </div>
-
-                                            {/* Comments */}
-                                            <div className="md:col-span-2">
-                                                <label className={LABEL_CLASS}>Comments *</label>
-                                                <textarea
-                                                    rows={2}
-                                                    value={revForm.comments}
-                                                    onChange={e => setRevForm(p => ({ ...p, comments: e.target.value }))}
-                                                    className={revErrors.comments ? INPUT_ERR : INPUT_CLASS}
-                                                    placeholder="Provide general notes, evaluation, and feedback..."
-                                                />
-                                                {revErrors.comments && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.comments}</p>}
-                                            </div>
-
-                                            {/* Strengths */}
-                                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div>
-                                                    <label className={LABEL_CLASS}>Strengths</label>
-                                                    <textarea
-                                                        rows={2}
-                                                        value={revForm.strengths}
-                                                        onChange={e => setRevForm(p => ({ ...p, strengths: e.target.value }))}
-                                                        className={INPUT_CLASS}
-                                                        placeholder="Key strengths observed..."
-                                                    />
-                                                </div>
-
-                                                {/* Areas for Improvement */}
-                                                <div>
-                                                    <label className={LABEL_CLASS}>Areas for Improvement</label>
-                                                    <textarea
-                                                        rows={2}
-                                                        value={revForm.areasForImprovement}
-                                                        onChange={e => setRevForm(p => ({ ...p, areasForImprovement: e.target.value }))}
-                                                        className={INPUT_CLASS}
-                                                        placeholder="Skills/areas needing development..."
-                                                    />
-                                                </div>
-
-                                                {/* Goals */}
-                                                <div>
-                                                    <label className={LABEL_CLASS}>Goals *</label>
-                                                    <textarea
-                                                        rows={2}
-                                                        value={revForm.goals}
-                                                        onChange={e => setRevForm(p => ({ ...p, goals: e.target.value }))}
-                                                        className={revErrors.goals ? INPUT_ERR : INPUT_CLASS}
-                                                        placeholder="Review goals & targets for next period..."
-                                                    />
-                                                    {revErrors.goals && <p className="text-rose-500 text-[11px] font-semibold mt-1 ml-1">{revErrors.goals}</p>}
-                                                </div>
-                                            </div>
-
-                                            {/* Submit */}
-                                            <div className="md:col-span-2 pt-2">
-                                                <button
-                                                    type="submit"
-                                                    disabled={revSubmitting}
-                                                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer"
-                                                >
-                                                    {revSubmitting ? 'Saving...' : <><Save size={16} /> {editingRev ? 'Update Review' : 'Save Review'}</>}
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
 
                         {/* Redesigned Premium Performance Review History Cards */}
                         {loadingRev ? (

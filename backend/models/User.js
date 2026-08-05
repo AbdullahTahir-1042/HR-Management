@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['employee', 'hr', 'admin'],
+        enum: ['employee', 'hr'],
         default: 'employee'
     },
     status: {
@@ -93,6 +93,12 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LoanRequest',
         default: null
+    },
+    contractDetails: {
+        contractType: { type: String, default: 'Full-Time' },
+        startDate: { type: Date, default: null },
+        endDate: { type: Date, default: null },
+        summary: { type: String, default: 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.' }
     },
     isFirstLogin: {
         type: Boolean,

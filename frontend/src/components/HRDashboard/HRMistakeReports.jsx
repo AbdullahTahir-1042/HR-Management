@@ -5,8 +5,9 @@ import {
     AlertTriangle, Search, Calendar, Building2, 
     UserCheck, X, ShieldAlert, ChevronDown, ChevronUp,
     CheckCircle, Clock, Eye, RotateCcw, Filter, ChevronLeft, ChevronRight,
-    TrendingUp, FileText, User, Sparkles, Download
+    TrendingUp, FileText, User, Sparkles, Download, Trash2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // ─── Animated Number ─────────────────────────────────────────────────────────
 const AnimatedNumber = ({ value }) => (
@@ -154,6 +155,21 @@ const HRMistakeReports = () => {
         }
     };
 
+    const handleDeleteReport = async (e, id) => {
+        e.stopPropagation();
+        if (!await window.confirmModal('Are you sure you want to completely delete this Mistake Report? This action cannot be undone.')) return;
+        
+        try {
+            await apiClient.delete(`/mistake-reports/${id}`);
+            toast.success('Report deleted successfully');
+            setReports(prev => prev.filter(r => r._id !== id));
+            setExpandedId(null);
+        } catch (err) {
+            console.error('Error deleting report:', err);
+            toast.error(err.response?.data?.msg || 'Failed to delete report');
+        }
+    };
+
     const getDeptName = (report) => {
         if (!report) return 'Unassigned';
         const submitterDept = report.submittedBy?.departmentId;
@@ -190,8 +206,6 @@ const HRMistakeReports = () => {
         const deptName = getDeptName(report)?.toLowerCase() || '';
         const matchesSearch = !term ||
             report.agentName?.toLowerCase().includes(term) ||
-            report.clinicName?.toLowerCase().includes(term) ||
-            report.patientName?.toLowerCase().includes(term) ||
             report.submittedBy?.name?.toLowerCase().includes(term) ||
             deptName.includes(term);
 
@@ -216,8 +230,6 @@ const HRMistakeReports = () => {
         switch (sortField) {
             case 'agentName':      valA = a.agentName?.toLowerCase() || ''; valB = b.agentName?.toLowerCase() || ''; break;
             case 'department':     valA = getDeptName(a)?.toLowerCase() || ''; valB = getDeptName(b)?.toLowerCase() || ''; break;
-            case 'clinicName':     valA = a.clinicName?.toLowerCase() || ''; valB = b.clinicName?.toLowerCase() || ''; break;
-            case 'patientName':    valA = a.patientName?.toLowerCase() || ''; valB = b.patientName?.toLowerCase() || ''; break;
             case 'dateOfMistake':  valA = new Date(a.dateOfMistake || 0); valB = new Date(b.dateOfMistake || 0); break;
             case 'submittedBy':    valA = a.submittedBy?.name?.toLowerCase() || ''; valB = b.submittedBy?.name?.toLowerCase() || ''; break;
             case 'status':         valA = a.status || ''; valB = b.status || ''; break;
@@ -255,8 +267,6 @@ const HRMistakeReports = () => {
 
         const headers = [
             "Agent Name",
-            "Clinic Name",
-            "Patient Name",
             "Date of Mistake",
             "Department",
             "Submitted By",
@@ -269,8 +279,6 @@ const HRMistakeReports = () => {
 
         const rows = filteredReports.map(r => [
             `"${(r.agentName || '').replace(/"/g, '""')}"`,
-            `"${(r.clinicName || '').replace(/"/g, '""')}"`,
-            `"${(r.patientName || '').replace(/"/g, '""')}"`,
             `"${formatDate(r.dateOfMistake)}"`,
             `"${(getDeptName(r) || '').replace(/"/g, '""')}"`,
             `"${(r.submittedBy?.name || 'Unknown').replace(/"/g, '""')}"`,
@@ -328,21 +336,21 @@ const HRMistakeReports = () => {
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
                     onClick={() => setStatusFilter('')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${
                         !statusFilter 
-                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10' 
-                            : 'border-slate-200/80 hover:border-indigo-300 hover:shadow-xs'
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10 dark:bg-indigo-500/10 dark:border-indigo-400' 
+                            : 'border-slate-200/80 dark:border-slate-700/80 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-xs'
                     }`}
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-100/80 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-100/80 dark:from-slate-700/40 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
                         <div className={`p-2.5 rounded-xl transition-all ${
-                            !statusFilter ? 'bg-indigo-600 text-white' : 'bg-gradient-to-br from-slate-100 to-slate-200/60 text-slate-600 group-hover:scale-110'
+                            !statusFilter ? 'bg-indigo-600 text-white' : 'bg-gradient-to-br from-slate-100 dark:from-slate-700 to-slate-200/60 dark:to-slate-800 text-slate-600 dark:text-slate-400 group-hover:scale-110'
                         }`}>
                             <ShieldAlert size={22} />
                         </div>
                         <div>
-                            <p className="text-[28px] font-extrabold text-slate-800 leading-none"><AnimatedNumber value={totalReports} /></p>
+                            <p className="text-[28px] font-extrabold text-slate-800 dark:text-slate-200 leading-none"><AnimatedNumber value={totalReports} /></p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Total Reports</p>
                         </div>
                     </div>
@@ -352,21 +360,21 @@ const HRMistakeReports = () => {
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                     onClick={() => setStatusFilter('pending')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${
                         statusFilter === 'pending' 
-                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10' 
-                            : 'border-amber-100 hover:border-amber-300 hover:shadow-xs'
+                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10 dark:bg-amber-500/10 dark:border-amber-400' 
+                            : 'border-amber-100 dark:border-slate-700/80 hover:border-amber-300 dark:hover:border-amber-500 hover:shadow-xs'
                     }`}
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 dark:from-amber-500/10 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
                         <div className={`p-2.5 rounded-xl transition-all ${
-                            statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-gradient-to-br from-amber-100 to-orange-100/60 text-amber-600 group-hover:scale-110'
+                            statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100/60 dark:to-orange-500/20 text-amber-600 dark:text-amber-500 group-hover:scale-110'
                         }`}>
                             <Clock size={22} />
                         </div>
                         <div>
-                            <p className="text-[28px] font-extrabold text-amber-700 leading-none"><AnimatedNumber value={pendingCount} /></p>
+                            <p className="text-[28px] font-extrabold text-amber-700 dark:text-amber-500 leading-none"><AnimatedNumber value={pendingCount} /></p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Pending Review</p>
                         </div>
                     </div>
@@ -376,49 +384,48 @@ const HRMistakeReports = () => {
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                     onClick={() => setStatusFilter('resolved')}
-                    className={`text-left relative overflow-hidden bg-white border rounded-2xl p-5 transition-all cursor-pointer group ${
+                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${
                         statusFilter === 'resolved' 
-                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10' 
-                            : 'border-emerald-100 hover:border-emerald-300 hover:shadow-xs'
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10 dark:bg-emerald-500/10 dark:border-emerald-400' 
+                            : 'border-emerald-100 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-xs'
                     }`}
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 dark:from-emerald-500/10 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
                         <div className={`p-2.5 rounded-xl transition-all ${
-                            statusFilter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-gradient-to-br from-emerald-100 to-teal-100/60 text-emerald-600 group-hover:scale-110'
+                            statusFilter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100/60 dark:to-teal-500/20 text-emerald-600 dark:text-emerald-500 group-hover:scale-110'
                         }`}>
                             <CheckCircle size={22} />
                         </div>
                         <div>
-                            <p className="text-[28px] font-extrabold text-emerald-700 leading-none"><AnimatedNumber value={resolvedCount} /></p>
+                            <p className="text-[28px] font-extrabold text-emerald-700 dark:text-emerald-500 leading-none"><AnimatedNumber value={resolvedCount} /></p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Resolved</p>
                         </div>
                     </div>
                 </motion.button>
 
                 {/* Resolution Rate */}
-                <motion.button
+                <motion.div
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    onClick={() => setStatusFilter('resolved')}
-                    className="text-left relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl p-5 transition-all cursor-pointer group hover:border-indigo-300 hover:shadow-xs"
+                    className="text-left relative overflow-hidden bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-5 transition-all"
                 >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50/60 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-indigo-50/60 dark:from-indigo-500/10 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className="bg-gradient-to-br from-indigo-100 to-purple-100/60 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
-                            <TrendingUp size={22} className="text-indigo-600" />
+                        <div className="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100/60 dark:to-purple-500/20 p-2.5 rounded-xl">
+                            <TrendingUp size={22} className="text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div>
-                            <p className="text-[28px] font-extrabold text-indigo-700 leading-none"><AnimatedNumber value={resolvedPct} />%</p>
+                            <p className="text-[28px] font-extrabold text-indigo-700 dark:text-indigo-400 leading-none"><AnimatedNumber value={resolvedPct} />%</p>
                             <p className="text-[11px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Resolution Rate</p>
                         </div>
                     </div>
-                </motion.button>
+                </motion.div>
             </div>
 
             {/* ── Filters Bar ───────────────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm"
+                className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm"
             >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Search */}
@@ -426,10 +433,10 @@ const HRMistakeReports = () => {
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input 
                             type="text"
-                            placeholder="Search agent, patient, clinic..."
+                            placeholder="Search agent, reporter..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-400 focus:ring-3 focus:ring-indigo-50 transition-all text-sm placeholder:text-slate-400"
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-3 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 transition-all text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
                         />
                     </div>
 
@@ -439,7 +446,7 @@ const HRMistakeReports = () => {
                         <select
                             value={selectedDeptId}
                             onChange={e => setSelectedDeptId(e.target.value)}
-                            className="w-full pl-10 pr-8 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-400 focus:ring-3 focus:ring-indigo-50 transition-all text-sm appearance-none cursor-pointer"
+                            className="w-full pl-10 pr-8 py-2.5 bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-3 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 transition-all text-sm text-slate-800 dark:text-slate-200 appearance-none cursor-pointer"
                         >
                             <option value="">All Departments</option>
                             {departments.map(dept => (
@@ -454,7 +461,7 @@ const HRMistakeReports = () => {
                         <select
                             value={statusFilter}
                             onChange={e => setStatusFilter(e.target.value)}
-                            className="w-full pl-10 pr-8 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-400 focus:ring-3 focus:ring-indigo-50 transition-all text-sm appearance-none cursor-pointer"
+                            className="w-full pl-10 pr-8 py-2.5 bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-3 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 transition-all text-sm text-slate-800 dark:text-slate-200 appearance-none cursor-pointer"
                         >
                             <option value="">All Statuses</option>
                             <option value="pending">Pending</option>
@@ -519,19 +526,17 @@ const HRMistakeReports = () => {
             ) : (
                 <motion.div
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                    className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden"
+                    className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden"
                 >
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                                <tr className="bg-gradient-to-r from-slate-50 dark:from-slate-800/80 to-slate-100/50 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-700/80">
                                     {/* Row number */}
                                     <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-12">#</th>
                                     {[
                                         { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[120px]', tooltip: 'Sort by Agent Name' },
                                         { key: 'department',    label: 'Department',       minW: 'min-w-[100px]', tooltip: 'Sort by Department' },
-                                        { key: 'clinicName',    label: 'Clinic',           minW: 'min-w-[90px]',  tooltip: 'Sort by Clinic' },
-                                        { key: 'patientName',   label: 'Patient',          minW: 'min-w-[90px]',  tooltip: 'Sort by Patient' },
                                         { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[90px]',  tooltip: 'Sort by Mistake Date' },
                                         { key: 'submittedBy',   label: 'Reported By',      minW: 'min-w-[110px]', tooltip: 'Sort by Submitter Name' },
                                         { key: 'status',        label: 'Status',           minW: 'min-w-[85px]',  tooltip: 'Sort by Status' },
@@ -540,7 +545,7 @@ const HRMistakeReports = () => {
                                             key={col.key}
                                             onClick={() => toggleSort(col.key)}
                                             title={col.tooltip}
-                                            className={`group px-5 py-3.5 text-left text-[10.5px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-100 hover:text-indigo-600 transition-all rounded-lg ${col.minW}`}
+                                            className={`group px-5 py-3.5 text-left text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all rounded-lg ${col.minW}`}
                                         >
                                             <span className="inline-flex items-center gap-1">
                                                 {col.label}
@@ -567,13 +572,13 @@ const HRMistakeReports = () => {
                                                 className={`
                                                     cursor-pointer transition-all duration-200 border-b
                                                     ${isExpanded
-                                                        ? 'bg-indigo-50/50 border-indigo-100'
-                                                        : 'hover:bg-slate-50/70 border-slate-100 even:bg-slate-50/30'}
+                                                        ? 'bg-indigo-50/50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20'
+                                                        : 'hover:bg-slate-50/70 dark:hover:bg-slate-700/30 border-slate-100 dark:border-slate-700/50 even:bg-slate-50/30 dark:even:bg-slate-700/10'}
                                                 `}
                                             >
                                                 {/* Row # */}
                                                 <td className="px-4 py-4 text-center">
-                                                    <span className="text-[11px] font-bold text-slate-400 bg-slate-100 w-7 h-7 rounded-lg inline-flex items-center justify-center">
+                                                    <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 w-7 h-7 rounded-lg inline-flex items-center justify-center">
                                                         {globalIndex}
                                                     </span>
                                                 </td>
@@ -581,45 +586,35 @@ const HRMistakeReports = () => {
                                                 {/* Agent */}
                                                 <td className="px-5 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center flex-shrink-0">
-                                                            <User size={16} className="text-rose-600" />
+                                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-500/20 dark:to-pink-500/20 flex items-center justify-center flex-shrink-0">
+                                                            <User size={16} className="text-rose-600 dark:text-rose-400" />
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="font-bold text-slate-800 text-[13px] truncate">{report.agentName}</p>
+                                                            <p className="font-bold text-slate-800 dark:text-slate-200 text-[13px] truncate">{report.agentName}</p>
                                                         </div>
                                                     </div>
                                                 </td>
 
                                                 {/* Department */}
                                                 <td className="px-5 py-4">
-                                                    <span className="inline-flex items-center gap-1 text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg text-xs font-bold capitalize">
+                                                    <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg text-xs font-bold capitalize">
                                                         <Building2 size={12} />
                                                         {getDeptName(report)}
                                                     </span>
                                                 </td>
 
-                                                {/* Clinic */}
-                                                <td className="px-5 py-4">
-                                                    <span className="text-slate-700 font-medium text-[13px]">{report.clinicName}</span>
-                                                </td>
-
-                                                {/* Patient */}
-                                                <td className="px-5 py-4">
-                                                    <span className="text-slate-700 font-medium text-[13px]">{report.patientName}</span>
-                                                </td>
-
                                                 {/* Date */}
                                                 <td className="px-5 py-4">
-                                                    <span className="inline-flex items-center gap-1.5 text-slate-500 text-[13px]">
-                                                        <Calendar size={13} className="text-slate-400 flex-shrink-0" />
+                                                    <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[13px]">
+                                                        <Calendar size={13} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                                         {formatDate(report.dateOfMistake)}
                                                     </span>
                                                 </td>
 
                                                 {/* Submitted By */}
                                                 <td className="px-5 py-4">
-                                                    <span className="inline-flex items-center gap-1.5 text-slate-600 font-medium text-[13px]">
-                                                        <UserCheck size={13} className="text-slate-400 flex-shrink-0" />
+                                                    <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium text-[13px]">
+                                                        <UserCheck size={13} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                                         {report.submittedBy?.name || 'Unknown'}
                                                     </span>
                                                 </td>
@@ -634,8 +629,8 @@ const HRMistakeReports = () => {
                                                     <button
                                                         className={`p-2 rounded-xl transition-all duration-200 ${
                                                             isExpanded
-                                                                ? 'bg-indigo-100 text-indigo-600 shadow-sm shadow-indigo-100 rotate-0'
-                                                                : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600'
+                                                                ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none rotate-0'
+                                                                : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                                                         }`}
                                                         onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : report._id); }}
                                                         title="View Details"
@@ -666,8 +661,6 @@ const HRMistakeReports = () => {
                                                                     {/* Info Grid */}
                                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                                                                         <InfoChip icon={User} label="Agent / Employee" value={report.agentName} />
-                                                                        <InfoChip icon={Building2} label="Clinic" value={report.clinicName} />
-                                                                        <InfoChip icon={UserCheck} label="Patient" value={report.patientName} />
                                                                         <InfoChip icon={Calendar} label="Submitted On" value={formatDateTime(report.createdAt)} />
                                                                     </div>
 
@@ -707,6 +700,13 @@ const HRMistakeReports = () => {
                                                                                     {updatingStatus === report._id ? 'Updating...' : 'Re-open Report'}
                                                                                 </button>
                                                                             )}
+                                                                            <button 
+                                                                                onClick={e => handleDeleteReport(e, report._id)}
+                                                                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                                Delete
+                                                                            </button>
                                                                             <button 
                                                                                 onClick={e => { e.stopPropagation(); setExpandedId(null); }}
                                                                                 className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all"

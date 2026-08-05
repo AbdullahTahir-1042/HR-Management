@@ -492,10 +492,10 @@ const EmployeeHRRequests = ({ user }) => {
                     </div>
 
                     {/* Request History */}
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
-                        <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
-                            <h2 className="text-xs font-bold text-slate-700 flex items-center gap-2 uppercase tracking-widest">
-                                <ClipboardList size={16} className="text-indigo-500" />
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700/50 shadow-xs dark:shadow-none p-6">
+                        <div className="flex items-center justify-between mb-5 border-b border-slate-100 dark:border-slate-700 pb-3">
+                            <h2 className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest">
+                                <ClipboardList size={16} className="text-indigo-500 dark:text-indigo-400" />
                                 My General Requests History
                             </h2>
                             {requests.length > 0 && (
@@ -514,7 +514,7 @@ const EmployeeHRRequests = ({ user }) => {
                                 {requests.map((req) => (
                                     <div
                                         key={req._id}
-                                        className="border border-slate-100 rounded-2xl p-4 bg-slate-50/40 hover:bg-white hover:border-indigo-100 hover:shadow-xs transition-all"
+                                        className="border border-slate-100 dark:border-slate-700/50 rounded-2xl p-4 bg-slate-50/40 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-700/30 hover:border-indigo-100 dark:hover:border-indigo-500/30 hover:shadow-xs dark:hover:shadow-none transition-all"
                                     >
                                         <div className="flex items-start justify-between gap-3 flex-wrap">
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -523,26 +523,26 @@ const EmployeeHRRequests = ({ user }) => {
                                                 </span>
                                                 <StatusBadge status={req.status} />
                                             </div>
-                                            <span className="text-[11px] text-slate-400 font-semibold">
+                                            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">
                                                 {formatDate(req.createdAt)}
                                             </span>
                                         </div>
 
+                                        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-3 leading-relaxed">
+                                            {req.description}
+                                        </p>
+
                                         {req.targetDate && (
-                                            <div className="mt-2 text-[11px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                                            <div className="mt-2 text-[11px] font-bold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 border dark:border-indigo-500/20">
                                                 <Calendar size={12} />
                                                 Target Date: {formatDate(req.targetDate)}
                                             </div>
                                         )}
 
-                                        <p className="text-xs text-slate-700 font-medium mt-3 leading-relaxed">
-                                            {req.description}
-                                        </p>
-
                                         {req.hrNote && (
-                                            <div className="mt-3 bg-indigo-50/70 border border-indigo-100 rounded-xl px-4 py-2.5">
-                                                <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">HR Response Note</p>
-                                                <p className="text-xs text-indigo-800 font-semibold">{req.hrNote}</p>
+                                            <div className="mt-3 bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 rounded-xl px-4 py-2.5">
+                                                <p className="text-[9px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-0.5">HR Response Note</p>
+                                                <p className="text-xs text-indigo-800 dark:text-indigo-200 font-semibold">{req.hrNote}</p>
                                             </div>
                                         )}
                                     </div>

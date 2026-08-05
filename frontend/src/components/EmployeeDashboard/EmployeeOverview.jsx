@@ -2,8 +2,9 @@ import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare, Star, AlertCircle } from 'lucide-react';
 
-const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab }) => {
+const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab, performanceSummary }) => {
     const todayAttendance = attendance;
 
     const [todaySchedule, setTodaySchedule] = useState(null);
@@ -226,7 +227,29 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
             </div>
 
             {/* ── Stat Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl">
+
+                {/* Performance Rating Card */}
+                <motion.div 
+                    whileHover={{ y: -4 }}
+                    onClick={() => setActiveTab('performance')}
+                    className={`bg-white p-5 rounded-2xl border ${performanceSummary?.totalComplaints > 0 ? 'border-rose-200 hover:border-rose-300' : 'border-amber-200 hover:border-amber-300'} shadow-sm cursor-pointer transition-all group`}
+                >
+                    <div className="flex justify-between items-start mb-3">
+                        <div className={`p-2 rounded-xl transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'}`}>
+                            {performanceSummary?.totalComplaints > 0 ? <AlertCircle size={20} /> : <Star size={20} />}
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'}`}>
+                            {performanceSummary?.hasReviews ? 'Rated' : 'Pending'}
+                        </span>
+                    </div>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Performance</p>
+                    <div className="flex items-end justify-between mt-0.5">
+                        <p className={`text-xl font-bold ${performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                            {performanceSummary ? `${performanceSummary.adjustedRating}/5` : '-'}
+                        </p>
+                    </div>
+                </motion.div>
 
                 {/* Today Status Card */}
                 <motion.div 

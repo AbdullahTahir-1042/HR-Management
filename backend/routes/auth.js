@@ -14,6 +14,7 @@ const LoanRequest = require('../models/LoanRequest');
 const MistakeReport = require('../models/MistakeReport');
 const Notification = require('../models/Notification');
 const Increment = require('../models/Increment');
+const PerformanceReview = require('../models/PerformanceReview');
 const TypingStatus = require('../models/TypingStatus');
 const { sendEmail } = require('../services/emailService');
 const { getWelcomeEmailTemplate } = require('../templates/welcomeEmail');
@@ -23,7 +24,7 @@ const { getOtpEmailTemplate } = require('../templates/otpEmail');
 // @desc    Register user (HR only)
 // @access  Private (HR)
 router.post('/register', [auth, isHR], async (req, res) => {
-    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead, joiningStatus, promotionRank } = req.body;
+    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead, joiningStatus, promotionRank, contractDetails } = req.body;
     if (email) email = email.toLowerCase().trim();
     if (phone) phone = phone.trim();
 
@@ -105,7 +106,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
             reportingTo,
             phone,
             isTeamLead: !!isTeamLead,
-            isFirstLogin: true
+            isFirstLogin: true,
+            contractDetails: contractDetails || {}
         });
         await newUser.save();
 
@@ -261,11 +263,15 @@ router.post('/forgot-password', async (req, res) => {
         await user.save();
 
         const emailTemplate = getOtpEmailTemplate({ name: user.name, otp });
-        await sendEmail({
+        const emailResult = await sendEmail({
             to: user.email,
             subject: emailTemplate.subject,
             html: emailTemplate.html
         });
+
+        if (!emailResult || !emailResult.success) {
+            return res.status(500).json({ msg: 'Failed to send OTP email. Please try again or contact HR.', error: emailResult?.error });
+        }
 
         res.status(200).json({ msg: 'An OTP has been sent to your email.' });
     } catch (err) {
@@ -357,9 +363,8 @@ router.put('/users/:id', auth, async (req, res) => {
         const currentUser = await User.findById(req.user.id);
         const isSelf = req.user.id === req.params.id;
         const isHRUser = currentUser.role === 'hr';
-        const isAdminUser = currentUser.role === 'admin';
 
-        if (!isSelf && !isHRUser && !isAdminUser) {
+        if (!isSelf && !isHRUser) {
             return res.status(403).json({ msg: 'Access denied. You can only update your own profile.' });
         }
 
@@ -383,11 +388,7 @@ router.put('/users/:id', auth, async (req, res) => {
             };
         }
 
-        if (isHRUser || isAdminUser) {
-            const targetIsProtected = user.role === 'hr' || user.role === 'admin';
-            const canEditProtectedFields = isAdminUser || (isHRUser && !targetIsProtected);
-
-            if (canEditProtectedFields) {
+        if (isHRUser) {
                 if (role !== undefined) user.role = role;
                 if (status !== undefined) user.status = status;
                 if (salary !== undefined) user.salary = salary;
@@ -405,9 +406,8 @@ router.put('/users/:id', auth, async (req, res) => {
                     }
                     user.joiningStatus = joiningStatus;
                 }
-            }
 
-            if (department !== undefined && canEditProtectedFields) {
+            if (department !== undefined && isHRUser) {
                 const oldDeptId = user.departmentId;
                 const newDept = await Department.findOne({ name: { $regex: new RegExp('^' + department + '$', 'i') }, isDeleted: false });
 
@@ -422,10 +422,6 @@ router.put('/users/:id', auth, async (req, res) => {
                         { _id: oldDeptId, teamLead: user._id },
                         { $set: { teamLead: null } }
                     );
-                    // Clear user's isTeamLead flag on department change unless explicitly set in body
-                    if (isTeamLead === undefined) {
-                        user.isTeamLead = false;
-                    }
                 }
                 if (newDept) {
                     await Department.findByIdAndUpdate(newDept._id, { $addToSet: { employees: user._id } });
@@ -495,12 +491,6 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
 
         const currentUser = await User.findById(req.user.id);
         const isHRUser = currentUser.role === 'hr';
-        const isAdminUser = currentUser.role === 'admin';
-        const targetIsProtected = user.role === 'hr' || user.role === 'admin';
-
-        if (isHRUser && targetIsProtected && !isAdminUser) {
-            return res.status(403).json({ msg: 'Access denied. HR cannot delete Admin or HR accounts.' });
-        }
 
         if (user.status === 'Inactive') {
             // Hard delete the employee completely from the database
@@ -512,8 +502,9 @@ router.delete('/users/:id', [auth, isHR], async (req, res) => {
                 LeaveRequest.deleteMany({ employee: req.params.id }),
                 HRRequest.deleteMany({ employee: req.params.id }),
                 LoanRequest.deleteMany({ employee: req.params.id }),
-                MistakeReport.deleteMany({ agentId: req.params.id }),
-                Increment.deleteMany({ employee: req.params.id }),
+                MistakeReport.deleteMany({ $or: [{ agentId: req.params.id }, { submittedBy: req.params.id }] }),
+                Increment.deleteMany({ $or: [{ employee: req.params.id }, { createdBy: req.params.id }] }),
+                PerformanceReview.deleteMany({ $or: [{ employee: req.params.id }, { createdBy: req.params.id }] }),
                 Notification.deleteMany({ recipient: req.params.id }),
                 TypingStatus.deleteMany({ user: req.params.id })
             ]);

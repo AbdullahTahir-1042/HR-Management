@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2, Award, Trash2 } from 'lucide-react';
+import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2, Award, Trash2, FileText, CalendarDays } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -180,7 +180,13 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
         reportingTo: '',
         salary: '',
         photo: '',
-        isTeamLead: false
+        isTeamLead: false,
+        contractDetails: {
+            contractType: 'Full-Time',
+            startDate: '',
+            endDate: '',
+            summary: 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.'
+        }
     });
     const [departmentsList, setDepartmentsList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -633,6 +639,64 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                         <option value="hr">HR Admin</option>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Contract Details */}
+                        <div className="md:col-span-2 space-y-4">
+                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2 flex items-center gap-2">
+                                <FileText size={16} /> Contract Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Contract Type</label>
+                                    <div className="relative mt-1 group">
+                                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <select 
+                                            value={formData.contractDetails.contractType} 
+                                            onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, contractType: e.target.value}})} 
+                                            className="input-field pl-10"
+                                        >
+                                            <option value="Full-Time">Full-Time</option>
+                                            <option value="Part-Time">Part-Time</option>
+                                            <option value="Contract">Contract</option>
+                                            <option value="Internship">Internship</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Date</label>
+                                    <div className="relative mt-1 group">
+                                        <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="date" 
+                                            value={formData.contractDetails.startDate} 
+                                            onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, startDate: e.target.value}})} 
+                                            className="input-field pl-10" 
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Date (Optional)</label>
+                                    <div className="relative mt-1 group">
+                                        <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="date" 
+                                            value={formData.contractDetails.endDate} 
+                                            onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, endDate: e.target.value}})} 
+                                            className="input-field pl-10" 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Contract Summary / Terms</label>
+                                <textarea
+                                    value={formData.contractDetails.summary}
+                                    onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, summary: e.target.value}})}
+                                    className="w-full p-4 mt-1 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm resize-none h-24"
+                                    placeholder="Enter contract summary or terms..."
+                                ></textarea>
                             </div>
                         </div>
 

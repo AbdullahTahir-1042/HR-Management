@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 /**
  * Initialize Nodemailer transporter
  */
-const getTransporter = () => {
+const getTransporter = async () => {
     const host = process.env.EMAIL_HOST;
     const port = Number(process.env.EMAIL_PORT);
     const user = process.env.EMAIL_USER;
@@ -23,14 +23,7 @@ const getTransporter = () => {
         auth: {
             user,
             pass,
-        },
-        family: 4,
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-        tls: {
-            rejectUnauthorized: false,
-        },
+        }
     });
 };
 
@@ -46,7 +39,7 @@ const sendEmail = async ({ to, subject, html }) => {
             };
         }
 
-        const transporter = getTransporter();
+        const transporter = await getTransporter();
 
         if (!transporter) {
             return {

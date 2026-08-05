@@ -3,7 +3,10 @@ import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
     Sparkles, GraduationCap, BookOpen, X, MessageCircle, MonitorPlay
+    Sparkles, GraduationCap, BookOpen, X, MessageCircle,
+    Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const NAV_ITEMS = [
     { id: 'dashboard',    label: 'Dashboard',        icon: LayoutDashboard },
@@ -17,6 +20,7 @@ const NAV_ITEMS = [
 ];
 
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
+    const { isDark, toggleTheme } = useTheme();
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             {/* Logo / Home Button */}
@@ -79,12 +83,12 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         onClick={() => setActiveTab('myTeam')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${activeTab === 'myTeam'
-                                ? 'bg-amber-50 text-amber-600 font-bold'
-                                : 'text-slate-500 hover:bg-amber-50 hover:text-amber-600'}`}
+                                ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                                : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'}`}
                     >
                         <Users size={20} />
                         <span className="text-sm">My Team</span>
-                        <span className="ml-auto text-[10px] bg-amber-100 text-amber-600 font-bold px-1.5 py-0.5 rounded-full">
+                        <span className="ml-auto text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full">
                             Lead
                         </span>
                     </button>
@@ -93,6 +97,19 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
 
             {/* Profile + Logout */}
             <div className="p-4 border-t border-slate-100">
+                {/* Dark / Light Toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl transition-all duration-200 text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 group cursor-pointer"
+                    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                    <div className="relative w-5 h-5">
+                        <Sun size={18} className={`absolute inset-0 transition-all duration-300 ${isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`} />
+                        <Moon size={18} className={`absolute inset-0 transition-all duration-300 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`} />
+                    </div>
+                    <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
+
                 <div
                     onClick={() => setActiveTab('profile')}
                     className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"

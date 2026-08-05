@@ -15,20 +15,6 @@ const MistakeReportSchema = new mongoose.Schema({
         default: null
     },
 
-    // Clinic / team name
-    clinicName: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
-    // Patient details
-    patientName: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
     // When the mistake happened
     dateOfMistake: {
         type: Date,
@@ -40,6 +26,13 @@ const MistakeReportSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true
+    },
+
+    // Severity level in points to deduct from rating (default 0)
+    severityPoints: {
+        type: Number,
+        default: 0,
+        min: 0
     },
 
     // Optional: what the agent should learn

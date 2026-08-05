@@ -1,9 +1,10 @@
 import toast from 'react-hot-toast';
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, EyeOff, Eye, Loader2, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, EyeOff, Eye, Loader2, ShieldCheck, Sun, Moon } from 'lucide-react';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 const getDashboardPath = (role) => {
@@ -17,6 +18,7 @@ const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const { login, user } = useContext(AuthContext);
+    const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -38,8 +40,21 @@ const Login = () => {
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 relative overflow-hidden font-sans">
-            <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-indigo-200 rounded-full blur-3xl opacity-80 animate-pulse" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-pink-200 rounded-full blur-3xl opacity-80 animate-pulse" />
+            <div className={`absolute top-[-10%] right-[-10%] w-96 h-96 rounded-full blur-3xl opacity-80 animate-pulse ${isDark ? 'bg-indigo-900/40' : 'bg-indigo-200'}`} />
+            <div className={`absolute bottom-[-10%] left-[-10%] w-96 h-96 rounded-full blur-3xl opacity-80 animate-pulse ${isDark ? 'bg-purple-900/40' : 'bg-pink-200'}`} />
+
+            {/* Theme toggle in corner */}
+            <button
+                onClick={toggleTheme}
+                className="absolute top-6 right-6 z-20 p-2.5 rounded-xl bg-white/80 backdrop-blur border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm cursor-pointer"
+                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+                <div className="relative w-5 h-5">
+                    <Sun size={20} className={`absolute inset-0 transition-all duration-300 ${isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`} />
+                    <Moon size={20} className={`absolute inset-0 transition-all duration-300 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`} />
+                </div>
+            </button>
+
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
