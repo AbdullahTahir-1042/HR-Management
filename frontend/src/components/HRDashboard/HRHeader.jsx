@@ -76,11 +76,11 @@ const HRHeader = ({
                 {canGoBack && (
                     <button
                         onClick={onBack}
-                        className="flex items-center gap-2 text-slate-700 hover:text-indigo-600 bg-slate-100/80 hover:bg-indigo-50 border border-slate-200/80 px-3.5 py-2 rounded-xl transition-all font-semibold text-xs sm:text-sm group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shrink-0"
+                        className="flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl transition-all font-semibold text-xs sm:text-sm group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shrink-0 shadow-xs"
                         aria-label="Go Back"
                         title="Go Back"
                     >
-                        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600" />
+                        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform text-indigo-600 dark:text-indigo-400" />
                         <span>Back</span>
                     </button>
                 )}
@@ -124,14 +124,14 @@ const HRHeader = ({
                             type="date"
                             value={attendanceDateFilter}
                             onChange={(e) => setAttendanceDateFilter(e.target.value)}
-                            className="px-3 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm flex-1 sm:flex-none"
+                            className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 transition-all text-sm flex-1 sm:flex-none cursor-pointer"
                         />
-                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                        <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-transparent dark:border-slate-700">
                             <button
                                 onClick={() => setAttendanceDateFilter(new Date().toISOString().slice(0, 10))}
                                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${attendanceDateFilter === new Date().toISOString().slice(0, 10)
-                                    ? 'bg-white text-indigo-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                     }`}
                             >
                                 Today
@@ -139,8 +139,8 @@ const HRHeader = ({
                             <button
                                 onClick={() => setAttendanceDateFilter('')}
                                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${attendanceDateFilter === ''
-                                    ? 'bg-white text-emerald-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                    ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                     }`}
                             >
                                 All Time

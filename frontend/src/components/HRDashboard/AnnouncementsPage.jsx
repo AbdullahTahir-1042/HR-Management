@@ -387,27 +387,27 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                 <div
                                     key={entry._id}
                                     onClick={() => setSelected(entry)}
-                                    className="px-6 py-5 hover:bg-indigo-50/50 transition-colors group cursor-pointer"
+                                    className="px-6 py-5 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 transition-colors group cursor-pointer"
                                 >
                                     <div className="flex justify-between items-start gap-4">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1.5">
-                                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0 group-hover:bg-indigo-100 transition-colors">
+                                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
                                                     <Megaphone size={15} />
                                                 </span>
-                                                <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors">
+                                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                                     {entry.title}
                                                 </h4>
                                             </div>
-                                            <p className="text-sm text-slate-500 leading-relaxed pl-10 truncate">
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed pl-10 truncate">
                                                 {entry.message}
                                             </p>
                                             <div className="flex items-center gap-4 mt-3 pl-10">
-                                                <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                                <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-medium">
                                                     <User size={12} />
                                                     {entry.createdBy?.name || 'HR'}
                                                 </span>
-                                                <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                                <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-medium">
                                                     <Calendar size={12} />
                                                     {formatDate(entry.createdAt)}
                                                 </span>
@@ -417,13 +417,13 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                             {isHR && (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDelete(entry._id); }}
-                                                    className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                                                    className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition-all"
                                                     title="Delete"
                                                 >
                                                     <Trash2 size={15} />
                                                 </button>
                                             )}
-                                            <span className="opacity-0 group-hover:opacity-100 text-indigo-400 transition-opacity">→</span>
+                                            <span className="opacity-0 group-hover:opacity-100 text-indigo-400 dark:text-indigo-500 transition-opacity">→</span>
                                         </div>
                                     </div>
                                 </div>

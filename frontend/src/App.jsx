@@ -1,6 +1,7 @@
 import React, { useContext, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { ConfirmProvider } from './context/ConfirmContext';
 
@@ -45,6 +46,7 @@ const ProtectedRoute = ({ children, role }) => {
 
 function App() {
     return (
+        <ThemeProvider>
         <AuthProvider>
             <ConfirmProvider>
                 <Toaster 
@@ -98,6 +100,7 @@ function App() {
                 </Router>
             </ConfirmProvider>
         </AuthProvider>
+        </ThemeProvider>
     );
 }
 
