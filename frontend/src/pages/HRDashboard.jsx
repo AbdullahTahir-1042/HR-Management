@@ -25,6 +25,8 @@ import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
 import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
 import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
 import LatecomersPage from '../components/HRDashboard/LatecomersPage';
+import HRTrainingManagement from '../components/HRDashboard/HRTrainingManagement'; // ✅ NEW
+import OfficeScheduleManagement from '../components/HRDashboard/OfficeScheduleManagement'; // ✅ NEW
 import MessagesPage from '../components/MessagesPage';
 
 const SHIFT_START_HOUR = 9;
@@ -599,6 +601,10 @@ const HRDashboard = () => {
                             <HRDepartments />
                         )}
 
+                        {activeTab === 'training' && (
+                            <HRTrainingManagement />
+                        )}
+
                         {activeTab === 'reports' && (
                             <HRReports employees={employees} loans={loans} />
                         )}
@@ -613,6 +619,10 @@ const HRDashboard = () => {
                                 dateFilter={latecomerDateFilter}
                                 setDateFilter={setLatecomerDateFilter}
                             />
+                        )}
+
+                        {activeTab === 'office-schedule' && (
+                            <OfficeScheduleManagement />
                         )}
 
                         {activeTab === 'announcements' && (

@@ -5,6 +5,7 @@ const Attendance = require('../models/Attendance');
 const LeaveRequest = require('../models/LeaveRequest');
 const HRRequest = require('../models/HRRequest');
 const Holiday = require('../models/Holiday');
+const OfficeSchedule = require('../models/OfficeSchedule'); // ✅ NEW
 
 const User = require('../models/User');
 const Notification = require('../models/Notification');
@@ -106,10 +107,36 @@ router.post('/check-in', auth, async (req, res) => {
         if (attendance) {
             return res.status(400).json({ msg: 'Already checked in today' });
         }
+
+        // --- NEW LATENESS LOGIC ---
+        let checkInStatus = 'present';
+        try {
+            let schedule = await OfficeSchedule.findOne({ date: today, isDefault: false });
+            if (!schedule) {
+                schedule = await OfficeSchedule.findOne({ isDefault: true });
+            }
+
+            if (schedule) {
+                const [startHour, startMin] = schedule.startTime.split(':').map(Number);
+                const gracePeriod = schedule.gracePeriod || 0;
+                
+                const expectedTime = new Date();
+                expectedTime.setHours(startHour, startMin + gracePeriod, 0, 0);
+
+                if (new Date() > expectedTime) {
+                    checkInStatus = 'late';
+                }
+            }
+        } catch (scheduleErr) {
+            console.error("Error determining lateness from schedule:", scheduleErr);
+        }
+        // -------------------------
+
         attendance = new Attendance({
             employee: req.user.id,
             date: today,
-            checkIn: new Date()
+            checkIn: new Date(),
+            status: checkInStatus
         });
         await attendance.save();
         console.log("✅ Attendance saved");

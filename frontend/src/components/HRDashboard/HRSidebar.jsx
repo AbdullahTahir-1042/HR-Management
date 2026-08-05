@@ -19,7 +19,9 @@ import {
     BookOpen,
     AlertTriangle,
     X,
-    MessageCircle
+    MessageCircle,
+    MonitorPlay,
+    CalendarClock
 } from 'lucide-react';
 
 const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0, pendingRequestsCount = 0 }) => {
@@ -100,6 +102,13 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                             <Clock size={18} />
                             <span>Late Comers</span>
                         </button>
+                        <button 
+                            onClick={() => setActiveTab('office-schedule')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'office-schedule' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <CalendarClock size={18} />
+                            <span>Office Schedule</span>
+                        </button>
                     </div>
                 </div>
 
@@ -174,6 +183,13 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                         >
                             <AlertTriangle size={18} />
                             <span>Mistake Reports</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('training')}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'training' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        >
+                            <MonitorPlay size={18} />
+                            <span>Training Management</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('holidays')}

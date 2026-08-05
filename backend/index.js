@@ -56,12 +56,14 @@ app.use('/api/hr-requests', require('./routes/hrRequests'));
 app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/mistake-reports', require('./routes/mistakeReports')); // ✅ NEW
+app.use('/api/training', require('./routes/training')); // ✅ NEW
 app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/increments', require('./routes/increments'));
 app.use('/api/performance-reviews', require('./routes/performanceReviews'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/loans', require('./routes/loans'));
 app.use('/api/payroll', require('./routes/payroll')); // ✅ NEW
+app.use('/api/office-schedule', require('./routes/officeSchedule')); // ✅ NEW
 app.use('/api/test', require('./routes/test'));
 console.log('✓ Test Route Registered');
 
