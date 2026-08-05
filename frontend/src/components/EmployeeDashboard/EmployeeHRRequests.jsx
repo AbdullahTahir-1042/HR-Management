@@ -600,7 +600,7 @@ const EmployeeHRRequests = ({ user }) => {
                     )}
 
                     {/* Loan Requests Table & Header Action */}
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700/50 shadow-xs p-6">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 border-b border-slate-100 pb-4">
                             <div>
                                 <h2 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest">
@@ -614,15 +614,15 @@ const EmployeeHRRequests = ({ user }) => {
                                 onClick={() => setIsLoanModalOpen(true)}
                                 disabled={pendingOrActiveCount > 0}
                                 title={pendingOrActiveCount > 0 ? "You already have an active or pending loan application" : "Submit new loan request"}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-indigo-100 disabled:shadow-none self-start sm:self-auto"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-700/50 disabled:text-slate-400 dark:disabled:text-slate-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-indigo-100 dark:shadow-none disabled:shadow-none self-start sm:self-auto"
                             >
                                 <Plus size={15} /> Request Loan
                             </button>
                         </div>
 
                         {pendingOrActiveCount > 0 && (
-                            <div className="mb-5 p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex items-center gap-3 text-xs font-semibold text-indigo-700">
-                                <Info size={16} className="text-indigo-500 shrink-0" />
+                            <div className="mb-5 p-3.5 bg-indigo-50/60 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl flex items-center gap-3 text-xs font-semibold text-indigo-700 dark:text-indigo-400">
+                                <Info size={16} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
                                 <span>Note: System policy limits employees to 1 active or pending loan request at a time.</span>
                             </div>
                         )}
@@ -643,7 +643,7 @@ const EmployeeHRRequests = ({ user }) => {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs">
                                     <thead>
-                                        <tr className="border-b border-slate-100 text-slate-400 uppercase text-[9px] font-extrabold tracking-wider bg-slate-50/60">
+                                        <tr className="border-b border-slate-100 dark:border-slate-700/50 text-slate-400 dark:text-slate-500 uppercase text-[9px] font-extrabold tracking-wider bg-slate-50/60 dark:bg-slate-900/50">
                                             <th className="py-3 px-3 rounded-l-xl">Submitted Date</th>
                                             <th className="py-3 px-3">Purpose</th>
                                             <th className="py-3 px-3">Requested Amount</th>
@@ -653,14 +653,14 @@ const EmployeeHRRequests = ({ user }) => {
                                             <th className="py-3 px-3 text-right rounded-r-xl">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-semibold text-slate-700 dark:text-slate-200">
                                         {loans.map(loan => (
-                                            <tr key={loan._id} className="hover:bg-slate-50/80 transition-colors">
-                                                <td className="py-3.5 px-3 font-medium text-slate-500">{formatDate(loan.createdAt)}</td>
+                                            <tr key={loan._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                                                <td className="py-3.5 px-3 font-medium text-slate-500 dark:text-slate-400">{formatDate(loan.createdAt)}</td>
                                                 <td className="py-3.5 px-3">
-                                                    <span className="font-bold text-slate-800">{loan.purpose}</span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200">{loan.purpose}</span>
                                                 </td>
-                                                <td className="py-3.5 px-3 font-extrabold text-slate-900">{formatPKR(loan.requestedAmount)}</td>
+                                                <td className="py-3.5 px-3 font-extrabold text-slate-900 dark:text-white">{formatPKR(loan.requestedAmount)}</td>
                                                 <td className="py-3.5 px-3">{loan.approvedInstallments || loan.preferredInstallments} Months</td>
                                                 <td className="py-3.5 px-3 font-bold text-emerald-600">
                                                     {loan.monthlyDeduction ? formatPKR(loan.monthlyDeduction) : '-'}
@@ -673,7 +673,7 @@ const EmployeeHRRequests = ({ user }) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => setSelectedLoanDetails(loan)}
-                                                            className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-bold text-[10px] uppercase transition-colors cursor-pointer"
+                                                            className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-[10px] uppercase transition-colors cursor-pointer"
                                                         >
                                                             <Eye size={12} className="inline mr-1" /> View Details
                                                         </button>
@@ -681,7 +681,7 @@ const EmployeeHRRequests = ({ user }) => {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleCancelLoan(loan._id)}
-                                                                className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] uppercase transition-colors cursor-pointer"
+                                                                className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-[10px] uppercase transition-colors cursor-pointer"
                                                             >
                                                                 Cancel
                                                             </button>

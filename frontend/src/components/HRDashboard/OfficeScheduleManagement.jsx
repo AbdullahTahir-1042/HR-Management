@@ -307,8 +307,8 @@ const OfficeScheduleManagement = () => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleCloseModal}>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
                         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
                             <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
                                 {formData.isDefault ? 'Edit Default Schedule' : (editingId ? 'Edit Schedule Override' : 'New Schedule Override')}

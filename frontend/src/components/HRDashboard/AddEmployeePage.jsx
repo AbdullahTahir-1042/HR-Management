@@ -350,9 +350,9 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                         )}
 
                         {/* Profile Photo Section */}
-                        <div className="md:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl p-8 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                        <div className="md:col-span-2 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700/50 rounded-3xl p-8 bg-slate-50/50 dark:bg-slate-800/20 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                             <div className="relative group cursor-pointer">
-                                <div className="w-24 h-24 rounded-3xl bg-white shadow-lg flex items-center justify-center overflow-hidden border-4 border-white ring-1 ring-slate-200">
+                                <div className="w-24 h-24 rounded-3xl bg-white dark:bg-slate-800 shadow-lg flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 ring-1 ring-slate-200 dark:ring-slate-700/50">
                                     {preview ? (
                                         <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                                     ) : (
@@ -555,7 +555,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                             </div>
                                         </div>
                                         {hasExistingLead && (
-                                            <div className="flex items-center gap-2 text-amber-600 bg-amber-50/50 border border-amber-100 rounded-xl p-3 text-[11px] font-semibold">
+                                            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800/50 rounded-xl p-3 text-[11px] font-semibold">
                                                 <AlertCircle size={14} className="shrink-0" />
                                                 <span>
                                                     {existingLeadName} is already assigned as the Team Lead of this department.
@@ -563,7 +563,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                             </div>
                                         )}
                                         {isIntern && !hasExistingLead && (
-                                            <div className="flex items-center gap-2 text-rose-600 bg-rose-50/50 border border-rose-100 rounded-xl p-3 text-[11px] font-semibold">
+                                            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-800/50 rounded-xl p-3 text-[11px] font-semibold">
                                                 <AlertCircle size={14} className="shrink-0" />
                                                 <span>
                                                     Interns cannot be assigned as Team Leads.

@@ -309,13 +309,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => setActiveTab('hr-requests')}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-blue-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-blue-200 dark:hover:border-blue-500/50"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-colors">
+                        <div className="p-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
                             <MessageSquare size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-blue-100 transition-colors">
+                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
                             Support
                         </span>
                     </div>

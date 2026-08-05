@@ -653,7 +653,7 @@ const MessagesPage = () => {
                                 </button>
                             </div>
 
-                            <div ref={threadScrollRef} className="flex-1 overflow-y-auto p-5 bg-[linear-gradient(to_bottom,white,theme(colors.slate.50/60))]">
+                            <div ref={threadScrollRef} className="flex-1 overflow-y-auto p-5 bg-[linear-gradient(to_bottom,white,theme(colors.slate.50/60))] dark:bg-slate-900">
                                 {loadingThread ? (
                                     <div className="h-full flex items-center justify-center text-slate-400">
                                         <Loader2 size={24} className="animate-spin opacity-40" />
