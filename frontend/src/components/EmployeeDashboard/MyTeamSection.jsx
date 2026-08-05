@@ -6,8 +6,10 @@ import {
     Users, Crown, AlertTriangle, BookOpen, TrendingUp,
     Calendar, UserCircle, Building2, CheckCircle,
     Loader2, X, RotateCcw, ChevronDown, ChevronUp, FileText, Search,
-    Sparkles, Eye, ChevronLeft, ChevronRight, User, Clock, UserCheck
+    Sparkles, Eye, ChevronLeft, ChevronRight, User, Clock, UserCheck, Trash2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import PerformanceReviewModal from './PerformanceReviewModal';
 
 // ─── Animated Number ─────────────────────────────────────────────────────────
 const AnimatedNumber = ({ value }) => (
@@ -96,39 +98,68 @@ const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
 
 // ─── Member Card ─────────────────────────────────────────────────────────────
 
-const MemberCard = ({ member, isLead, index }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
-    >
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0
-            ${isLead ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
-            {member.name?.[0]?.toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-slate-800 truncate">{member.name}</p>
-                {isLead && (
-                    <span className="flex items-center gap-1 bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
-                        <Crown size={9} /> Team Lead
-                    </span>
-                )}
+const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick }) => {
+    const [perf, setPerf] = useState(null);
+    useEffect(() => {
+        if (currentUserIsLead) {
+            apiClient.get(`/performance-reviews/summary/${member._id || member.id}`)
+                .then(res => setPerf(res.data))
+                .catch(err => console.error(err));
+        }
+    }, [member, currentUserIsLead]);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
+        >
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0
+                ${isLead ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                {member.name?.[0]?.toUpperCase()}
             </div>
-            <p className="text-xs text-slate-400 capitalize">{member.status || 'Employee'}</p>
-        </div>
-    </motion.div>
-);
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-800 truncate">{member.name}</p>
+                    {isLead && (
+                        <span className="flex items-center gap-1 bg-indigo-100 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                            <Crown size={9} /> Team Lead
+                        </span>
+                    )}
+                </div>
+                <p className="text-xs text-slate-400 capitalize">{member.status || 'Employee'}</p>
+            </div>
+            {currentUserIsLead && perf && (
+                <div className="shrink-0 flex flex-col items-end gap-1.5">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Performance</span>
+                        <span className={`text-sm font-black ${perf.totalComplaints > 0 ? 'text-rose-600' : 'text-amber-500'}`}>
+                            {perf.adjustedRating} / 5
+                        </span>
+                    </div>
+                    {!isLead && (
+                        <button 
+                            onClick={() => onReviewClick(member)}
+                            className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded transition-colors"
+                        >
+                            + Review
+                        </button>
+                    )}
+                </div>
+            )}
+        </motion.div>
+    );
+};
 
 // ─── Submit Report Modal ──────────────────────────────────────────────────────
 
 const EMPTY_FORM = {
     agentName: '',
-    patientName: '',
-    clinicName: '',
+    dateOfMistake: '',
     dateOfMistake: '',
     mistakeDescription: '',
+    severityPoints: 0,
     learning: '',
     improvement: '',
 };
@@ -165,7 +196,7 @@ const ReportModal = ({ members, onClose, onSuccess }) => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
+                className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
@@ -211,7 +242,7 @@ const ReportModal = ({ members, onClose, onSuccess }) => {
 
                         {/* Section 1 — Who */}
                         <div className="bg-slate-50 rounded-xl p-4 space-y-4">
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Team & Patient Info</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Employee Info</p>
 
                             {/* Agent Name — dropdown from members */}
                             <div>
@@ -233,44 +264,6 @@ const ReportModal = ({ members, onClose, onSuccess }) => {
                                         ))}
                                     </select>
                                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Clinic */}
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-600 mb-1.5 block">
-                                        Clinic / Team <span className="text-rose-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                        <input
-                                            name="clinicName"
-                                            value={form.clinicName}
-                                            onChange={handleChange}
-                                            required
-                                            placeholder="e.g. The Grand Family"
-                                            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Patient */}
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-600 mb-1.5 block">
-                                        Patient Name <span className="text-rose-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <UserCircle size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                        <input
-                                            name="patientName"
-                                            value={form.patientName}
-                                            onChange={handleChange}
-                                            required
-                                            placeholder="e.g. Tyler Sanders"
-                                            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all"
-                                        />
-                                    </div>
                                 </div>
                             </div>
 
@@ -312,6 +305,25 @@ const ReportModal = ({ members, onClose, onSuccess }) => {
                                         rows={3}
                                         placeholder="Describe exactly what mistake was made..."
                                         className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white resize-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                            
+                            {/* Severity Points */}
+                            <div>
+                                <label className="text-xs font-semibold text-slate-600 mb-1.5 block">
+                                    Severity Level (Points to Deduct)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        name="severityPoints"
+                                        value={form.severityPoints}
+                                        onChange={handleChange}
+                                        min="0"
+                                        max="5"
+                                        step="0.5"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all"
                                     />
                                 </div>
                             </div>
@@ -385,6 +397,7 @@ const MyTeamSection = () => {
     const [reportCount, setReportCount] = useState(0);
     const [history, setHistory] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
+    const [reviewMember, setReviewMember] = useState(null);
 
     // Table States
     const [expandedId, setExpandedId] = useState(null);
@@ -436,6 +449,22 @@ const MyTeamSection = () => {
         }
     };
 
+    const handleDeleteReport = async (e, id) => {
+        e.stopPropagation();
+        if (!await window.confirmModal('Are you sure you want to completely delete this Mistake Report? This action cannot be undone.')) return;
+        
+        try {
+            await apiClient.delete(`/mistake-reports/${id}`);
+            toast.success('Report deleted successfully');
+            setHistory(prev => prev.filter(r => r._id !== id));
+            setExpandedId(null);
+            setReportCount(prev => Math.max(0, prev - 1));
+        } catch (err) {
+            console.error('Error deleting report:', err);
+            toast.error(err.response?.data?.msg || 'Failed to delete report');
+        }
+    };
+
     const teamLeadId = dept?.teamLead?._id || dept?.teamLead;
     const isTeamLead = user?._id === teamLeadId || user?.id === teamLeadId || user?.role === 'hr';
 
@@ -443,9 +472,7 @@ const MyTeamSection = () => {
     const filteredReports = useMemo(() => history.filter(report => {
         const term = searchTerm.toLowerCase();
         const matchesSearch = !term ||
-            report.agentName?.toLowerCase().includes(term) ||
-            report.clinicName?.toLowerCase().includes(term) ||
-            report.patientName?.toLowerCase().includes(term);
+            report.agentName?.toLowerCase().includes(term);
 
         const matchesStatus = !statusFilter || report.status === statusFilter;
 
@@ -457,8 +484,6 @@ const MyTeamSection = () => {
         let valA, valB;
         switch (sortField) {
             case 'agentName':      valA = a.agentName?.toLowerCase() || ''; valB = b.agentName?.toLowerCase() || ''; break;
-            case 'clinicName':     valA = a.clinicName?.toLowerCase() || ''; valB = b.clinicName?.toLowerCase() || ''; break;
-            case 'patientName':    valA = a.patientName?.toLowerCase() || ''; valB = b.patientName?.toLowerCase() || ''; break;
             case 'dateOfMistake':  valA = new Date(a.dateOfMistake || 0); valB = new Date(b.dateOfMistake || 0); break;
             case 'status':         valA = a.status || ''; valB = b.status || ''; break;
             default:               valA = new Date(a.createdAt || 0); valB = new Date(b.createdAt || 0); break;
@@ -507,7 +532,7 @@ const MyTeamSection = () => {
         );
     }
 
-    const members = dept?.employees || [];
+    const members = (dept?.employees || []).filter(m => m.status !== 'Inactive');
 
     return (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
@@ -581,6 +606,8 @@ const MyTeamSection = () => {
                                 member={member}
                                 isLead={member._id === teamLeadId || member._id?.toString() === teamLeadId?.toString()}
                                 index={i}
+                                currentUserIsLead={isTeamLead}
+                                onReviewClick={setReviewMember}
                             />
                         ))}
                     </div>
@@ -651,8 +678,6 @@ const MyTeamSection = () => {
                                             <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-12">#</th>
                                             {[
                                                 { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[150px]' },
-                                                { key: 'clinicName',    label: 'Clinic',           minW: 'min-w-[110px]' },
-                                                { key: 'patientName',   label: 'Patient',          minW: 'min-w-[110px]' },
                                                 { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[110px]' },
                                                 { key: 'status',        label: 'Status',           minW: 'min-w-[100px]' },
                                             ].map(col => (
@@ -701,8 +726,6 @@ const MyTeamSection = () => {
                                                                 <span className="font-bold text-slate-800 text-[13px]">{report.agentName}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-3 text-slate-600 font-medium text-[13px]">{report.clinicName}</td>
-                                                        <td className="px-4 py-3 text-slate-600 font-medium text-[13px]">{report.patientName}</td>
                                                         <td className="px-4 py-3 text-slate-500 text-[13px]">
                                                             {new Date(report.dateOfMistake).toLocaleDateString()}
                                                         </td>
@@ -740,8 +763,6 @@ const MyTeamSection = () => {
                                                                             
                                                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                                                                                 <InfoChip icon={User} label="Agent Name" value={report.agentName} />
-                                                                                <InfoChip icon={Building2} label="Clinic Name" value={report.clinicName} />
-                                                                                <InfoChip icon={UserCheck} label="Patient Name" value={report.patientName} />
                                                                                 <InfoChip icon={Calendar} label="Date Submitted" value={new Date(report.createdAt).toLocaleDateString()} />
                                                                             </div>
 
@@ -752,6 +773,13 @@ const MyTeamSection = () => {
                                                                             </div>
 
                                                                             <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-200/60">
+                                                                                <button 
+                                                                                    onClick={e => handleDeleteReport(e, report._id)}
+                                                                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-sm"
+                                                                                >
+                                                                                    <Trash2 size={14} />
+                                                                                    Delete
+                                                                                </button>
                                                                                 <button 
                                                                                     onClick={e => { e.stopPropagation(); setExpandedId(null); }}
                                                                                     className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-colors"
@@ -817,10 +845,21 @@ const MyTeamSection = () => {
             <AnimatePresence>
                 {showReportModal && (
                     <ReportModal
-                        members={members}
+                        className="scrollbar-hide"
+                        members={members.filter(m => m._id !== user?._id && m._id?.toString() !== user?.id?.toString())}
                         onClose={() => setShowReportModal(false)}
                         onSuccess={() => {
                             fetchHistory();
+                        }}
+                    />
+                )}
+                {reviewMember && (
+                    <PerformanceReviewModal
+                        employee={reviewMember}
+                        onClose={() => setReviewMember(null)}
+                        onSuccess={() => {
+                            setReviewMember(null);
+                            fetchMyDept();
                         }}
                     />
                 )}

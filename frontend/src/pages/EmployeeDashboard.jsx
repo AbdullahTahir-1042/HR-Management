@@ -21,6 +21,7 @@ import UpdateProfilePage from '../components/UpdateProfilePage';
 import MyTeamSection from '../components/EmployeeDashboard/MyTeamSection';
 import MessagesPage from '../components/MessagesPage';
 import FirstLoginModal from '../components/FirstLoginModal';
+import EmployeeReviews from '../components/EmployeeDashboard/EmployeeReviews';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -63,6 +64,7 @@ const EmployeeDashboard = () => {
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [leaves, setLeaves] = useState([]);
     const [holidays, setHolidays] = useState([]);
+    const [performanceSummary, setPerformanceSummary] = useState(null);
     const [leaveBalances, setLeaveBalances] = useState([]);
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -153,6 +155,16 @@ const EmployeeDashboard = () => {
             ]);
             setFullUser(profile.data);
             updateUser(profile.data);
+
+            if (profile.data && profile.data._id) {
+                try {
+                    const perfRes = await apiClient.get(`/performance-reviews/summary/${profile.data._id}`);
+                    setPerformanceSummary(perfRes.data);
+                } catch(e) {
+                    console.error("Error fetching performance summary:", e);
+                }
+            }
+
             setAttendance(todayAtt.data);
             setAttendanceHistory(history.data);
             setLeaves(leavesRes.data);
@@ -583,6 +595,7 @@ const EmployeeDashboard = () => {
                                 holidays={holidays}
                                 announcements={announcements}
                                 setActiveTab={setActiveTab}
+                                performanceSummary={performanceSummary}
                             />
                         )}
 
@@ -631,18 +644,20 @@ const EmployeeDashboard = () => {
                             <MessagesPage />
                         )}
 
+                        {activeTab === 'announcements' && (
+                            <EmployeeAnnouncement
+                                initialAnnouncements={announcements}
+                                onRefreshAnnouncements={fetchAllAnnouncements}
+                            />
+                        )}
+
+                        {activeTab === 'performance' && <EmployeeReviews />}
+
                         {activeTab === 'profile' && (
                             <UpdateProfilePage
                                 user={fullUser || authUser}
                                 onBack={() => setActiveTab('dashboard')}
                                 onUpdate={(updatedUser) => setFullUser(updatedUser)}
-                            />
-                        )}
-
-                        {activeTab === 'announcements' && (
-                            <EmployeeAnnouncement
-                                initialAnnouncements={announcements}
-                                onRefreshAnnouncements={fetchAllAnnouncements}
                             />
                         )}
 

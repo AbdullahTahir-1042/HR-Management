@@ -5,8 +5,9 @@ import {
     AlertTriangle, Search, Calendar, Building2, 
     UserCheck, X, ShieldAlert, ChevronDown, ChevronUp,
     CheckCircle, Clock, Eye, RotateCcw, Filter, ChevronLeft, ChevronRight,
-    TrendingUp, FileText, User, Sparkles, Download
+    TrendingUp, FileText, User, Sparkles, Download, Trash2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // ─── Animated Number ─────────────────────────────────────────────────────────
 const AnimatedNumber = ({ value }) => (
@@ -154,6 +155,21 @@ const HRMistakeReports = () => {
         }
     };
 
+    const handleDeleteReport = async (e, id) => {
+        e.stopPropagation();
+        if (!await window.confirmModal('Are you sure you want to completely delete this Mistake Report? This action cannot be undone.')) return;
+        
+        try {
+            await apiClient.delete(`/mistake-reports/${id}`);
+            toast.success('Report deleted successfully');
+            setReports(prev => prev.filter(r => r._id !== id));
+            setExpandedId(null);
+        } catch (err) {
+            console.error('Error deleting report:', err);
+            toast.error(err.response?.data?.msg || 'Failed to delete report');
+        }
+    };
+
     const getDeptName = (report) => {
         if (!report) return 'Unassigned';
         const submitterDept = report.submittedBy?.departmentId;
@@ -190,8 +206,6 @@ const HRMistakeReports = () => {
         const deptName = getDeptName(report)?.toLowerCase() || '';
         const matchesSearch = !term ||
             report.agentName?.toLowerCase().includes(term) ||
-            report.clinicName?.toLowerCase().includes(term) ||
-            report.patientName?.toLowerCase().includes(term) ||
             report.submittedBy?.name?.toLowerCase().includes(term) ||
             deptName.includes(term);
 
@@ -216,8 +230,6 @@ const HRMistakeReports = () => {
         switch (sortField) {
             case 'agentName':      valA = a.agentName?.toLowerCase() || ''; valB = b.agentName?.toLowerCase() || ''; break;
             case 'department':     valA = getDeptName(a)?.toLowerCase() || ''; valB = getDeptName(b)?.toLowerCase() || ''; break;
-            case 'clinicName':     valA = a.clinicName?.toLowerCase() || ''; valB = b.clinicName?.toLowerCase() || ''; break;
-            case 'patientName':    valA = a.patientName?.toLowerCase() || ''; valB = b.patientName?.toLowerCase() || ''; break;
             case 'dateOfMistake':  valA = new Date(a.dateOfMistake || 0); valB = new Date(b.dateOfMistake || 0); break;
             case 'submittedBy':    valA = a.submittedBy?.name?.toLowerCase() || ''; valB = b.submittedBy?.name?.toLowerCase() || ''; break;
             case 'status':         valA = a.status || ''; valB = b.status || ''; break;
@@ -255,8 +267,6 @@ const HRMistakeReports = () => {
 
         const headers = [
             "Agent Name",
-            "Clinic Name",
-            "Patient Name",
             "Date of Mistake",
             "Department",
             "Submitted By",
@@ -269,8 +279,6 @@ const HRMistakeReports = () => {
 
         const rows = filteredReports.map(r => [
             `"${(r.agentName || '').replace(/"/g, '""')}"`,
-            `"${(r.clinicName || '').replace(/"/g, '""')}"`,
-            `"${(r.patientName || '').replace(/"/g, '""')}"`,
             `"${formatDate(r.dateOfMistake)}"`,
             `"${(getDeptName(r) || '').replace(/"/g, '""')}"`,
             `"${(r.submittedBy?.name || 'Unknown').replace(/"/g, '""')}"`,
@@ -426,7 +434,7 @@ const HRMistakeReports = () => {
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input 
                             type="text"
-                            placeholder="Search agent, patient, clinic..."
+                            placeholder="Search agent, reporter..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-400 focus:ring-3 focus:ring-indigo-50 transition-all text-sm placeholder:text-slate-400"
@@ -530,8 +538,6 @@ const HRMistakeReports = () => {
                                     {[
                                         { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[120px]', tooltip: 'Sort by Agent Name' },
                                         { key: 'department',    label: 'Department',       minW: 'min-w-[100px]', tooltip: 'Sort by Department' },
-                                        { key: 'clinicName',    label: 'Clinic',           minW: 'min-w-[90px]',  tooltip: 'Sort by Clinic' },
-                                        { key: 'patientName',   label: 'Patient',          minW: 'min-w-[90px]',  tooltip: 'Sort by Patient' },
                                         { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[90px]',  tooltip: 'Sort by Mistake Date' },
                                         { key: 'submittedBy',   label: 'Reported By',      minW: 'min-w-[110px]', tooltip: 'Sort by Submitter Name' },
                                         { key: 'status',        label: 'Status',           minW: 'min-w-[85px]',  tooltip: 'Sort by Status' },
@@ -598,16 +604,6 @@ const HRMistakeReports = () => {
                                                     </span>
                                                 </td>
 
-                                                {/* Clinic */}
-                                                <td className="px-5 py-4">
-                                                    <span className="text-slate-700 font-medium text-[13px]">{report.clinicName}</span>
-                                                </td>
-
-                                                {/* Patient */}
-                                                <td className="px-5 py-4">
-                                                    <span className="text-slate-700 font-medium text-[13px]">{report.patientName}</span>
-                                                </td>
-
                                                 {/* Date */}
                                                 <td className="px-5 py-4">
                                                     <span className="inline-flex items-center gap-1.5 text-slate-500 text-[13px]">
@@ -666,8 +662,6 @@ const HRMistakeReports = () => {
                                                                     {/* Info Grid */}
                                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                                                                         <InfoChip icon={User} label="Agent / Employee" value={report.agentName} />
-                                                                        <InfoChip icon={Building2} label="Clinic" value={report.clinicName} />
-                                                                        <InfoChip icon={UserCheck} label="Patient" value={report.patientName} />
                                                                         <InfoChip icon={Calendar} label="Submitted On" value={formatDateTime(report.createdAt)} />
                                                                     </div>
 
@@ -707,6 +701,13 @@ const HRMistakeReports = () => {
                                                                                     {updatingStatus === report._id ? 'Updating...' : 'Re-open Report'}
                                                                                 </button>
                                                                             )}
+                                                                            <button 
+                                                                                onClick={e => handleDeleteReport(e, report._id)}
+                                                                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                                Delete
+                                                                            </button>
                                                                             <button 
                                                                                 onClick={e => { e.stopPropagation(); setExpandedId(null); }}
                                                                                 className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all"

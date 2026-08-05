@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const PerformanceReview = require('../models/PerformanceReview');
 const User = require('../models/User');
-const { auth, isHR } = require('../middleware/auth');
+const { auth, isHR, isTeamLead } = require('../middleware/auth');
 
 // Helper to compare dates ignoring times timezone-insensitively
 const getStartOfDay = (d) => {
@@ -17,11 +17,88 @@ const getStartOfDay = (d) => {
 };
 
 // ─────────────────────────────────────────────
+// GET /api/performance-reviews/summary/:employeeId
+// Get aggregated performance and penalties summary
+// ─────────────────────────────────────────────
+router.get('/summary/:employeeId', auth, async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const employee = await User.findById(employeeId);
+        if (!employee) return res.status(404).json({ msg: 'Employee not found' });
+
+        // Permissions: HR, Admin, self, or Team Lead of same department
+        const reqUser = await User.findById(req.user.id);
+        if (reqUser.role !== 'hr' && reqUser.role !== 'admin' && req.user.id !== employeeId) {
+            if (!reqUser.isTeamLead || reqUser.departmentId?.toString() !== employee.departmentId?.toString()) {
+                return res.status(403).json({ msg: 'Access denied' });
+            }
+        }
+
+        const reviews = await PerformanceReview.find({ employee: employeeId });
+        let averageBaseRating = 0;
+        let hasReviews = reviews.length > 0;
+        if (hasReviews) {
+            const sum = reviews.reduce((acc, rev) => acc + rev.overallRating, 0);
+            averageBaseRating = sum / reviews.length;
+        }
+
+        const MistakeReport = require('../models/MistakeReport');
+        const mistakeReports = await MistakeReport.find({ agentId: employeeId });
+        const totalComplaints = mistakeReports.length;
+
+        // Base is 5.0. Team lead reviews can replace it.
+        let base = hasReviews ? averageBaseRating : 5.0;
+        
+        let adjustedRating = base;
+        
+        // Sum mistake severities
+        let totalPenalty = 0;
+        mistakeReports.forEach(report => {
+            totalPenalty += (report.severityPoints || 0);
+        });
+
+        adjustedRating = base - totalPenalty;
+        if (adjustedRating < 0.0) adjustedRating = 0.0;
+
+        res.json({
+            hasReviews,
+            averageBaseRating: base.toFixed(1),
+            totalComplaints,
+            adjustedRating: adjustedRating.toFixed(1),
+            complaints: mistakeReports
+        });
+
+    } catch (err) {
+        console.error('Error fetching performance summary:', err.message);
+        res.status(500).json({ msg: 'Server error', error: err.message });
+    }
+});
+
+// ─────────────────────────────────────────────
 // GET /api/performance-reviews/:employeeId
 // Get all reviews for an employee
 // ─────────────────────────────────────────────
-router.get('/:employeeId', [auth, isHR], async (req, res) => {
+router.get('/:employeeId', auth, async (req, res) => {
     try {
+        const User = require('../models/User');
+        const emp = await User.findById(req.params.employeeId);
+        if (!emp) return res.status(404).json({ msg: 'Employee not found' });
+        
+        const isSelf = req.user.id === req.params.employeeId;
+        const isHR = req.user.role === 'hr';
+        
+        let isLead = false;
+        if (!isSelf && !isHR) {
+            const reqUser = await User.findById(req.user.id);
+            if (reqUser && reqUser.departmentId?.toString() === emp.departmentId?.toString() && reqUser.isTeamLead) {
+                isLead = true;
+            }
+        }
+        
+        if (!isSelf && !isHR && !isLead) {
+            return res.status(403).json({ msg: 'Not authorized to view these reviews' });
+        }
+
         const reviews = await PerformanceReview.find({ employee: req.params.employeeId })
             .populate('createdBy', 'name email')
             .populate('updatedBy', 'name email')
@@ -37,7 +114,7 @@ router.get('/:employeeId', [auth, isHR], async (req, res) => {
 // POST /api/performance-reviews
 // Create a new performance review (HR only)
 // ─────────────────────────────────────────────
-router.post('/', [auth, isHR], async (req, res) => {
+router.post('/', [auth, isTeamLead], async (req, res) => {
     try {
         const {
             employee, reviewDate,
@@ -45,12 +122,12 @@ router.post('/', [auth, isHR], async (req, res) => {
             goals, nextReviewDate
         } = req.body;
 
-        // Fetch logged-in HR/Admin name from database
-        const hrUser = await User.findById(req.user.id).select('name');
-        if (!hrUser) {
-            return res.status(404).json({ msg: 'HR/Admin user not found' });
+        // Fetch logged-in user name from database
+        const tlUser = await User.findById(req.user.id).select('name departmentId');
+        if (!tlUser) {
+            return res.status(404).json({ msg: 'User not found' });
         }
-        const resolvedReviewer = hrUser.name;
+        const resolvedReviewer = tlUser.name;
 
         // ── Validation ──────────────────────────────────────────────────
         if (!employee) {
@@ -59,6 +136,10 @@ router.post('/', [auth, isHR], async (req, res) => {
         const emp = await User.findById(employee);
         if (!emp) {
             return res.status(404).json({ msg: 'Employee not found' });
+        }
+        
+        if (emp.departmentId?.toString() !== tlUser.departmentId?.toString()) {
+            return res.status(403).json({ msg: 'You can only review members of your own team' });
         }
         if (!reviewDate || isNaN(new Date(reviewDate).getTime())) {
             return res.status(400).json({ msg: 'Valid review date is required' });
@@ -72,8 +153,8 @@ router.post('/', [auth, isHR], async (req, res) => {
         }
 
         const rating = Number(overallRating);
-        if (!overallRating || isNaN(rating) || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
-            return res.status(400).json({ msg: 'Overall rating must be an integer between 1 and 5' });
+        if (!overallRating || isNaN(rating) || rating < 0 || rating > 5 || rating % 0.5 !== 0) {
+            return res.status(400).json({ msg: 'Overall rating must be between 0 and 5, in multiples of 0.5' });
         }
         if (!comments || !comments.trim()) {
             return res.status(400).json({ msg: 'Comments are required' });
@@ -113,7 +194,7 @@ router.post('/', [auth, isHR], async (req, res) => {
 // PUT /api/performance-reviews/:id
 // Update an existing review (HR only)
 // ─────────────────────────────────────────────
-router.put('/:id', [auth, isHR], async (req, res) => {
+router.put('/:id', [auth, isTeamLead], async (req, res) => {
     try {
         const review = await PerformanceReview.findById(req.params.id);
         if (!review) {
@@ -125,12 +206,12 @@ router.put('/:id', [auth, isHR], async (req, res) => {
             comments, strengths, areasForImprovement, goals, nextReviewDate
         } = req.body;
 
-        // Fetch logged-in HR/Admin name from database
-        const hrUser = await User.findById(req.user.id).select('name');
-        if (!hrUser) {
-            return res.status(404).json({ msg: 'HR/Admin user not found' });
+        // Fetch logged-in Team Lead name from database
+        const tlUser = await User.findById(req.user.id).select('name departmentId');
+        if (!tlUser) {
+            return res.status(404).json({ msg: 'Team Lead user not found' });
         }
-        review.reviewer = hrUser.name;
+        review.reviewer = tlUser.name;
         review.reviewPeriod = '';
 
         if (reviewDate !== undefined) {
@@ -146,8 +227,8 @@ router.put('/:id', [auth, isHR], async (req, res) => {
         }
         if (overallRating !== undefined) {
             const rating = Number(overallRating);
-            if (isNaN(rating) || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
-                return res.status(400).json({ msg: 'Overall rating must be an integer between 1 and 5' });
+            if (isNaN(rating) || rating < 0 || rating > 5 || rating % 0.5 !== 0) {
+                return res.status(400).json({ msg: 'Overall rating must be between 0 and 5, in multiples of 0.5' });
             }
             review.overallRating = rating;
         }
@@ -183,7 +264,7 @@ router.put('/:id', [auth, isHR], async (req, res) => {
 // DELETE /api/performance-reviews/:id
 // Delete a review (HR only)
 // ─────────────────────────────────────────────
-router.delete('/:id', [auth, isHR], async (req, res) => {
+router.delete('/:id', [auth, isTeamLead], async (req, res) => {
     try {
         const review = await PerformanceReview.findById(req.params.id);
         if (!review) {

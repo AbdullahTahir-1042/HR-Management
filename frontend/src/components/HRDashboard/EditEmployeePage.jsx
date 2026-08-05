@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
     ArrowLeft, Save, Mail, User, Shield, Briefcase, Building2,
     UserCheck, Image as ImageIcon, Phone, Crown, AlertCircle,
-    TrendingUp, Award, CheckCircle2, Trash2
+    TrendingUp, Award, CheckCircle2, Trash2, FileText, CalendarDays
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 import { AuthContext } from '../../context/AuthContext';
@@ -140,7 +140,13 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
         reportingTo: '',
         salary: '',
         photo: '',
-        isTeamLead: false
+        isTeamLead: false,
+        contractDetails: {
+            contractType: 'Full-Time',
+            startDate: '',
+            endDate: '',
+            summary: ''
+        }
     });
     const [departmentsList, setDepartmentsList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -149,10 +155,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
     const { user: currentUser } = useContext(AuthContext);
 
     const isHRUser = currentUser?.role === 'hr';
-    const isAdminUser = currentUser?.role === 'admin';
-    const targetIsProtected = employee?.role === 'hr' || employee?.role === 'admin';
-    // HR cannot edit protected fields (salary, role, status) of Admin or other HR users
-    const disableProtectedFields = isHRUser && targetIsProtected && !isAdminUser;
+    const disableProtectedFields = false;
 
     // ── Validation State ──────────────────────────────────────────────────────
     const [touched, setTouched] = useState({});
@@ -185,7 +188,13 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                 reportingTo: employee.reportingTo || '',
                 salary: employee.salary || '',
                 photo: employee.photo || '',
-                isTeamLead: employee.isTeamLead || false
+                isTeamLead: employee.isTeamLead || false,
+                contractDetails: employee.contractDetails || {
+                    contractType: 'Full-Time',
+                    startDate: '',
+                    endDate: '',
+                    summary: ''
+                }
             });
             setPreview(employee.photo || null);
         }
@@ -634,10 +643,69 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         <select disabled={disableProtectedFields} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}>
                                             <option value="employee">Standard Employee</option>
                                             <option value="hr">HR Administrator</option>
-                                            <option value="admin">Super Admin</option>
                                         </select>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Contract Details */}
+                        <div className="md:col-span-2 space-y-4">
+                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2 flex items-center gap-2">
+                                <FileText size={16} /> Contract Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Contract Type</label>
+                                    <div className="relative mt-1 group">
+                                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <select 
+                                            value={formData.contractDetails?.contractType || 'Full-Time'} 
+                                            onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, contractType: e.target.value}})} 
+                                            className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}
+                                            disabled={disableProtectedFields}
+                                        >
+                                            <option value="Full-Time">Full-Time</option>
+                                            <option value="Part-Time">Part-Time</option>
+                                            <option value="Contract">Contract</option>
+                                            <option value="Internship">Internship</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Date</label>
+                                    <div className="relative mt-1 group">
+                                        <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="date" 
+                                            value={formData.contractDetails?.startDate ? formData.contractDetails.startDate.split('T')[0] : ''} 
+                                            readOnly
+                                            className={`input-field pl-10 opacity-70 bg-slate-100 pointer-events-none cursor-default`} 
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Date (Extendable)</label>
+                                    <div className="relative mt-1 group">
+                                        <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="date" 
+                                            value={formData.contractDetails?.endDate ? formData.contractDetails.endDate.split('T')[0] : ''} 
+                                            onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, endDate: e.target.value}})} 
+                                            className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`} 
+                                            disabled={disableProtectedFields}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Contract Summary / Terms (Non-editable)</label>
+                                <textarea
+                                    value={formData.contractDetails?.summary || ''}
+                                    readOnly
+                                    className={`w-full p-4 mt-1 border border-slate-200 rounded-2xl outline-none transition-all text-sm resize-none h-24 opacity-70 bg-slate-100 pointer-events-none cursor-default`}
+                                    placeholder="Contract summary..."
+                                ></textarea>
                             </div>
                         </div>
 

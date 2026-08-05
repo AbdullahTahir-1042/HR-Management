@@ -3,7 +3,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil, Bell, MessageSquare, Megaphone, CalendarCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil, Bell, MessageSquare, Megaphone, CalendarCheck, CheckCircle2, FileText, ArrowRight } from 'lucide-react';
+import ContractModal from './ContractModal';
 
 const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const { updateUser } = useContext(AuthContext);
@@ -25,6 +26,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
         }
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [isContractModalOpen, setIsContractModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Fetch full user data to ensure we have everything
@@ -175,6 +177,23 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                     <input disabled value={formData.salary} className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-not-allowed" />
                                 </div>
                             </div>
+                            <div className="mt-4">
+                                <div 
+                                    onClick={() => setIsContractModalOpen(true)}
+                                    className="bg-slate-50 hover:bg-slate-100 transition-colors p-4 rounded-xl cursor-pointer flex items-center justify-between border border-slate-200 group w-full md:w-1/2"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-700 flex items-center justify-center shadow-sm">
+                                            <FileText size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 text-sm text-left">Employment Contract</h3>
+                                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider text-left">Click to view details</p>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={18} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+                                </div>
+                            </div>
                             <p className="text-[10px] text-slate-400 italic mt-3">* Employment details can only be changed by the HR Department.</p>
                         </div>
 
@@ -280,6 +299,13 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                     </div>
                 </div>
             </form>
+
+            <ContractModal 
+                isOpen={isContractModalOpen} 
+                onClose={() => setIsContractModalOpen(false)} 
+                contractDetails={formData?.contractDetails} 
+                employeeName={formData?.name} 
+            />
         </motion.div>
     );
 };
