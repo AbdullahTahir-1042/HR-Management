@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
+    Sparkles, GraduationCap, BookOpen, X, MessageCircle, MonitorPlay
     Sparkles, GraduationCap, BookOpen, X, MessageCircle,
     Sun, Moon
 } from 'lucide-react';
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
     { id: 'hr-requests',  label: 'HR Requests',       icon: MessageSquare },
     { id: 'messages',     label: 'Messages',          icon: MessageCircle },
     { id: 'announcements',label: 'Announcements',     icon: Bell },
+    { id: 'training',     label: 'Training Center',   icon: MonitorPlay },
 ];
 
 const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {

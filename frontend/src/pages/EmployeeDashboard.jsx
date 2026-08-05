@@ -21,6 +21,7 @@ import UpdateProfilePage from '../components/UpdateProfilePage';
 import MyTeamSection from '../components/EmployeeDashboard/MyTeamSection';
 import MessagesPage from '../components/MessagesPage';
 import FirstLoginModal from '../components/FirstLoginModal';
+import EmployeeTrainingCenter from '../components/EmployeeDashboard/EmployeeTrainingCenter'; // ✅ NEW
 import EmployeeReviews from '../components/EmployeeDashboard/EmployeeReviews';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
@@ -642,6 +643,10 @@ const EmployeeDashboard = () => {
                         {/* ── NEW: Messages tab from feature/chat ── */}
                         {activeTab === 'messages' && (
                             <MessagesPage />
+                        )}
+
+                        {activeTab === 'training' && (
+                            <EmployeeTrainingCenter />
                         )}
 
                         {activeTab === 'announcements' && (

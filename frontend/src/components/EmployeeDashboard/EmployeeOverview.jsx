@@ -1,9 +1,33 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare } from 'lucide-react';
+import apiClient from '../../api/axiosClient';
 import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare, Star, AlertCircle } from 'lucide-react';
 
 const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab, performanceSummary }) => {
     const todayAttendance = attendance;
+
+    const [todaySchedule, setTodaySchedule] = useState(null);
+    const [upcomingSchedules, setUpcomingSchedules] = useState([]);
+
+    useEffect(() => {
+        apiClient.get('/office-schedule/today')
+            .then(res => setTodaySchedule(res.data))
+            .catch(() => setTodaySchedule(null));
+
+        apiClient.get('/office-schedule/upcoming')
+            .then(res => setUpcomingSchedules(res.data))
+            .catch(() => setUpcomingSchedules([]));
+    }, []);
+
+    const formatTime12hr = (timeString) => {
+        if (!timeString) return '';
+        const [h, m] = timeString.split(':');
+        const hour = parseInt(h, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${m} ${ampm}`;
+    };
 
     // Check if today is Sunday or a Holiday to disable check-in
     const checkInDate = new Date();
@@ -144,6 +168,62 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* ── Today's & Upcoming Working Hours ── */}
+            <div className="flex flex-col lg:flex-row gap-4 max-w-6xl">
+                {todaySchedule && (
+                    <div className="flex-1 bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-sm flex items-center gap-4">
+                        <div className="p-2.5 bg-violet-50 text-violet-600 rounded-xl shrink-0">
+                            <Clock size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today's Working Hours</p>
+                            <p className="text-base font-bold text-slate-800 mt-0.5">
+                                {formatTime12hr(todaySchedule.startTime)} – {formatTime12hr(todaySchedule.endTime)}
+                            </p>
+                            {todaySchedule.reason && (
+                                <p className="text-xs text-violet-600 font-medium mt-0.5">{todaySchedule.reason}</p>
+                            )}
+                        </div>
+                        {!todaySchedule.isDefault && todaySchedule.reason && (
+                            <span className="text-[10px] font-bold bg-violet-50 text-violet-600 px-2 py-1 rounded-lg shrink-0">Custom Schedule</span>
+                        )}
+                    </div>
+                )}
+
+                {upcomingSchedules && upcomingSchedules.length > 0 && (
+                    <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl px-5 py-4 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Calendar size={14} className="text-indigo-500" />
+                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Upcoming Schedule Changes</p>
+                        </div>
+                        <div className="space-y-3 mt-3">
+                            {upcomingSchedules.slice(0, 2).map((schedule) => (
+                                <div key={schedule._id} className="flex justify-between items-center bg-white/70 backdrop-blur border border-white px-4 py-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-bold text-slate-800 text-sm">
+                                                {new Date(schedule.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                            </span>
+                                            {schedule.reason && (
+                                                <span className="text-[9px] font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                                    {schedule.reason}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                            <Clock size={12} />
+                                            <span className="font-medium text-xs">
+                                                {formatTime12hr(schedule.startTime)} – {formatTime12hr(schedule.endTime)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── Stat Cards ── */}
