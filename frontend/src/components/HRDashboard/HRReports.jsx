@@ -1809,20 +1809,20 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                className="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden z-10 p-5 sm:p-6"
+                className="relative bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden z-10 p-5 sm:p-6"
             >
                 {/* Header (Pinned) */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-md shadow-indigo-100">
+                        <div className="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-md shadow-indigo-100 dark:shadow-none">
                             <Banknote size={22} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-black text-slate-800 leading-snug">Official Payslip Voucher</h2>
-                            <p className="text-[11px] text-slate-400">Itemized Monthly Salary Statement</p>
+                            <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 leading-snug">Official Payslip Voucher</h2>
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500">Itemized Monthly Salary Statement</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer">
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors cursor-pointer">
                         <XCircle size={20} />
                     </button>
                 </div>
@@ -1830,19 +1830,19 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
                 {/* Scrollable Modal Body */}
                 <div className="flex-1 overflow-y-auto space-y-3.5 py-3 pr-1">
                     {/* Employee Profile Header */}
-                    <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 flex items-center justify-between">
+                    <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3.5 border border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             {employee.photo ? (
-                                <img src={employee.photo} alt={employee.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-xs" />
+                                <img src={employee.photo} alt={employee.name} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-xs" />
                             ) : (
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-sm border-2 border-white shadow-xs">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-black text-sm border-2 border-white dark:border-slate-800 shadow-xs">
                                     {employee.name?.[0]}
                                 </div>
                             )}
                             <div>
-                                <p className="font-black text-slate-800 text-sm">{employee.name}</p>
-                                <p className="text-[11px] text-slate-400">{employee.email}</p>
-                                <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full capitalize mt-0.5 inline-block">
+                                <p className="font-black text-slate-800 dark:text-slate-100 text-sm">{employee.name}</p>
+                                <p className="text-[11px] text-slate-400 dark:text-slate-400">{employee.email}</p>
+                                <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30 px-2 py-0.5 rounded-full capitalize mt-0.5 inline-block">
                                     {employee.department || 'General'} &nbsp;·&nbsp; {employee.status || 'Full Time'}
                                 </span>
                             </div>
@@ -1851,13 +1851,13 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
 
                     {/* Earnings & Allowances */}
                     <div className="space-y-1.5">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Earnings &amp; Allowances</h3>
-                        <div className="bg-indigo-50/40 rounded-xl p-3 border border-indigo-100/60 space-y-1.5 text-xs">
-                            <div className="flex justify-between font-bold text-slate-700">
+                        <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Earnings &amp; Allowances</h3>
+                        <div className="bg-indigo-50/40 dark:bg-indigo-500/10 rounded-xl p-3 border border-indigo-100/60 dark:border-indigo-500/20 space-y-1.5 text-xs">
+                            <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200">
                                 <span>Monthly Base Salary</span>
-                                <span className="text-slate-900 font-black">{formatCurrency(baseSalary)}</span>
+                                <span className="text-slate-900 dark:text-slate-100 font-black">{formatCurrency(baseSalary)}</span>
                             </div>
-                            <div className="flex justify-between text-slate-500 text-[11px] pt-1 border-t border-indigo-100/40">
+                            <div className="flex justify-between text-slate-500 dark:text-slate-400 text-[11px] pt-1 border-t border-indigo-100/40 dark:border-indigo-500/20">
                                 <span>Calculated Daily Rate (Base / 30)</span>
                                 <span>{formatCurrency(dailyRate)} / day</span>
                             </div>
@@ -1866,50 +1866,50 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
 
                     {/* Deductions Breakdown */}
                     <div className="space-y-1.5">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Deductions Breakdown</h3>
-                        <div className="bg-rose-50/40 rounded-xl p-3 border border-rose-100/60 space-y-2 text-xs">
+                        <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Deductions Breakdown</h3>
+                        <div className="bg-rose-50/40 dark:bg-rose-500/10 rounded-xl p-3 border border-rose-100/60 dark:border-rose-500/20 space-y-2 text-xs">
                             {/* Leave Deduction */}
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <p className="font-bold text-slate-700">Leave Deduction</p>
-                                    <p className="text-[10px] text-slate-400">
+                                    <p className="font-bold text-slate-700 dark:text-slate-200">Leave Deduction</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
                                         {leaveDays} approved leave {leaveDays === 1 ? 'day' : 'days'} taken
                                         {unpaidLeaveDays > 0
                                             ? ` · ${unpaidLeaveDays} excess day${unpaidLeaveDays > 1 ? 's' : ''} beyond quota × ${formatCurrency(dailyRate)}`
                                             : ' · All within allocated quota (Paid Leave)'}
                                     </p>
                                 </div>
-                                <span className={`font-bold tabular-nums ${unpaidLeaveDays > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                <span className={`font-bold tabular-nums ${unpaidLeaveDays > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                     {unpaidLeaveDays > 0 ? `-${formatCurrency(leaveDeduction)}` : '₨ 0'}
                                 </span>
                             </div>
 
                             {/* Late Deduction */}
-                            <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40">
+                            <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40 dark:border-rose-500/20">
                                 <div>
-                                    <p className="font-bold text-slate-700">Late Arrival Penalty</p>
-                                    <p className="text-[10px] text-slate-400">{lateCount} late check-in {lateCount === 1 ? 'entry' : 'entries'} × 0.25 day rate</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200">Late Arrival Penalty</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500">{lateCount} late check-in {lateCount === 1 ? 'entry' : 'entries'} × 0.25 day rate</p>
                                 </div>
-                                <span className="font-bold text-rose-600 tabular-nums">
+                                <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                                     {lateCount > 0 ? `-${formatCurrency(lateDeduction)}` : '₨ 0'}
                                 </span>
                             </div>
 
                             {/* Loan Deduction */}
                             {loanDeduction > 0 && (
-                                <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40">
+                                <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40 dark:border-rose-500/20">
                                     <div>
-                                        <p className="font-bold text-slate-700">Loan Installment Deduction</p>
-                                        <p className="text-[10px] text-slate-400">Monthly installment towards active loan</p>
+                                        <p className="font-bold text-slate-700 dark:text-slate-200">Loan Installment Deduction</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500">Monthly installment towards active loan</p>
                                     </div>
-                                    <span className="font-bold text-rose-600 tabular-nums">
+                                    <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                                         -{formatCurrency(loanDeduction)}
                                     </span>
                                 </div>
                             )}
 
                             {/* Total Deductions */}
-                            <div className="flex justify-between items-center pt-1.5 border-t border-rose-200/60 font-black text-rose-700 text-xs">
+                            <div className="flex justify-between items-center pt-1.5 border-t border-rose-200/60 dark:border-rose-500/30 font-black text-rose-700 dark:text-rose-400 text-xs">
                                 <span>Total Deductions</span>
                                 <span className="tabular-nums">-{formatCurrency(deduction)}</span>
                             </div>
@@ -1917,7 +1917,7 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
                     </div>
 
                     {/* Net Payout Banner */}
-                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl p-3.5 flex items-center justify-between shadow-md shadow-emerald-100">
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl p-3.5 flex items-center justify-between shadow-md shadow-emerald-100 dark:shadow-none">
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-100">Net Disbursed Salary</p>
                             <p className="text-xl font-black">{formatCurrency(netSalary)}</p>
