@@ -24,7 +24,7 @@ const { getOtpEmailTemplate } = require('../templates/otpEmail');
 // @desc    Register user (HR only)
 // @access  Private (HR)
 router.post('/register', [auth, isHR], async (req, res) => {
-    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead, joiningStatus, promotionRank, contractDetails } = req.body;
+    let { name, email, password, role, status, salary, photo, department, reportingTo, phone, isTeamLead, joiningStatus, promotionRank, contractDetails, shiftDetails } = req.body;
     if (email) email = email.toLowerCase().trim();
     if (phone) phone = phone.trim();
 
@@ -107,7 +107,8 @@ router.post('/register', [auth, isHR], async (req, res) => {
             phone,
             isTeamLead: !!isTeamLead,
             isFirstLogin: true,
-            contractDetails: contractDetails || {}
+            contractDetails: contractDetails || {},
+            shiftDetails: shiftDetails || { startTime: '09:00', endTime: '19:00', gracePeriod: 0 }
         });
         await newUser.save();
 
@@ -199,7 +200,8 @@ router.post('/login', async (req, res) => {
                 email: user.email,
                 role: user.role,
                 teamName: user.teamName || '',
-                isFirstLogin: user.isFirstLogin === true
+                isFirstLogin: user.isFirstLogin === true,
+                shiftDetails: user.shiftDetails
             }
         });
     } catch (err) {
@@ -356,7 +358,7 @@ router.get('/colleagues', auth, async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus, notificationPreferences } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus, notificationPreferences, shiftDetails } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
@@ -451,6 +453,13 @@ router.put('/users/:id', auth, async (req, res) => {
                         await Department.findByIdAndUpdate(userDeptId, { teamLead: null });
                     }
                 }
+            }
+
+            if (shiftDetails !== undefined) {
+                user.shiftDetails = {
+                    ...(user.shiftDetails || {}),
+                    ...shiftDetails
+                };
             }
         }
 

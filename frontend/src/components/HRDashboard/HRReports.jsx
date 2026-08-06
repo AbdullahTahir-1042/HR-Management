@@ -306,15 +306,7 @@ const HRReports = ({ employees, loans = [] }) => {
             ? (hoursArray.reduce((a, b) => a + b, 0) / hoursArray.length).toFixed(1)
             : 0;
 
-        const SHIFT_START_HOUR = 9;
-        const SHIFT_START_MIN = 15;
-        const lateArrivals = filteredAttendance.filter(r => {
-            if (!r.checkIn) return false;
-            const t = new Date(r.checkIn);
-            const h = t.getHours();
-            const m = t.getMinutes();
-            return h > SHIFT_START_HOUR || (h === SHIFT_START_HOUR && m > SHIFT_START_MIN);
-        }).length;
+        const lateArrivals = filteredAttendance.filter(r => r.status === 'late').length;
 
         const activeSessions = filteredAttendance.filter(r => r.checkIn && !r.checkOut).length;
 
@@ -353,15 +345,7 @@ const HRReports = ({ employees, loans = [] }) => {
             });
             const presentDays = empAttendance.filter(r => r.checkIn).length;
 
-            const SHIFT_START_HOUR = 9;
-            const SHIFT_START_MIN = 15;
-            const lateCount = empAttendance.filter(r => {
-                if (!r.checkIn) return false;
-                const t = new Date(r.checkIn);
-                const h = t.getHours();
-                const m = t.getMinutes();
-                return h > SHIFT_START_HOUR || (h === SHIFT_START_HOUR && m > SHIFT_START_MIN);
-            }).length;
+            const lateCount = empAttendance.filter(r => r.status === 'late').length;
 
             // Late penalty: 0.25 * dailyRate per late check-in
             const lateDeduction = Math.round(lateCount * (dailyRate * 0.25));
@@ -469,14 +453,9 @@ const HRReports = ({ employees, loans = [] }) => {
     }, [filteredEmployees]);
 
     // ── Formatter & Helper Functions ─────────────────────────
-    const SHIFT_START_HOUR = 9;
-    const SHIFT_START_MIN = 45;
-    const isLate = (checkIn) => {
-        if (!checkIn) return false;
-        const t = new Date(checkIn);
-        const h = t.getHours();
-        const m = t.getMinutes();
-        return h > SHIFT_START_HOUR || (h === SHIFT_START_HOUR && m > SHIFT_START_MIN);
+    const isLate = (record) => {
+        if (!record) return false;
+        return record.status === 'late';
     };
 
     const formatTime = (dateStr) => {
@@ -514,7 +493,7 @@ const HRReports = ({ employees, loans = [] }) => {
                 dateMap[r.date] = { count: 0, lateCount: 0, activeCount: 0 };
             }
             dateMap[r.date].count += 1;
-            if (isLate(r.checkIn)) dateMap[r.date].lateCount += 1;
+            if (isLate(r)) dateMap[r.date].lateCount += 1;
             if (r.checkIn && !r.checkOut) dateMap[r.date].activeCount += 1;
         });
 
@@ -578,7 +557,7 @@ const HRReports = ({ employees, loans = [] }) => {
         });
 
         const dailyAvg = (totalCheckIns / chartData.length).toFixed(1);
-        const lateCount = filteredAttendance.filter(r => isLate(r.checkIn)).length;
+        const lateCount = filteredAttendance.filter(r => isLate(r)).length;
         const totalLogs = filteredAttendance.length;
         const onTimeRate = totalLogs > 0 ? Math.round(((totalLogs - lateCount) / totalLogs) * 100) : 100;
 
@@ -596,9 +575,9 @@ const HRReports = ({ employees, loans = [] }) => {
 
             let matchesStatus = true;
             if (attendanceStatusFilter === 'present') {
-                matchesStatus = record.checkIn && !isLate(record.checkIn);
+                matchesStatus = record.checkIn && !isLate(record);
             } else if (attendanceStatusFilter === 'late') {
-                matchesStatus = isLate(record.checkIn);
+                matchesStatus = isLate(record);
             } else if (attendanceStatusFilter === 'active') {
                 matchesStatus = record.checkIn && !record.checkOut;
             }
@@ -619,7 +598,7 @@ const HRReports = ({ employees, loans = [] }) => {
             `"${formatTime(r.checkIn)}"`,
             `"${formatTime(r.checkOut)}"`,
             `"${calcHours(r.checkIn, r.checkOut)}"`,
-            `"${!r.checkIn ? 'Absent' : isLate(r.checkIn) ? 'Late Entry' : !r.checkOut ? 'Active Session' : 'Present'}"`
+            `"${!r.checkIn ? 'Absent' : isLate(r) ? 'Late Entry' : !r.checkOut ? 'Active Session' : 'Present'}"`
         ]);
 
         const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -749,7 +728,7 @@ const HRReports = ({ employees, loans = [] }) => {
                     r.checkIn ? new Date(r.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
                     r.checkOut ? new Date(r.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
                     calcHours(r.checkIn, r.checkOut),
-                    !r.checkIn ? 'Absent' : isLate(r.checkIn) ? 'Late' : !r.checkOut ? 'Active' : 'Present'
+                    !r.checkIn ? 'Absent' : isLate(r) ? 'Late' : !r.checkOut ? 'Active' : 'Present'
                 ]);
             } else if (reportType === 'leave') {
                 tableHeaders = [['Employee', 'Department', 'Start Date', 'End Date', 'Reason', 'Status']];
@@ -1098,7 +1077,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                     : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                                             }`}
                                         >
-                                            On Time ({filteredAttendance.filter(r => r.checkIn && !isLate(r.checkIn)).length})
+                                            On Time ({filteredAttendance.filter(r => r.checkIn && !isLate(r)).length})
                                         </button>
                                         <button
                                             onClick={() => setAttendanceStatusFilter('late')}
@@ -1108,7 +1087,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                     : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
                                             }`}
                                         >
-                                            Late Entry ({filteredAttendance.filter(r => isLate(r.checkIn)).length})
+                                            Late Entry ({filteredAttendance.filter(r => isLate(r)).length})
                                         </button>
                                         <button
                                             onClick={() => setAttendanceStatusFilter('active')}
@@ -1166,7 +1145,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {displayedAttendance.map(record => {
-                                                    const late = isLate(record.checkIn);
+                                                    const late = isLate(record);
                                                     const active = record.checkIn && !record.checkOut;
                                                     const hoursVal = getDecimalHours(record.checkIn, record.checkOut);
                                                     const formattedDate = record.date ? new Date(record.date + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
