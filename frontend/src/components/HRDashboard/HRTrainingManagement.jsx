@@ -91,7 +91,7 @@ const HRTrainingManagement = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (formData.visibility === 'Specific Department' && !formData.department) {
             return toast.error('Please select a department');
         }
@@ -119,13 +119,13 @@ const HRTrainingManagement = () => {
             <div className="flex flex-col gap-3">
                 <p className="text-sm font-medium text-slate-900 dark:text-white">Are you sure you want to delete this video?</p>
                 <div className="flex justify-end gap-2">
-                    <button 
+                    <button
                         onClick={() => toast.dismiss(t.id)}
                         className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 rounded-md"
                     >
                         Cancel
                     </button>
-                    <button 
+                    <button
                         onClick={() => {
                             toast.dismiss(t.id);
                             confirmDelete(id);
@@ -149,7 +149,7 @@ const HRTrainingManagement = () => {
         }
     };
 
-    const filteredVideos = videos.filter(v => 
+    const filteredVideos = videos.filter(v =>
         v.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -211,21 +211,21 @@ const HRTrainingManagement = () => {
                                 {video.resourceType === 'Document' ? (
                                     <DocumentViewer documentUrl={video.documentUrl} title={video.title} />
                                 ) : (
-                                    <VideoPlayer 
-                                        fileId={video.fileId} 
+                                    <VideoPlayer
+                                        fileId={video.fileId}
                                         youtubeId={video.youtubeId}
-                                        title={video.title} 
-                                        thumbnail={video.thumbnail} 
+                                        title={video.title}
+                                        thumbnail={video.thumbnail}
                                     />
                                 )}
                                 <div className="absolute top-2 right-2 flex gap-1 z-10 pointer-events-none">
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); handleOpenModal(video); }}
                                         className="pointer-events-auto p-1.5 bg-white dark:bg-slate-800/90 backdrop-blur text-slate-600 dark:text-slate-300 hover:text-indigo-600 rounded-md shadow-sm"
                                     >
                                         <Pencil className="w-4 h-4" />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); handleDeleteClick(video._id); }}
                                         className="pointer-events-auto p-1.5 bg-white dark:bg-slate-800/90 backdrop-blur text-slate-600 dark:text-slate-300 hover:text-rose-600 rounded-md shadow-sm"
                                     >
@@ -306,7 +306,7 @@ const HRTrainingManagement = () => {
                                         onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     />
                                 </div>
-                                
+
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Description *</label>
                                     <textarea
@@ -349,7 +349,7 @@ const HRTrainingManagement = () => {
                                                 onChange={e => setFormData({ ...formData, youtubeUrl: e.target.value })}
                                             />
                                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Paste any valid YouTube video URL or embed link.</p>
-                                            
+
                                             {/* Live Thumbnail Preview */}
                                             {(() => {
                                                 const url = formData.youtubeUrl;
@@ -359,24 +359,24 @@ const HRTrainingManagement = () => {
                                                     const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
                                                     const match = url.match(regExp);
                                                     yId = (match && match[2].length === 11) ? match[2] : null;
-                                                } catch (e) {}
-                                                
+                                                } catch (e) { }
+
                                                 if (yId || formData.thumbnail) {
                                                     return (
                                                         <div className="mt-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2 border border-slate-100 dark:border-slate-700 flex items-center gap-3">
                                                             <div className="w-24 h-16 rounded overflow-hidden bg-black flex-shrink-0 relative">
-                                                                <img 
+                                                                <img
                                                                     src={(() => {
                                                                         if (!formData.thumbnail) return `https://img.youtube.com/vi/${yId}/mqdefault.jpg`;
                                                                         try {
                                                                             const match = formData.thumbnail.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
                                                                             const thumbYId = (match && match[2].length === 11) ? match[2] : null;
                                                                             if (thumbYId) return `https://img.youtube.com/vi/${thumbYId}/mqdefault.jpg`;
-                                                                        } catch (e) {}
+                                                                        } catch (e) { }
                                                                         return formData.thumbnail;
                                                                     })()}
-                                                                    className="w-full h-full object-cover" 
-                                                                    alt="Preview" 
+                                                                    className="w-full h-full object-cover"
+                                                                    alt="Preview"
                                                                 />
                                                                 <div className="absolute inset-0 flex items-center justify-center">
                                                                     <div className="w-6 h-6 bg-white dark:bg-slate-800/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">

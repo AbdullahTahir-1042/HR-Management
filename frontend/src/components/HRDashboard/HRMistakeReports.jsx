@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    AlertTriangle, Search, Calendar, Building2, 
+import {
+    AlertTriangle, Search, Calendar, Building2,
     UserCheck, X, ShieldAlert, ChevronDown, ChevronUp,
     CheckCircle, Clock, Eye, RotateCcw, Filter, ChevronLeft, ChevronRight,
     TrendingUp, FileText, User, Sparkles, Download, Trash2
@@ -68,8 +68,8 @@ const InfoChip = ({ icon: Icon, label, value }) => (
 const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
     if (!value) return null;
     const styles = {
-        rose:    { bg: 'bg-rose-50/70',    border: 'border-rose-100',    iconBg: 'bg-rose-100',    iconColor: 'text-rose-600',    labelColor: 'text-rose-600' },
-        indigo:  { bg: 'bg-indigo-50/70',  border: 'border-indigo-100',  iconBg: 'bg-indigo-100',  iconColor: 'text-indigo-600',  labelColor: 'text-indigo-600' },
+        rose: { bg: 'bg-rose-50/70', border: 'border-rose-100', iconBg: 'bg-rose-100', iconColor: 'text-rose-600', labelColor: 'text-rose-600' },
+        indigo: { bg: 'bg-indigo-50/70', border: 'border-indigo-100', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', labelColor: 'text-indigo-600' },
         emerald: { bg: 'bg-emerald-50/70', border: 'border-emerald-100', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', labelColor: 'text-emerald-600' },
     };
     const s = styles[accentColor] || styles.rose;
@@ -158,7 +158,7 @@ const HRMistakeReports = () => {
     const handleDeleteReport = async (e, id) => {
         e.stopPropagation();
         if (!await window.confirmModal('Are you sure you want to completely delete this Mistake Report? This action cannot be undone.')) return;
-        
+
         try {
             await apiClient.delete(`/mistake-reports/${id}`);
             toast.success('Report deleted successfully');
@@ -209,13 +209,13 @@ const HRMistakeReports = () => {
             report.submittedBy?.name?.toLowerCase().includes(term) ||
             deptName.includes(term);
 
-        const submitterDeptId = (typeof report.submittedBy?.departmentId === 'object' 
-            ? report.submittedBy?.departmentId?._id?.toString() 
+        const submitterDeptId = (typeof report.submittedBy?.departmentId === 'object'
+            ? report.submittedBy?.departmentId?._id?.toString()
             : report.submittedBy?.departmentId?.toString()) || report.teamName;
 
         const selectedDeptObj = (departments || []).find(d => d && d._id?.toString() === selectedDeptId?.toString());
 
-        const matchesDept = !selectedDeptId || 
+        const matchesDept = !selectedDeptId ||
             submitterDeptId === selectedDeptId?.toString() ||
             (selectedDeptObj && deptName === selectedDeptObj.name?.toLowerCase());
 
@@ -228,12 +228,12 @@ const HRMistakeReports = () => {
     const sorted = useMemo(() => [...filteredReports].sort((a, b) => {
         let valA, valB;
         switch (sortField) {
-            case 'agentName':      valA = a.agentName?.toLowerCase() || ''; valB = b.agentName?.toLowerCase() || ''; break;
-            case 'department':     valA = getDeptName(a)?.toLowerCase() || ''; valB = getDeptName(b)?.toLowerCase() || ''; break;
-            case 'dateOfMistake':  valA = new Date(a.dateOfMistake || 0); valB = new Date(b.dateOfMistake || 0); break;
-            case 'submittedBy':    valA = a.submittedBy?.name?.toLowerCase() || ''; valB = b.submittedBy?.name?.toLowerCase() || ''; break;
-            case 'status':         valA = a.status || ''; valB = b.status || ''; break;
-            default:               valA = new Date(a.createdAt || 0); valB = new Date(b.createdAt || 0); break;
+            case 'agentName': valA = a.agentName?.toLowerCase() || ''; valB = b.agentName?.toLowerCase() || ''; break;
+            case 'department': valA = getDeptName(a)?.toLowerCase() || ''; valB = getDeptName(b)?.toLowerCase() || ''; break;
+            case 'dateOfMistake': valA = new Date(a.dateOfMistake || 0); valB = new Date(b.dateOfMistake || 0); break;
+            case 'submittedBy': valA = a.submittedBy?.name?.toLowerCase() || ''; valB = b.submittedBy?.name?.toLowerCase() || ''; break;
+            case 'status': valA = a.status || ''; valB = b.status || ''; break;
+            default: valA = new Date(a.createdAt || 0); valB = new Date(b.createdAt || 0); break;
         }
         if (valA < valB) return sortDir === 'asc' ? -1 : 1;
         if (valA > valB) return sortDir === 'asc' ? 1 : -1;
@@ -336,17 +336,15 @@ const HRMistakeReports = () => {
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
                     onClick={() => setStatusFilter('')}
-                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        !statusFilter 
-                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10 dark:bg-indigo-500/10 dark:border-indigo-400' 
+                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${!statusFilter
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md bg-indigo-50/10 dark:bg-indigo-500/10 dark:border-indigo-400'
                             : 'border-slate-200/80 dark:border-slate-700/80 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-xs'
-                    }`}
+                        }`}
                 >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-100/80 dark:from-slate-700/40 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className={`p-2.5 rounded-xl transition-all ${
-                            !statusFilter ? 'bg-indigo-600 text-white' : 'bg-gradient-to-br from-slate-100 dark:from-slate-700 to-slate-200/60 dark:to-slate-800 text-slate-600 dark:text-slate-400 group-hover:scale-110'
-                        }`}>
+                        <div className={`p-2.5 rounded-xl transition-all ${!statusFilter ? 'bg-indigo-600 text-white' : 'bg-gradient-to-br from-slate-100 dark:from-slate-700 to-slate-200/60 dark:to-slate-800 text-slate-600 dark:text-slate-400 group-hover:scale-110'
+                            }`}>
                             <ShieldAlert size={22} />
                         </div>
                         <div>
@@ -360,17 +358,15 @@ const HRMistakeReports = () => {
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                     onClick={() => setStatusFilter('pending')}
-                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        statusFilter === 'pending' 
-                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10 dark:bg-amber-500/10 dark:border-amber-400' 
+                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${statusFilter === 'pending'
+                            ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-md bg-amber-50/10 dark:bg-amber-500/10 dark:border-amber-400'
                             : 'border-amber-100 dark:border-slate-700/80 hover:border-amber-300 dark:hover:border-amber-500 hover:shadow-xs'
-                    }`}
+                        }`}
                 >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-50 dark:from-amber-500/10 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className={`p-2.5 rounded-xl transition-all ${
-                            statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100/60 dark:to-orange-500/20 text-amber-600 dark:text-amber-500 group-hover:scale-110'
-                        }`}>
+                        <div className={`p-2.5 rounded-xl transition-all ${statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100/60 dark:to-orange-500/20 text-amber-600 dark:text-amber-500 group-hover:scale-110'
+                            }`}>
                             <Clock size={22} />
                         </div>
                         <div>
@@ -384,17 +380,15 @@ const HRMistakeReports = () => {
                 <motion.button
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                     onClick={() => setStatusFilter('resolved')}
-                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${
-                        statusFilter === 'resolved' 
-                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10 dark:bg-emerald-500/10 dark:border-emerald-400' 
+                    className={`text-left relative overflow-hidden bg-white dark:bg-slate-800 border rounded-2xl p-5 transition-all cursor-pointer group ${statusFilter === 'resolved'
+                            ? 'border-emerald-500 ring-2 ring-emerald-500/10 shadow-md bg-emerald-50/10 dark:bg-emerald-500/10 dark:border-emerald-400'
                             : 'border-emerald-100 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-xs'
-                    }`}
+                        }`}
                 >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-50 dark:from-emerald-500/10 to-transparent rounded-bl-[60px] -mr-2 -mt-2" />
                     <div className="relative flex items-center gap-4">
-                        <div className={`p-2.5 rounded-xl transition-all ${
-                            statusFilter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100/60 dark:to-teal-500/20 text-emerald-600 dark:text-emerald-500 group-hover:scale-110'
-                        }`}>
+                        <div className={`p-2.5 rounded-xl transition-all ${statusFilter === 'resolved' ? 'bg-emerald-600 text-white' : 'bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100/60 dark:to-teal-500/20 text-emerald-600 dark:text-emerald-500 group-hover:scale-110'
+                            }`}>
                             <CheckCircle size={22} />
                         </div>
                         <div>
@@ -431,7 +425,7 @@ const HRMistakeReports = () => {
                     {/* Search */}
                     <div className="relative md:col-span-1">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search agent, reporter..."
                             value={searchTerm}
@@ -535,11 +529,11 @@ const HRMistakeReports = () => {
                                     {/* Row number */}
                                     <th className="px-4 py-3.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-12">#</th>
                                     {[
-                                        { key: 'agentName',     label: 'Agent / Employee', minW: 'min-w-[120px]', tooltip: 'Sort by Agent Name' },
-                                        { key: 'department',    label: 'Department',       minW: 'min-w-[100px]', tooltip: 'Sort by Department' },
-                                        { key: 'dateOfMistake', label: 'Date',             minW: 'min-w-[90px]',  tooltip: 'Sort by Mistake Date' },
-                                        { key: 'submittedBy',   label: 'Reported By',      minW: 'min-w-[110px]', tooltip: 'Sort by Submitter Name' },
-                                        { key: 'status',        label: 'Status',           minW: 'min-w-[85px]',  tooltip: 'Sort by Status' },
+                                        { key: 'agentName', label: 'Agent / Employee', minW: 'min-w-[120px]', tooltip: 'Sort by Agent Name' },
+                                        { key: 'department', label: 'Department', minW: 'min-w-[100px]', tooltip: 'Sort by Department' },
+                                        { key: 'dateOfMistake', label: 'Date', minW: 'min-w-[90px]', tooltip: 'Sort by Mistake Date' },
+                                        { key: 'submittedBy', label: 'Reported By', minW: 'min-w-[110px]', tooltip: 'Sort by Submitter Name' },
+                                        { key: 'status', label: 'Status', minW: 'min-w-[85px]', tooltip: 'Sort by Status' },
                                     ].map(col => (
                                         <th
                                             key={col.key}
@@ -627,11 +621,10 @@ const HRMistakeReports = () => {
                                                 {/* Expand toggle */}
                                                 <td className="px-4 py-4 text-center">
                                                     <button
-                                                        className={`p-2 rounded-xl transition-all duration-200 ${
-                                                            isExpanded
+                                                        className={`p-2 rounded-xl transition-all duration-200 ${isExpanded
                                                                 ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none rotate-0'
                                                                 : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                                                        }`}
+                                                            }`}
                                                         onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : report._id); }}
                                                         title="View Details"
                                                     >
@@ -682,7 +675,7 @@ const HRMistakeReports = () => {
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
                                                                             {report.status !== 'resolved' ? (
-                                                                                <button 
+                                                                                <button
                                                                                     onClick={e => { e.stopPropagation(); handleUpdateStatus(report._id, 'resolved'); }}
                                                                                     disabled={updatingStatus === report._id}
                                                                                     className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-emerald-200/50 hover:shadow-emerald-300/60"
@@ -691,7 +684,7 @@ const HRMistakeReports = () => {
                                                                                     {updatingStatus === report._id ? 'Updating...' : 'Mark Resolved'}
                                                                                 </button>
                                                                             ) : (
-                                                                                <button 
+                                                                                <button
                                                                                     onClick={e => { e.stopPropagation(); handleUpdateStatus(report._id, 'pending'); }}
                                                                                     disabled={updatingStatus === report._id}
                                                                                     className="bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
@@ -700,14 +693,14 @@ const HRMistakeReports = () => {
                                                                                     {updatingStatus === report._id ? 'Updating...' : 'Re-open Report'}
                                                                                 </button>
                                                                             )}
-                                                                            <button 
+                                                                            <button
                                                                                 onClick={e => handleDeleteReport(e, report._id)}
                                                                                 className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm"
                                                                             >
                                                                                 <Trash2 size={14} />
                                                                                 Delete
                                                                             </button>
-                                                                            <button 
+                                                                            <button
                                                                                 onClick={e => { e.stopPropagation(); setExpandedId(null); }}
                                                                                 className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl transition-all"
                                                                             >
@@ -762,16 +755,15 @@ const HRMistakeReports = () => {
                                             <button
                                                 key={p}
                                                 onClick={() => setCurrentPage(p)}
-                                                className={`min-w-[34px] h-[34px] rounded-xl text-xs font-bold transition-all ${
-                                                    currentPage === p
+                                                className={`min-w-[34px] h-[34px] rounded-xl text-xs font-bold transition-all ${currentPage === p
                                                         ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-200'
                                                         : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:shadow-sm'
-                                                }`}
+                                                    }`}
                                             >
                                                 {p}
                                             </button>
                                         )
-                                )}
+                                    )}
                                 <button
                                     disabled={currentPage === totalPages}
                                     onClick={() => setCurrentPage(p => p + 1)}
