@@ -653,7 +653,7 @@ const MessagesPage = () => {
                                 </button>
                             </div>
 
-                            <div ref={threadScrollRef} className="flex-1 overflow-y-auto p-5 bg-[linear-gradient(to_bottom,white,theme(colors.slate.50/60))] dark:bg-slate-900">
+                            <div ref={threadScrollRef} className="flex-1 overflow-y-auto p-5 bg-gradient-to-b from-white to-slate-50/60 dark:from-slate-900 dark:to-slate-900">
                                 {loadingThread ? (
                                     <div className="h-full flex items-center justify-center text-slate-400">
                                         <Loader2 size={24} className="animate-spin opacity-40" />
@@ -818,7 +818,7 @@ const MessagesPage = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-md max-h-[80vh] flex flex-col"
+                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-md max-h-[80vh] flex flex-col"
                         >
                             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                                 <h3 className="text-base font-bold text-slate-800">New Conversation</h3>
@@ -830,14 +830,14 @@ const MessagesPage = () => {
                             <div className="flex px-5 pt-4 gap-2">
                                 <button
                                     onClick={() => { setNewChatMode('dm'); setFormError(''); }}
-                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${newChatMode === 'dm' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${newChatMode === 'dm' ? 'bg-indigo-600 text-white' : 'bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                                         }`}
                                 >
                                     Direct Message
                                 </button>
                                 <button
                                     onClick={() => { setNewChatMode('group'); setFormError(''); }}
-                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${newChatMode === 'group' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${newChatMode === 'group' ? 'bg-indigo-600 text-white' : 'bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                                         }`}
                                 >
                                     Group
@@ -879,7 +879,7 @@ const MessagesPage = () => {
                                                 key={person._id}
                                                 onClick={() => (newChatMode === 'dm' ? startDM(person._id) : toggleMember(person._id))}
                                                 disabled={creating}
-                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors disabled:opacity-50 ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}
+                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors disabled:opacity-50 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-500/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                                             >
                                                 <div className="relative shrink-0">
                                                     <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${color.bg} ${color.text}`}>
@@ -944,7 +944,7 @@ const MessagesPage = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-md max-h-[80vh] flex flex-col"
+                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-md max-h-[80vh] flex flex-col"
                         >
                             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                                 <h3 className="text-base font-bold text-slate-800">Group Info</h3>
@@ -960,7 +960,7 @@ const MessagesPage = () => {
                                         value={groupSettingsName}
                                         onChange={(e) => setGroupSettingsName(e.target.value)}
                                         disabled={!activeConversation.viewerIsAdmin}
-                                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all disabled:bg-slate-50"
+                                        className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 bg-transparent rounded-xl text-sm text-slate-600 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20 transition-all disabled:bg-slate-50 dark:disabled:bg-slate-700/50"
                                     />
                                     {activeConversation.viewerIsAdmin && (
                                         <button
@@ -986,17 +986,17 @@ const MessagesPage = () => {
                                     const isSelf = p._id === currentUserId;
                                     const color = avatarColor(p._id);
                                     return (
-                                        <div key={p._id} className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50">
+                                        <div key={p._id} className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                             <div className="relative shrink-0">
                                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${color.bg} ${color.text}`}>
                                                     {initials(p.name)}
                                                 </div>
                                                 {isOnline(p.lastSeenAt) && (
-                                                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+                                                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full" />
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-700 truncate">{p.name}{isSelf ? ' (You)' : ''}</p>
+                                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{p.name}{isSelf ? ' (You)' : ''}</p>
                                                 {memberIsAdmin && <p className="text-[11px] text-indigo-500 font-bold">Admin</p>}
                                             </div>
                                             {activeConversation.viewerIsAdmin && !isSelf && (
@@ -1004,14 +1004,14 @@ const MessagesPage = () => {
                                                     <button
                                                         onClick={() => toggleAdmin(p._id)}
                                                         title={memberIsAdmin ? 'Remove admin' : 'Make admin'}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/20"
                                                     >
                                                         {memberIsAdmin ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
                                                     </button>
                                                     <button
                                                         onClick={() => removeMember(p._id)}
                                                         title="Remove from group"
-                                                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"
+                                                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/20"
                                                     >
                                                         <Trash2 size={15} />
                                                     </button>
@@ -1022,10 +1022,10 @@ const MessagesPage = () => {
                                 })}
                             </div>
 
-                            <div className="p-5 border-t border-slate-100">
+                            <div className="p-5 border-t border-slate-100 dark:border-slate-700">
                                 <button
                                     onClick={leaveGroup}
-                                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-100 transition-all"
+                                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
                                 >
                                     <LogOut size={15} />
                                     Leave Group
@@ -1051,10 +1051,10 @@ const MessagesPage = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 w-full max-w-sm overflow-hidden"
+                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-sm overflow-hidden"
                         >
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                                <h3 className="text-base font-bold text-slate-800">Contact Info</h3>
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Contact Info</h3>
                                 <button onClick={() => setShowContactInfo(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                     <X size={18} />
                                 </button>
@@ -1065,8 +1065,14 @@ const MessagesPage = () => {
                                 const fullProfile = colleagues.find(c => c._id === other._id) || other;
                                 const color = avatarColor(other._id || activeConversation._id);
                                 const online = isOnline(fullProfile.lastSeenAt);
+                                const convInfo = {
+                                    title: activeConversation.name,
+                                    role: fullProfile.role,
+                                    department: fullProfile.department,
+                                    email: fullProfile.email
+                                };
                                 return (
-                                    <div className="px-6 py-6 flex flex-col items-center text-center border-b border-slate-100">
+                                    <div className="px-6 py-6 flex flex-col items-center text-center border-b border-slate-100 dark:border-slate-700">
                                         <div className="relative mb-3">
                                             <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold ${color.bg} ${color.text}`}>
                                                 {initials(activeConversation.name)}
@@ -1074,34 +1080,48 @@ const MessagesPage = () => {
                                             {online && (
                                                 <span className="absolute bottom-1 right-1 flex h-4 w-4">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                                                    <span className="relative inline-flex w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
+                                                    <span className="relative inline-flex w-4 h-4 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full" />
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-lg font-bold text-slate-800">{activeConversation.name}</p>
+                                        <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{activeConversation.name}</p>
                                         <p className={`text-xs font-semibold mt-0.5 ${online ? 'text-emerald-500' : 'text-slate-400'}`}>
                                             {presenceLabel(fullProfile.lastSeenAt)}
                                         </p>
 
                                         <div className="w-full mt-5 space-y-3 text-left">
-                                            {fullProfile.email && (
-                                                <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 rounded-xl">
-                                                    <Mail size={15} className="text-slate-400 shrink-0" />
-                                                    <p className="text-sm text-slate-600 truncate">{fullProfile.email}</p>
+                                            {/* Role */}
+                                            <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                                                <div className="p-1.5 bg-white dark:bg-slate-600 rounded-lg shadow-sm">
+                                                    <BadgeCheck size={16} className="text-emerald-500" />
                                                 </div>
-                                            )}
-                                            {fullProfile.department && (
-                                                <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 rounded-xl">
-                                                    <Building2 size={15} className="text-slate-400 shrink-0" />
-                                                    <p className="text-sm text-slate-600 truncate">{fullProfile.department}</p>
+                                                <div>
+                                                    <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Role</p>
+                                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">{convInfo.role}</p>
                                                 </div>
-                                            )}
-                                            {fullProfile.role && (
-                                                <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 rounded-xl">
-                                                    <BadgeCheck size={15} className="text-slate-400 shrink-0" />
-                                                    <p className="text-sm text-slate-600 truncate capitalize">{fullProfile.role}</p>
+                                            </div>
+
+                                            {/* Department */}
+                                            <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                                                <div className="p-1.5 bg-white dark:bg-slate-600 rounded-lg shadow-sm">
+                                                    <Building2 size={16} className="text-blue-500" />
                                                 </div>
-                                            )}
+                                                <div>
+                                                    <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Department</p>
+                                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{convInfo.department}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Email */}
+                                            <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                                                <div className="p-1.5 bg-white dark:bg-slate-600 rounded-lg shadow-sm">
+                                                    <Mail size={16} className="text-orange-500" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Email</p>
+                                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate">{convInfo.email}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -1110,7 +1130,7 @@ const MessagesPage = () => {
                             <div className="p-4">
                                 <button
                                     onClick={() => setShowContactInfo(false)}
-                                    className="w-full px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-all"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                 >
                                     Close
                                 </button>
