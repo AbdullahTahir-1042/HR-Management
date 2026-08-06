@@ -176,28 +176,28 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
             >
                 <button
                     onClick={() => { setSelected(null); setIsEditing(false); }}
-                    className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+                    className="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                     <ArrowLeft size={16} />
                     Back to Announcements
                 </button>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
+                <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm p-8 space-y-6">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+                            <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shrink-0">
                                 <Megaphone size={20} />
                             </span>
                             {isEditing ? (
                                 <input
                                     value={editTitle}
                                     onChange={(e) => setEditTitle(e.target.value)}
-                                    className="flex-1 px-4 py-2 border border-indigo-300 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+                                    className="flex-1 px-4 py-2 border border-indigo-300 dark:border-indigo-500/30 bg-transparent rounded-xl text-base font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20 transition-all"
                                     placeholder="Announcement title"
                                     autoFocus
                                 />
                             ) : (
-                                <h2 className="text-xl font-bold text-slate-800">{selected.title}</h2>
+                                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{selected.title}</h2>
                             )}
                         </div>
 
@@ -207,7 +207,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                     <>
                                         <button
                                             onClick={cancelEdit}
-                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all"
                                         >
                                             <X size={15} />
                                             Cancel
@@ -215,7 +215,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                         <button
                                             onClick={handleEdit}
                                             disabled={editSubmitting}
-                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-60 transition-all"
                                         >
                                             {editSubmitting
                                                 ? <Loader2 size={14} className="animate-spin" />
@@ -228,14 +228,14 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                     <>
                                         <button
                                             onClick={startEdit}
-                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-indigo-600 hover:bg-indigo-50 transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
                                         >
                                             <Pencil size={15} />
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => handleDelete(selected._id)}
-                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
                                         >
                                             <Trash2 size={15} />
                                             Delete
@@ -246,7 +246,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                         )}
                     </div>
 
-                    <div className="flex items-center gap-6 text-xs font-medium text-slate-400 border-y border-slate-100 py-4">
+                    <div className="flex items-center gap-6 text-xs font-medium text-slate-400 dark:text-slate-500 border-y border-slate-100 dark:border-slate-700/50 py-4">
                         <span className="flex items-center gap-1.5">
                             <User size={13} />
                             {selected.createdBy?.name || 'HR'}
@@ -263,17 +263,17 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                 value={editMessage}
                                 onChange={(e) => setEditMessage(e.target.value)}
                                 rows={6}
-                                className="w-full px-4 py-3 border border-indigo-300 rounded-xl text-sm text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+                                className="w-full px-4 py-3 border border-indigo-300 dark:border-indigo-500/30 bg-transparent rounded-xl text-sm text-slate-600 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-500/20 transition-all resize-none"
                                 placeholder="Write your announcement..."
                             />
                             {editError && (
-                                <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                                <p className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-lg px-3 py-2">
                                     {editError}
                                 </p>
                             )}
                         </div>
                     ) : (
-                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
+                        <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
                             {selected.message}
                         </p>
                     )}
