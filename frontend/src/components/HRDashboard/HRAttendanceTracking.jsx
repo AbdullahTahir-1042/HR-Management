@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock } from 'lucide-react';
+import { Clock, Calendar } from 'lucide-react';
 
 const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
     const sortedAttendance = [...filteredAttendance]
@@ -10,6 +10,15 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
             const dateB = b.checkIn ? new Date(b.checkIn) : new Date(b.date);
             return dateB - dateA;
         });
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+    };
 
     return (
         <motion.div 
@@ -44,7 +53,12 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                         <span className="text-xs text-slate-400">{record.employee?.email}</span>
                                     </div>
                                 </td>
-                                <td className="table-cell px-8 py-6 text-slate-600 dark:text-slate-400 text-sm">{record.date}</td>
+                                <td className="table-cell px-8 py-6">
+                                    <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 text-sm font-medium">
+                                        <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
+                                        {formatDate(record.date)}
+                                    </span>
+                                </td>
                                 <td className="table-cell px-8 py-6">
                                     <div className={`flex items-center gap-2 font-medium ${late ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                                         {record.status === 'absent' || !record.checkIn ? (

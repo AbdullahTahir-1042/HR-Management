@@ -136,7 +136,10 @@ const HRTrainingManagement = () => {
                     </button>
                 </div>
             </div>
-        ), { duration: Infinity });
+        ), { 
+            duration: Infinity,
+            className: '!bg-white dark:!bg-slate-800 border dark:border-slate-700'
+        });
     };
 
     const confirmDelete = async (id) => {

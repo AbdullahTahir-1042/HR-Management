@@ -25,16 +25,16 @@ const AnimatedNumber = ({ value }) => (
 const StatusBadge = ({ status, size = 'sm' }) => {
     const config = {
         resolved: {
-            gradient: 'bg-gradient-to-r from-emerald-50 to-teal-50',
-            text: 'text-emerald-700',
-            border: 'border-emerald-200/80',
+            gradient: 'bg-gradient-to-r from-emerald-50 dark:from-emerald-500/10 to-teal-50 dark:to-teal-500/10',
+            text: 'text-emerald-700 dark:text-emerald-400',
+            border: 'border-emerald-200/80 dark:border-emerald-500/20',
             dot: 'bg-emerald-500',
             label: 'Resolved'
         },
         pending: {
-            gradient: 'bg-gradient-to-r from-amber-50 to-orange-50',
-            text: 'text-amber-700',
-            border: 'border-amber-200/80',
+            gradient: 'bg-gradient-to-r from-amber-50 dark:from-amber-500/10 to-orange-50 dark:to-orange-500/10',
+            text: 'text-amber-700 dark:text-amber-400',
+            border: 'border-amber-200/80 dark:border-amber-500/20',
             dot: 'bg-amber-500',
             label: 'Pending'
         },
@@ -53,13 +53,13 @@ const StatusBadge = ({ status, size = 'sm' }) => {
 
 // ─── Info Chip (used in expanded detail grid) ────────────────────────────────
 const InfoChip = ({ icon: Icon, label, value }) => (
-    <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="mt-0.5 p-1.5 rounded-lg bg-slate-100/80">
-            <Icon size={14} className="text-slate-500" />
+    <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="mt-0.5 p-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50">
+            <Icon size={14} className="text-slate-500 dark:text-slate-400" />
         </div>
         <div className="min-w-0">
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{label}</p>
-            <p className="text-[13px] font-bold text-slate-800 mt-0.5 truncate">{value || '—'}</p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">{label}</p>
+            <p className="text-[13px] font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate">{value || '—'}</p>
         </div>
     </div>
 );
@@ -68,9 +68,9 @@ const InfoChip = ({ icon: Icon, label, value }) => (
 const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
     if (!value) return null;
     const styles = {
-        rose:    { bg: 'bg-rose-50/70',    border: 'border-rose-100',    iconBg: 'bg-rose-100',    iconColor: 'text-rose-600',    labelColor: 'text-rose-600' },
-        indigo:  { bg: 'bg-indigo-50/70',  border: 'border-indigo-100',  iconBg: 'bg-indigo-100',  iconColor: 'text-indigo-600',  labelColor: 'text-indigo-600' },
-        emerald: { bg: 'bg-emerald-50/70', border: 'border-emerald-100', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', labelColor: 'text-emerald-600' },
+        rose:    { bg: 'bg-rose-50/70 dark:bg-rose-500/10',    border: 'border-rose-100 dark:border-rose-500/20',    iconBg: 'bg-rose-100 dark:bg-rose-500/20',    iconColor: 'text-rose-600 dark:text-rose-400',    labelColor: 'text-rose-600 dark:text-rose-400' },
+        indigo:  { bg: 'bg-indigo-50/70 dark:bg-indigo-500/10',  border: 'border-indigo-100 dark:border-indigo-500/20',  iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',  iconColor: 'text-indigo-600 dark:text-indigo-400',  labelColor: 'text-indigo-600 dark:text-indigo-400' },
+        emerald: { bg: 'bg-emerald-50/70 dark:bg-emerald-500/10', border: 'border-emerald-100 dark:border-emerald-500/20', iconBg: 'bg-emerald-100 dark:bg-emerald-500/20', iconColor: 'text-emerald-600 dark:text-emerald-400', labelColor: 'text-emerald-600 dark:text-emerald-400' },
     };
     const s = styles[accentColor] || styles.rose;
 
@@ -81,13 +81,13 @@ const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
             transition={{ duration: 0.3 }}
             className={`rounded-xl border ${s.border} ${s.bg} overflow-hidden`}
         >
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/60">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/60 dark:border-slate-700/30">
                 <div className={`p-1 rounded-md ${s.iconBg}`}>
                     <Icon size={12} className={s.iconColor} />
                 </div>
                 <p className={`text-[10.5px] font-bold uppercase tracking-wider ${s.labelColor}`}>{label}</p>
             </div>
-            <div className="px-4 py-3 text-[13px] text-slate-700 leading-relaxed whitespace-pre-line">
+            <div className="px-4 py-3 text-[13px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {value}
             </div>
         </motion.div>
@@ -654,7 +654,7 @@ const HRMistakeReports = () => {
                                                                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                                                                 className="overflow-hidden"
                                                             >
-                                                                <div className="relative px-8 py-6 bg-gradient-to-br from-slate-50/80 via-indigo-50/20 to-slate-50/80">
+                                                                <div className="relative px-8 py-6 bg-gradient-to-br from-slate-50/80 via-indigo-50/20 to-slate-50/80 dark:from-slate-800/80 dark:via-indigo-900/20 dark:to-slate-800/80 border-t border-b border-indigo-100/50 dark:border-indigo-500/20">
                                                                     {/* Decorative accent line */}
                                                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-violet-500 to-indigo-400 rounded-r-full" />
 
@@ -672,12 +672,12 @@ const HRMistakeReports = () => {
                                                                     </div>
 
                                                                     {/* Footer Actions */}
-                                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-5 pt-4 border-t border-slate-200/60 gap-3">
-                                                                        <div className="text-[11px] text-slate-400">
-                                                                            Department: <span className="font-bold text-slate-600">{getDeptName(report)}</span>
-                                                                            <span className="mx-1.5 text-slate-300">·</span>
-                                                                            Lead: <span className="font-bold text-slate-600">{report.submittedBy?.name || 'Unknown'}</span>
-                                                                            <span className="mx-1.5 text-slate-300">·</span>
+                                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-5 pt-4 border-t border-slate-200/60 dark:border-slate-700/60 gap-3">
+                                                                        <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                                                                            Department: <span className="font-bold text-slate-600 dark:text-slate-300">{getDeptName(report)}</span>
+                                                                            <span className="mx-1.5 text-slate-300 dark:text-slate-600">·</span>
+                                                                            Lead: <span className="font-bold text-slate-600 dark:text-slate-300">{report.submittedBy?.name || 'Unknown'}</span>
+                                                                            <span className="mx-1.5 text-slate-300 dark:text-slate-600">·</span>
                                                                             Reported: <span className="font-bold text-slate-600">{formatDate(report.dateOfMistake)}</span>
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
