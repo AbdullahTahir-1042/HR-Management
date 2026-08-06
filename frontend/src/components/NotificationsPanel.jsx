@@ -111,14 +111,14 @@ const NotificationsPanel = ({ onNavigate }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden flex flex-col"
+                        className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden flex flex-col"
                     >
-                        <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h3 className="font-bold text-slate-800">Notifications</h3>
+                        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
+                            <h3 className="font-bold text-slate-800 dark:text-slate-100">Notifications</h3>
                             {unreadCount > 0 && (
                                 <button 
                                     onClick={handleMarkAllRead}
-                                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+                                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                                 >
                                     Mark all read
                                 </button>
@@ -136,26 +136,26 @@ const NotificationsPanel = ({ onNavigate }) => {
                                     <p className="text-slate-400 text-sm font-medium">No notifications yet</p>
                                 </div>
                             ) : (
-                                <div className="divide-y divide-slate-50">
+                                <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
                                     {notifications.map((notif) => (
                                         <div 
                                             key={notif._id} 
                                             onClick={() => handleItemClick(notif)}
-                                            className={`p-4 flex gap-3 cursor-pointer transition-colors ${!notif.isRead ? 'bg-indigo-50/30 hover:bg-indigo-50/50' : 'hover:bg-slate-50'}`}
+                                            className={`p-4 flex gap-3 cursor-pointer transition-colors ${!notif.isRead ? 'bg-indigo-50/30 hover:bg-indigo-50/50 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!notif.isRead ? 'bg-white shadow-sm border border-indigo-100' : 'bg-slate-100 border border-slate-200'}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!notif.isRead ? 'bg-white dark:bg-slate-800 shadow-sm border border-indigo-100 dark:border-indigo-500/30' : 'bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600'}`}>
                                                 {ICONS[notif.type] || ICONS.system}
                                             </div>
                                             <div className="flex-1 min-w-0 pt-1">
                                                 <div className="flex justify-between items-start gap-2 mb-1">
-                                                    <p className={`text-sm truncate ${!notif.isRead ? 'font-bold text-slate-800' : 'font-semibold text-slate-600'}`}>
+                                                    <p className={`text-sm truncate ${!notif.isRead ? 'font-bold text-slate-800 dark:text-slate-100' : 'font-semibold text-slate-600 dark:text-slate-400'}`}>
                                                         {notif.title}
                                                     </p>
-                                                    <span className="text-[10px] text-slate-400 font-medium shrink-0">
+                                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
                                                         {new Date(notif.createdAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                <p className={`text-xs ${!notif.isRead ? 'text-slate-600 font-medium' : 'text-slate-500'} line-clamp-2 leading-relaxed`}>
+                                                <p className={`text-xs ${!notif.isRead ? 'text-slate-600 dark:text-slate-300 font-medium' : 'text-slate-500 dark:text-slate-500'} line-clamp-2 leading-relaxed`}>
                                                     {notif.message}
                                                 </p>
                                             </div>
