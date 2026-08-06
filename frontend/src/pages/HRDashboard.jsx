@@ -397,7 +397,7 @@ const HRDashboard = () => {
             }
             return { ...record, minutesLate, compensated };
         })
-        .filter(record => record.minutesLate > 0);
+        .filter(record => record.status === 'late');
 
     const filteredLatecomers = latecomers.filter(l => latecomerDateFilter ? l.date === latecomerDateFilter : true);
     const filteredLeaves = leaves.filter(l => leaveFilter === 'all' ? true : l.status === leaveFilter);
