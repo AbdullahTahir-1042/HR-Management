@@ -131,9 +131,16 @@ const startCronJobs = () => {
                         console.log('✓ Approved Leave Found');
                         console.log('Skipping Employee - Reason: On Approved Leave');
                     }
+                } else if (!attendance.checkOut) {
+                    console.log('! Missing Check-Out');
+                    // Mark as completely absent due to missing checkout
+                    attendance.status = 'absent';
+                    attendance.reason = attendance.reason ? attendance.reason + ' | Automatic absence due to missing manual check-out.' : 'Automatic absence due to missing manual check-out.';
+                    await attendance.save();
+                    console.log('• Marked Absent due to missing check-out');
                 } else {
-                    console.log('✓ Attendance Found');
-                    console.log('Skipping Employee - Reason: Checked In Today');
+                    console.log('✓ Attendance Complete');
+                    console.log('Skipping Employee - Reason: Checked In and Out');
                 }
             }
             console.log('\nDaily absence check completed.');
