@@ -133,14 +133,11 @@ const startCronJobs = () => {
                     }
                 } else if (!attendance.checkOut) {
                     console.log('! Missing Check-Out');
-                    // Automatically check them out at 19:00
-                    const checkOutDate = new Date();
-                    checkOutDate.setHours(19, 0, 0, 0);
-
-                    attendance.checkOut = checkOutDate;
-                    attendance.reason = attendance.reason ? attendance.reason + ' | System Auto-Checkout (Missing manual checkout)' : 'System Auto-Checkout (Missing manual checkout)';
+                    // Mark as completely absent due to missing checkout
+                    attendance.status = 'absent';
+                    attendance.reason = attendance.reason ? attendance.reason + ' | Automatic absence due to missing manual check-out.' : 'Automatic absence due to missing manual check-out.';
                     await attendance.save();
-                    console.log('• Auto-Checked Out at 19:00');
+                    console.log('• Marked Absent due to missing check-out');
                 } else {
                     console.log('✓ Attendance Complete');
                     console.log('Skipping Employee - Reason: Checked In and Out');
