@@ -52,7 +52,7 @@ function App() {
                 <Toaster 
                     position="bottom-right" 
                     toastOptions={{
-                        className: 'text-sm font-semibold text-slate-700 shadow-xl border border-slate-100 rounded-2xl',
+                        className: 'text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700 rounded-2xl',
                         duration: 4000,
                         success: {
                             iconTheme: {

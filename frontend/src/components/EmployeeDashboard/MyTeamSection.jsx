@@ -55,13 +55,13 @@ const StatusBadge = ({ status, size = 'sm' }) => {
 
 // ─── Info Chip ────────────────────────────────────────────────────────────────
 const InfoChip = ({ icon: Icon, label, value }) => (
-    <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="mt-0.5 p-1.5 rounded-lg bg-slate-100/80">
-            <Icon size={14} className="text-slate-500" />
+    <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/70 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="mt-0.5 p-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-700/50">
+            <Icon size={14} className="text-slate-500 dark:text-slate-400" />
         </div>
         <div className="min-w-0">
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{label}</p>
-            <p className="text-[13px] font-bold text-slate-800 mt-0.5 truncate">{value || '—'}</p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">{label}</p>
+            <p className="text-[13px] font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate">{value || '—'}</p>
         </div>
     </div>
 );
@@ -70,9 +70,9 @@ const InfoChip = ({ icon: Icon, label, value }) => (
 const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
     if (!value) return null;
     const styles = {
-        rose:    { bg: 'bg-rose-50/70',    border: 'border-rose-100',    iconBg: 'bg-rose-100',    iconColor: 'text-rose-600',    labelColor: 'text-rose-600' },
-        indigo:  { bg: 'bg-indigo-50/70',  border: 'border-indigo-100',  iconBg: 'bg-indigo-100',  iconColor: 'text-indigo-600',  labelColor: 'text-indigo-600' },
-        emerald: { bg: 'bg-emerald-50/70', border: 'border-emerald-100', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', labelColor: 'text-emerald-600' },
+        rose:    { bg: 'bg-rose-50/70 dark:bg-rose-500/10',    border: 'border-rose-100 dark:border-rose-500/20',    iconBg: 'bg-rose-100 dark:bg-rose-500/20',    iconColor: 'text-rose-600 dark:text-rose-400',    labelColor: 'text-rose-600 dark:text-rose-400' },
+        indigo:  { bg: 'bg-indigo-50/70 dark:bg-indigo-500/10',  border: 'border-indigo-100 dark:border-indigo-500/20',  iconBg: 'bg-indigo-100 dark:bg-indigo-500/20',  iconColor: 'text-indigo-600 dark:text-indigo-400',  labelColor: 'text-indigo-600 dark:text-indigo-400' },
+        emerald: { bg: 'bg-emerald-50/70 dark:bg-emerald-500/10', border: 'border-emerald-100 dark:border-emerald-500/20', iconBg: 'bg-emerald-100 dark:bg-emerald-500/20', iconColor: 'text-emerald-600 dark:text-emerald-400', labelColor: 'text-emerald-600 dark:text-emerald-400' },
     };
     const s = styles[accentColor] || styles.rose;
 
@@ -83,13 +83,13 @@ const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
             transition={{ duration: 0.3 }}
             className={`rounded-xl border ${s.border} ${s.bg} overflow-hidden`}
         >
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/60">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/60 dark:border-slate-700/30">
                 <div className={`p-1 rounded-md ${s.iconBg}`}>
                     <Icon size={12} className={s.iconColor} />
                 </div>
                 <p className={`text-[10.5px] font-bold uppercase tracking-wider ${s.labelColor}`}>{label}</p>
             </div>
-            <div className="px-4 py-3 text-[13px] text-slate-700 leading-relaxed whitespace-pre-line">
+            <div className="px-4 py-3 text-[13px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {value}
             </div>
         </motion.div>
@@ -745,7 +745,7 @@ const MyTeamSection = () => {
                                                                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                                                                         className="overflow-hidden"
                                                                     >
-                                                                        <div className="relative px-6 py-5 bg-gradient-to-br from-slate-50 to-indigo-50/20 border-t border-b border-indigo-100/50">
+                                                                        <div className="relative px-6 py-5 bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-800/80 dark:to-indigo-900/20 border-t border-b border-indigo-100/50 dark:border-indigo-500/20">
                                                                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-violet-500 rounded-r-full" />
                                                                             
                                                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -762,14 +762,14 @@ const MyTeamSection = () => {
                                                                             <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-200/60">
                                                                                 <button 
                                                                                     onClick={e => handleDeleteReport(e, report._id)}
-                                                                                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-sm"
+                                                                                    className="bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-sm"
                                                                                 >
                                                                                     <Trash2 size={14} />
                                                                                     Delete
                                                                                 </button>
                                                                                 <button 
                                                                                     onClick={e => { e.stopPropagation(); setExpandedId(null); }}
-                                                                                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                                                                                    className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-transparent dark:border-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition-colors"
                                                                                 >
                                                                                     Collapse Details
                                                                                 </button>
