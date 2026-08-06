@@ -573,9 +573,12 @@ const HRReports = ({ employees, loans = [] }) => {
         });
     };
 
-    const calcHours = (checkIn, checkOut) => {
+    const calcHours = (checkIn, checkOut, recordDate) => {
         if (!checkIn) return '—';
-        if (!checkOut) return 'Active Now';
+        if (!checkOut) {
+            const isToday = new Date(recordDate || checkIn).toDateString() === new Date().toDateString();
+            return isToday ? 'Active Now' : '—';
+        }
         const diff = new Date(checkOut) - new Date(checkIn);
         const h = Math.floor(diff / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -1200,7 +1203,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                     : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
                                             }`}
                                         >
-                                            Active Now ({filteredAttendance.filter(r => r.checkIn && !r.checkOut).length})
+                                            Active Now ({filteredAttendance.filter(r => r.checkIn && !r.checkOut && new Date(r.date || r.checkIn).toDateString() === new Date().toDateString()).length})
                                         </button>
                                     </div>
 
@@ -1249,7 +1252,9 @@ const HRReports = ({ employees, loans = [] }) => {
                                             <tbody className="divide-y divide-slate-100">
                                                 {displayedAttendance.map(record => {
                                                     const late = isLate(record.checkIn);
-                                                    const active = record.checkIn && !record.checkOut;
+                                                    const isToday = new Date(record.date || record.checkIn).toDateString() === new Date().toDateString();
+                                                    const active = record.checkIn && !record.checkOut && isToday;
+                                                    const missingCheckout = record.checkIn && !record.checkOut && !isToday;
                                                     const hoursVal = getDecimalHours(record.checkIn, record.checkOut);
                                                     const formattedDate = record.date ? new Date(record.date + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
                                                     return (
@@ -1308,6 +1313,10 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-full text-[10px] font-bold">
                                                                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" /> Active Now
                                                                     </span>
+                                                                ) : missingCheckout ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                                                        Missing Checkout
+                                                                    </span>
                                                                 ) : (
                                                                     <span className="text-xs text-slate-600 font-semibold tabular-nums">
                                                                         {formatTime(record.checkOut)}
@@ -1320,7 +1329,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                 <div className="space-y-1">
                                                                     <div className="flex items-center justify-between text-xs">
                                                                         <span className="font-black text-slate-800 tabular-nums">
-                                                                            {calcHours(record.checkIn, record.checkOut)}
+                                                                            {calcHours(record.checkIn, record.checkOut, record.date)}
                                                                         </span>
                                                                         {!record.checkIn || record.status === 'absent' ? (
                                                                             <div className="flex flex-col items-end">
@@ -1331,10 +1340,12 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                                     </span>
                                                                                 )}
                                                                             </div>
+                                                                        ) : missingCheckout ? (
+                                                                            <Badge color="amber" label="Missing Checkout" />
                                                                         ) : late ? (
                                                                             <Badge color="amber" label="Late Entry" />
                                                                         ) : active ? (
-                                                                            <Badge color="rose" label="Active" />
+                                                                            <Badge color="rose" label="Active Now" />
                                                                         ) : (
                                                                             <Badge color="emerald" label="Present" />
                                                                         )}
