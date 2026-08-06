@@ -100,6 +100,11 @@ const UserSchema = new mongoose.Schema({
         endDate: { type: Date, default: null },
         summary: { type: String, default: 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.' }
     },
+    shiftDetails: {
+        startTime: { type: String, default: null }, // e.g. "09:00"
+        endTime: { type: String, default: null },   // e.g. "19:00"
+        gracePeriod: { type: Number, default: 0 }
+    },
     isFirstLogin: {
         type: Boolean,
         default: true

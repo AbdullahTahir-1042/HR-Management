@@ -853,21 +853,21 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                             </thead>
                                             <tbody className="table-body">
                                                 {employeeLeaves.slice(0, 5).map(l => (
-                                                    <tr key={l._id} className="hover:bg-slate-50/50 transition-colors">
+                                                    <tr key={l._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                         <td className="py-3">
-                                                            <span className="font-bold text-slate-700 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-lg text-[9px] uppercase tracking-wider">
+                                                            <span className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 border border-slate-200/50 dark:border-slate-600/50 px-2.5 py-0.5 rounded-lg text-[9px] uppercase tracking-wider">
                                                                 {l.leaveType?.name || 'Annual Leave'}
                                                             </span>
                                                         </td>
-                                                        <td className="py-3 text-slate-600 font-medium">{formatDate(l.startDate)} - {formatDate(l.endDate)}</td>
+                                                        <td className="py-3 text-slate-600 dark:text-slate-400 font-medium">{formatDate(l.startDate)} - {formatDate(l.endDate)}</td>
                                                         <td className="py-3 text-center">
-                                                            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg font-bold">
+                                                            <span className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded-lg font-bold">
                                                                 {calculateDays(l.startDate, l.endDate)}
                                                             </span>
                                                         </td>
                                                         <td className="py-3 text-right">
-                                                            <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] border ${l.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                                                    l.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-rose-50 text-rose-700 border-rose-100'
+                                                            <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] border ${l.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' :
+                                                                    l.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' : 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'
                                                                 }`}>
                                                                 {l.status}
                                                             </span>

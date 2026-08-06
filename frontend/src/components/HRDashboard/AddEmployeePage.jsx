@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2, Award, Trash2, FileText, CalendarDays } from 'lucide-react';
+import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Briefcase, Eye, EyeOff, Building2, UserCheck, Phone, Crown, AlertCircle, CheckCircle2, Award, Trash2, FileText, CalendarDays, Clock } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -186,6 +186,11 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
             startDate: '',
             endDate: '',
             summary: 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.'
+        },
+        shiftDetails: {
+            startTime: '09:00',
+            endTime: '19:00',
+            gracePeriod: 0
         }
     });
     const [departmentsList, setDepartmentsList] = useState([]);
@@ -638,6 +643,52 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                         <option value="employee">Employee</option>
                                         <option value="hr">HR Admin</option>
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Shift Details */}
+                        <div className="md:col-span-2 space-y-4 mb-4">
+                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2 flex items-center gap-2">
+                                <Clock size={16} /> Custom Shift Timings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Time</label>
+                                    <div className="relative mt-1 group">
+                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="time" 
+                                            value={formData.shiftDetails.startTime} 
+                                            onChange={e => setFormData({...formData, shiftDetails: {...formData.shiftDetails, startTime: e.target.value}})} 
+                                            className="input-field pl-10" 
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Time</label>
+                                    <div className="relative mt-1 group">
+                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="time" 
+                                            value={formData.shiftDetails.endTime} 
+                                            onChange={e => setFormData({...formData, shiftDetails: {...formData.shiftDetails, endTime: e.target.value}})} 
+                                            className="input-field pl-10" 
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grace Period (Mins)</label>
+                                    <div className="relative mt-1 group">
+                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                        <input 
+                                            type="number" 
+                                            min="0"
+                                            value={formData.shiftDetails.gracePeriod} 
+                                            onChange={e => setFormData({...formData, shiftDetails: {...formData.shiftDetails, gracePeriod: Number(e.target.value)}})} 
+                                            className="input-field pl-10" 
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -170,25 +170,34 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
 
             {/* ── Today's & Upcoming Working Hours ── */}
             <div className="flex flex-col lg:flex-row gap-4 max-w-6xl">
-                {todaySchedule && (
-                    <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 shadow-sm flex items-center gap-4">
-                        <div className="p-2.5 bg-violet-50 dark:bg-violet-500/10 text-violet-600 rounded-xl shrink-0">
-                            <Clock size={20} />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today's Working Hours</p>
-                            <p className="text-base font-bold text-slate-800 dark:text-white mt-0.5">
-                                {formatTime12hr(todaySchedule.startTime)} – {formatTime12hr(todaySchedule.endTime)}
-                            </p>
-                            {todaySchedule.reason && (
-                                <p className="text-xs text-violet-600 font-medium mt-0.5">{todaySchedule.reason}</p>
+                {(user?.shiftDetails?.startTime || todaySchedule) && (() => {
+                    const hasCustomShift = user?.shiftDetails?.startTime && user?.shiftDetails?.endTime;
+                    const startTimeStr = hasCustomShift ? user.shiftDetails.startTime : todaySchedule?.startTime;
+                    const endTimeStr = hasCustomShift ? user.shiftDetails.endTime : todaySchedule?.endTime;
+                    const isCustomSchedule = hasCustomShift || (!todaySchedule?.isDefault && todaySchedule?.reason);
+
+                    if (!startTimeStr || !endTimeStr) return null;
+
+                    return (
+                        <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 shadow-sm flex items-center gap-4">
+                            <div className="p-2.5 bg-violet-50 dark:bg-violet-500/10 text-violet-600 rounded-xl shrink-0">
+                                <Clock size={20} />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today's Working Hours</p>
+                                <p className="text-base font-bold text-slate-800 dark:text-white mt-0.5">
+                                    {formatTime12hr(startTimeStr)} – {formatTime12hr(endTimeStr)}
+                                </p>
+                                {!hasCustomShift && todaySchedule?.reason && (
+                                    <p className="text-xs text-violet-600 font-medium mt-0.5">{todaySchedule.reason}</p>
+                                )}
+                            </div>
+                            {isCustomSchedule && (
+                                <span className="text-[10px] font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 px-2 py-1 rounded-lg shrink-0">Custom Schedule</span>
                             )}
                         </div>
-                        {!todaySchedule.isDefault && todaySchedule.reason && (
-                            <span className="text-[10px] font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 px-2 py-1 rounded-lg shrink-0">Custom Schedule</span>
-                        )}
-                    </div>
-                )}
+                    );
+                })()}
 
                 {upcomingSchedules && upcomingSchedules.length > 0 && (
                     <div className="flex-1 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800/80 dark:to-slate-800/90 border border-indigo-100 dark:border-slate-700/50 rounded-2xl px-5 py-4 shadow-sm">

@@ -29,10 +29,6 @@ import HRTrainingManagement from '../components/HRDashboard/HRTrainingManagement
 import OfficeScheduleManagement from '../components/HRDashboard/OfficeScheduleManagement'; // ✅ NEW
 import MessagesPage from '../components/MessagesPage';
 
-const SHIFT_START_HOUR = 9;
-const SHIFT_START_MINUTE = 45;
-const SHIFT_END_HOUR = 19;
-const SHIFT_END_MINUTE = 0;
 
 const HRDashboard = () => {
     const mainRef = useRef(null);
@@ -376,12 +372,23 @@ const HRDashboard = () => {
         .filter(record => record.checkIn)
         .map(record => {
             const checkIn = new Date(record.checkIn);
+            
+            // Read expected start and end from record, fallback to 09:00 and 19:00
+            const expectedStartStr = record.expectedCheckIn || '09:00';
+            const expectedEndStr = record.expectedCheckOut || '19:00';
+            
+            const [startHour, startMin] = expectedStartStr.split(':').map(Number);
+            const [endHour, endMin] = expectedEndStr.split(':').map(Number);
+
             const shiftStart = new Date(checkIn);
-            shiftStart.setHours(SHIFT_START_HOUR, SHIFT_START_MINUTE, 0, 0);
+            shiftStart.setHours(startHour, startMin, 0, 0);
+            
             const shiftEnd = new Date(checkIn);
-            shiftEnd.setHours(SHIFT_END_HOUR, SHIFT_END_MINUTE, 0, 0);
+            shiftEnd.setHours(endHour, endMin, 0, 0);
+            
             const minutesLate = Math.round((checkIn - shiftStart) / 60000);
             let compensated = false;
+            
             if (record.checkOut && minutesLate > 0) {
                 const checkOut = new Date(record.checkOut);
                 const expectedEnd = new Date(shiftEnd);
