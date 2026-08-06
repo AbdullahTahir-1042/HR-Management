@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Mail, Lock, User, Shield, Award } from 'lucide-react';
+import { X, UserPlus, Mail, Lock, User, Shield, Award, Clock } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 
 const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
@@ -9,7 +9,12 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
         email: '',
         password: '',
         role: 'employee',
-        joiningStatus: 'Fresh Join'
+        joiningStatus: 'Fresh Join',
+        shiftDetails: {
+            startTime: '09:00',
+            endTime: '19:00',
+            gracePeriod: 0
+        }
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -145,6 +150,40 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
                                     <option value="employee">Employee</option>
                                     <option value="hr">HR Admin</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 flex items-center gap-1 mb-2"><Clock size={12} /> Custom Shift Timings</label>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <div className="text-[9px] text-slate-400 mb-1 ml-1 font-semibold uppercase">Start</div>
+                                    <input 
+                                        type="time" 
+                                        value={formData.shiftDetails.startTime}
+                                        onChange={(e) => setFormData({...formData, shiftDetails: {...formData.shiftDetails, startTime: e.target.value}})}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 text-xs"
+                                    />
+                                </div>
+                                <div>
+                                    <div className="text-[9px] text-slate-400 mb-1 ml-1 font-semibold uppercase">End</div>
+                                    <input 
+                                        type="time" 
+                                        value={formData.shiftDetails.endTime}
+                                        onChange={(e) => setFormData({...formData, shiftDetails: {...formData.shiftDetails, endTime: e.target.value}})}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 text-xs"
+                                    />
+                                </div>
+                                <div>
+                                    <div className="text-[9px] text-slate-400 mb-1 ml-1 font-semibold uppercase">Grace (min)</div>
+                                    <input 
+                                        type="number" 
+                                        min="0"
+                                        value={formData.shiftDetails.gracePeriod}
+                                        onChange={(e) => setFormData({...formData, shiftDetails: {...formData.shiftDetails, gracePeriod: Number(e.target.value)}})}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500 text-xs"
+                                    />
+                                </div>
                             </div>
                         </div>
 

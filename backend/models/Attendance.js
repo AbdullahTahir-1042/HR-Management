@@ -24,6 +24,14 @@ const AttendanceSchema = new mongoose.Schema({
     reason: {
         type: String,
         default: ''
+    },
+    expectedCheckIn: {
+        type: String, // e.g. "09:00"
+        default: null
+    },
+    expectedCheckOut: {
+        type: String, // e.g. "19:00"
+        default: null
     }
 }, { timestamps: true });
 

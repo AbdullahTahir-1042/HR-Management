@@ -110,25 +110,39 @@ router.post('/check-in', auth, async (req, res) => {
 
         // --- NEW LATENESS LOGIC ---
         let checkInStatus = 'present';
+        let expectedStartStr = '09:00';
+        let expectedEndStr = '19:00';
+        let appliedGracePeriod = 0;
+
         try {
-            let schedule = await OfficeSchedule.findOne({ date: today, isDefault: false });
-            if (!schedule) {
-                schedule = await OfficeSchedule.findOne({ isDefault: true });
-            }
-
-            if (schedule) {
-                const [startHour, startMin] = schedule.startTime.split(':').map(Number);
-                const gracePeriod = schedule.gracePeriod || 0;
-                
-                const expectedTime = new Date();
-                expectedTime.setHours(startHour, startMin + gracePeriod, 0, 0);
-
-                if (new Date() > expectedTime) {
-                    checkInStatus = 'late';
+            // Check if user has custom shift details
+            const employeeUser = await User.findById(req.user.id);
+            if (employeeUser && employeeUser.shiftDetails && employeeUser.shiftDetails.startTime && employeeUser.shiftDetails.endTime) {
+                expectedStartStr = employeeUser.shiftDetails.startTime;
+                expectedEndStr = employeeUser.shiftDetails.endTime;
+                appliedGracePeriod = employeeUser.shiftDetails.gracePeriod || 0;
+            } else {
+                // Fallback to global Office Schedule
+                let schedule = await OfficeSchedule.findOne({ date: today, isDefault: false });
+                if (!schedule) {
+                    schedule = await OfficeSchedule.findOne({ isDefault: true });
+                }
+                if (schedule) {
+                    expectedStartStr = schedule.startTime || '09:00';
+                    expectedEndStr = schedule.endTime || '19:00';
+                    appliedGracePeriod = schedule.gracePeriod || 0;
                 }
             }
+
+            const [startHour, startMin] = expectedStartStr.split(':').map(Number);
+            const expectedTime = new Date();
+            expectedTime.setHours(startHour, startMin + appliedGracePeriod, 0, 0);
+
+            if (new Date() > expectedTime) {
+                checkInStatus = 'late';
+            }
         } catch (scheduleErr) {
-            console.error("Error determining lateness from schedule:", scheduleErr);
+            console.error("Error determining lateness from schedule/shift:", scheduleErr);
         }
         // -------------------------
 
@@ -136,7 +150,9 @@ router.post('/check-in', auth, async (req, res) => {
             employee: req.user.id,
             date: today,
             checkIn: new Date(),
-            status: checkInStatus
+            status: checkInStatus,
+            expectedCheckIn: expectedStartStr,
+            expectedCheckOut: expectedEndStr
         });
         await attendance.save();
         console.log("✅ Attendance saved");
