@@ -101,6 +101,10 @@ const validators = {
             if (!/^[a-zA-Z\s.'\-]+$/.test(val.trim())) return 'Manager name can only contain letters and spaces';
         }
         return '';
+    },
+    contractStartDate: (val) => {
+        if (!val) return 'Contract Start Date is required';
+        return '';
     }
 };
 
@@ -271,14 +275,17 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
 
     // ── Validate all fields before submit ─────────────────────────────────────
     const validateAll = () => {
-        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary', 'joiningStatus', 'promotionRank'];
+        const fieldsToValidate = ['name', 'email', 'phone', 'password', 'salary', 'joiningStatus', 'promotionRank', 'contractStartDate'];
         const newErrors = {};
         const newTouched = {};
         let hasError = false;
 
         fieldsToValidate.forEach(field => {
             newTouched[field] = true;
-            const err = validateField(field, formData[field]);
+            let valueToValidate = formData[field];
+            if (field === 'contractStartDate') valueToValidate = formData.contractDetails?.startDate;
+            
+            const err = validateField(field, valueToValidate);
             newErrors[field] = err;
             if (err) hasError = true;
         });
@@ -716,16 +723,28 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Date</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Date *</label>
                                     <div className="relative mt-1 group">
                                         <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                         <input 
                                             type="date" 
                                             value={formData.contractDetails.startDate} 
-                                            onChange={e => setFormData({...formData, contractDetails: {...formData.contractDetails, startDate: e.target.value}})} 
-                                            className="input-field pl-10" 
+                                            onChange={e => {
+                                                setFormData({...formData, contractDetails: {...formData.contractDetails, startDate: e.target.value}});
+                                                if (touched.contractStartDate) {
+                                                    const err = validateField('contractStartDate', e.target.value);
+                                                    setFieldErrors(prev => ({ ...prev, contractStartDate: err }));
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                setTouched(prev => ({ ...prev, contractStartDate: true }));
+                                                const err = validateField('contractStartDate', formData.contractDetails.startDate);
+                                                setFieldErrors(prev => ({ ...prev, contractStartDate: err }));
+                                            }}
+                                            className={getInputBorderClass('contractStartDate', touched, fieldErrors, BASE_INPUT)} 
                                         />
                                     </div>
+                                    <FieldError message={touched.contractStartDate ? fieldErrors.contractStartDate : ''} />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Date (Optional)</label>
