@@ -27,6 +27,11 @@ const DepartmentSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
+    },
+    shiftDetails: {
+        startTime: { type: String, default: null }, // e.g. "09:00"
+        endTime: { type: String, default: null },   // e.g. "19:00"
+        gracePeriod: { type: Number, default: 0 }
     }
 }, { timestamps: true });
 
