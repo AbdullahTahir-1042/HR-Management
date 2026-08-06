@@ -49,12 +49,10 @@ router.get('/my-department', auth, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────
 // POST /api/departments
-// Create a new department (HR only)
-// Body: { name, description, employeeIds[], teamLeadId }
 // ─────────────────────────────────────────────────────────────────
 router.post('/', auth, isHR, async (req, res) => {
     try {
-        const { name, description, employeeIds = [], teamLeadId } = req.body;
+        const { name, description, employeeIds = [], teamLeadId, shiftDetails } = req.body;
 
         // Duplicate name check (case-insensitive)
         const existing = await Department.findOne({ name, isDeleted: false })
@@ -67,7 +65,8 @@ router.post('/', auth, isHR, async (req, res) => {
             name,
             description,
             employees: employeeIds,
-            teamLead: teamLeadId || null
+            teamLead: teamLeadId || null,
+            shiftDetails: shiftDetails || { startTime: null, endTime: null, gracePeriod: 0 }
         });
         await dept.save();
 
@@ -111,7 +110,7 @@ router.post('/', auth, isHR, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 router.put('/:id', auth, isHR, async (req, res) => {
     try {
-        const { name, description, employeeIds, teamLeadId } = req.body;
+        const { name, description, employeeIds, teamLeadId, shiftDetails } = req.body;
 
         // Duplicate name check ignoring current dept
         if (name) {
@@ -134,6 +133,12 @@ router.put('/:id', auth, isHR, async (req, res) => {
         const update = {};
         if (name !== undefined) update.name = name;
         if (description !== undefined) update.description = description;
+        if (shiftDetails !== undefined) {
+            update.shiftDetails = {
+                ...(currentDept.shiftDetails || {}),
+                ...shiftDetails
+            };
+        }
 
         if (employeeIds !== undefined) {
             update.employees = employeeIds;

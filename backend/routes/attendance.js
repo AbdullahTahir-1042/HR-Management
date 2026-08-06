@@ -8,6 +8,7 @@ const Holiday = require('../models/Holiday');
 const OfficeSchedule = require('../models/OfficeSchedule'); // ✅ NEW
 
 const User = require('../models/User');
+const Department = require('../models/Department'); // ✅ NEW
 const Notification = require('../models/Notification');
 const { sendEmail } = require('../services/emailService');
 const { getCheckInEmailTemplate } = require('../templates/checkInEmail');
@@ -116,11 +117,16 @@ router.post('/check-in', auth, async (req, res) => {
 
         try {
             // Check if user has custom shift details
-            const employeeUser = await User.findById(req.user.id);
+            const employeeUser = await User.findById(req.user.id).populate('departmentId');
             if (employeeUser && employeeUser.shiftDetails && employeeUser.shiftDetails.startTime && employeeUser.shiftDetails.endTime) {
                 expectedStartStr = employeeUser.shiftDetails.startTime;
                 expectedEndStr = employeeUser.shiftDetails.endTime;
                 appliedGracePeriod = employeeUser.shiftDetails.gracePeriod || 0;
+            } else if (employeeUser && employeeUser.departmentId && employeeUser.departmentId.shiftDetails && employeeUser.departmentId.shiftDetails.startTime && employeeUser.departmentId.shiftDetails.endTime) {
+                // Fallback to Department Shift
+                expectedStartStr = employeeUser.departmentId.shiftDetails.startTime;
+                expectedEndStr = employeeUser.departmentId.shiftDetails.endTime;
+                appliedGracePeriod = employeeUser.departmentId.shiftDetails.gracePeriod || 0;
             } else {
                 // Fallback to global Office Schedule
                 let schedule = await OfficeSchedule.findOne({ date: today, isDefault: false });

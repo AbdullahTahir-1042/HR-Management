@@ -476,7 +476,7 @@ router.put('/users/:id', auth, async (req, res) => {
 // @access  Private
 router.get('/user', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
+        const user = await User.findById(req.user.id).select('-password').populate('departmentId', 'shiftDetails name');
         res.json(user);
     } catch (err) {
         console.error(err.message);

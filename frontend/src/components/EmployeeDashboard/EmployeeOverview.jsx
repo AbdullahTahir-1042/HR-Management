@@ -170,11 +170,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
 
             {/* ── Today's & Upcoming Working Hours ── */}
             <div className="flex flex-col lg:flex-row gap-4 max-w-6xl">
-                {(user?.shiftDetails?.startTime || todaySchedule) && (() => {
+                {(user?.shiftDetails?.startTime || user?.departmentId?.shiftDetails?.startTime || todaySchedule) && (() => {
                     const hasCustomShift = user?.shiftDetails?.startTime && user?.shiftDetails?.endTime;
-                    const startTimeStr = hasCustomShift ? user.shiftDetails.startTime : todaySchedule?.startTime;
-                    const endTimeStr = hasCustomShift ? user.shiftDetails.endTime : todaySchedule?.endTime;
-                    const isCustomSchedule = hasCustomShift || (!todaySchedule?.isDefault && todaySchedule?.reason);
+                    const hasDeptShift = !hasCustomShift && user?.departmentId?.shiftDetails?.startTime && user?.departmentId?.shiftDetails?.endTime;
+                    
+                    const startTimeStr = hasCustomShift ? user.shiftDetails.startTime : (hasDeptShift ? user.departmentId.shiftDetails.startTime : todaySchedule?.startTime);
+                    const endTimeStr = hasCustomShift ? user.shiftDetails.endTime : (hasDeptShift ? user.departmentId.shiftDetails.endTime : todaySchedule?.endTime);
+                    const isCustomSchedule = hasCustomShift || hasDeptShift || (!todaySchedule?.isDefault && todaySchedule?.reason);
 
                     if (!startTimeStr || !endTimeStr) return null;
 
@@ -188,12 +190,14 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                 <p className="text-base font-bold text-slate-800 dark:text-white mt-0.5">
                                     {formatTime12hr(startTimeStr)} – {formatTime12hr(endTimeStr)}
                                 </p>
-                                {!hasCustomShift && todaySchedule?.reason && (
+                                {(!hasCustomShift && !hasDeptShift) && todaySchedule?.reason && (
                                     <p className="text-xs text-violet-600 font-medium mt-0.5">{todaySchedule.reason}</p>
                                 )}
                             </div>
                             {isCustomSchedule && (
-                                <span className="text-[10px] font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 px-2 py-1 rounded-lg shrink-0">Custom Schedule</span>
+                                <span className="text-[10px] font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 px-2 py-1 rounded-lg shrink-0">
+                                    {hasCustomShift ? 'Custom Schedule' : (hasDeptShift ? 'Department Schedule' : 'Custom Schedule')}
+                                </span>
                             )}
                         </div>
                     );
