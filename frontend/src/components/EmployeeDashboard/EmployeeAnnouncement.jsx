@@ -122,27 +122,27 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
                             <div
                                 key={entry._id}
                                 onClick={() => setSelected(entry)}
-                                className="px-6 py-5 hover:bg-indigo-50/50 transition-colors group cursor-pointer"
+                                className="px-6 py-5 hover:bg-indigo-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer"
                             >
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1.5">
-                                            <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0 group-hover:bg-indigo-100 transition-colors">
+                                            <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
                                                 <Megaphone size={15} />
                                             </span>
-                                            <h4 className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                                            <h4 className="text-sm font-bold text-slate-800 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                                 {entry.title}
                                             </h4>
                                         </div>
-                                        <p className="text-sm text-slate-500 leading-relaxed pl-10 truncate">
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed pl-10 truncate">
                                             {entry.message}
                                         </p>
                                         <div className="flex items-center gap-4 mt-3 pl-10">
-                                            <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                            <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-medium">
                                                 <User size={12} />
                                                 {entry.createdBy?.name || 'HR'}
                                             </span>
-                                            <span className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                                            <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-medium">
                                                 <Calendar size={12} />
                                                 {formatDate(entry.createdAt)}
                                             </span>
