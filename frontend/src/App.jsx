@@ -47,60 +47,60 @@ const ProtectedRoute = ({ children, role }) => {
 function App() {
     return (
         <ThemeProvider>
-            <AuthProvider>
-                <ConfirmProvider>
-                    <Toaster
-                        position="bottom-right"
-                        toastOptions={{
-                            className: 'text-sm font-semibold text-slate-700 shadow-xl border border-slate-100 rounded-2xl',
-                            duration: 4000,
-                            success: {
-                                iconTheme: {
-                                    primary: '#10b981',
-                                    secondary: '#ffffff',
-                                },
+        <AuthProvider>
+            <ConfirmProvider>
+                <Toaster
+                    position="bottom-right"
+                    toastOptions={{
+                        className: 'text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700 rounded-2xl',
+                        duration: 4000,
+                        success: {
+                            iconTheme: {
+                                primary: '#10b981',
+                                secondary: '#ffffff',
                             },
-                            error: {
-                                iconTheme: {
-                                    primary: '#f43f5e',
-                                    secondary: '#ffffff',
-                                },
-                            },
-                        }}
-                    />
-                    <Router>
-                        <ScrollToTop />
-                        <Suspense fallback={<PageLoader />}>
-                            <Routes>
-                                <Route path="/login" element={<Login />} />
-                                <Route path="/employee" element={
-                                    <ProtectedRoute role="employee">
-                                        <EmployeeDashboard />
-                                    </ProtectedRoute>
-                                } />
-                                <Route path="/hr" element={
-                                    <ProtectedRoute role="hr">
-                                        <HRDashboard />
-                                    </ProtectedRoute>
-                                } />
-                                <Route path="/onboarding" element={
-                                    <ProtectedRoute>
-                                        <PracticeOnboarding />
-                                    </ProtectedRoute>
-                                } />
-                                <Route path="/practice-onboarding" element={
-                                    <ProtectedRoute>
-                                        <PracticeOnboardingWizard />
-                                    </ProtectedRoute>
-                                } />
-                                <Route path="/" element={<Navigate to="/login" />} />
-                                <Route path="*" element={<Navigate to="/login" />} />
-                            </Routes>
-                        </Suspense>
-                    </Router>
-                </ConfirmProvider>
-            </AuthProvider>
-        </ThemeProvider>
+                    },
+                    error: {
+                        iconTheme: {
+                            primary: '#f43f5e',
+                            secondary: '#ffffff',
+                        },
+                    },
+                }}
+            />
+            <Router>
+                <ScrollToTop />
+                <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/employee" element={
+                            <ProtectedRoute role="employee">
+                                <EmployeeDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/hr" element={
+                            <ProtectedRoute role="hr">
+                                <HRDashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/onboarding" element={
+                            <ProtectedRoute>
+                                <PracticeOnboarding />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/practice-onboarding" element={
+                            <ProtectedRoute>
+                                <PracticeOnboardingWizard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/" element={<Navigate to="/login" />} />
+                        <Route path="*" element={<Navigate to="/login" />} />
+                    </Routes>
+                </Suspense>
+            </Router>
+        </ConfirmProvider>
+    </AuthProvider>
+        </ThemeProvider >
     );
 }
 

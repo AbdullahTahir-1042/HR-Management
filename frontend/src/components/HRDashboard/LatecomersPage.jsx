@@ -11,7 +11,7 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+        return `${month}/${day}/${year}`;
     };
 
     const formatTime = (isoStr) => {
@@ -64,7 +64,7 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                             placeholder="Search employee..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="px-3 py-2 pl-9 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm w-48 sm:w-64"
+                            className="px-3 py-2 pl-9 bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 transition-all text-sm w-48 sm:w-64"
                         />
                     </div>
                     <div className="flex items-center gap-2">
@@ -72,15 +72,15 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                             type="date"
                             value={dateFilter}
                             onChange={(e) => setDateFilter(e.target.value)}
-                            className="px-3 py-2 bg-slate-100 border border-transparent rounded-xl outline-none focus:bg-white focus:border-indigo-500 transition-all text-sm"
+                            className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 transition-all text-sm cursor-pointer"
                         />
-                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                        <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-transparent dark:border-slate-700">
                             <button
                                 onClick={() => setDateFilter(new Date().toISOString().slice(0, 10))}
                                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
                                     dateFilter === new Date().toISOString().slice(0, 10)
-                                        ? 'bg-white text-indigo-600 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                             >
                                 Today
@@ -89,8 +89,8 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                                 onClick={() => setDateFilter('')}
                                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
                                     dateFilter === ''
-                                        ? 'bg-white text-emerald-600 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                        ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                             >
                                 All Time
