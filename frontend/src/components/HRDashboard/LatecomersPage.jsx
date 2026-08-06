@@ -129,13 +129,13 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                                         key={entry._id}
                                         className={`table-row transition-colors ${
                                             entry.compensated
-                                                ? 'bg-emerald-50/30 hover:bg-emerald-50/60'
+                                                ? 'bg-emerald-50/30 hover:bg-emerald-50/60 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20'
                                                 : ''
                                         }`}
                                     >
                                         <td className="px-6 py-5">
                                             <div>
-                                                <p className="text-sm font-bold text-slate-700">
+                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                                     {entry.employee?.name || '—'}
                                                 </p>
                                                 <p className="text-xs text-slate-400 font-medium">
@@ -144,37 +144,37 @@ const LatecomersPage = ({ latecomers = [], dateFilter = '', setDateFilter = () =
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <span className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
+                                            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-sm font-medium">
                                                 <Calendar size={14} className="text-slate-400" />
                                                 {formatDate(entry.date)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <span className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
+                                            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-sm font-medium">
                                                 <Clock size={14} className="text-red-400" />
                                                 {formatTime(entry.checkIn)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <span className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
+                                            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-sm font-medium">
                                                 <Clock size={14} className="text-slate-400" />
                                                 {formatTime(entry.checkOut)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 flex items-center gap-1.5 w-fit">
+                                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20 flex items-center gap-1.5 w-fit">
                                                 <AlertCircle size={12} />
                                                 {formatLateDuration(entry.minutesLate)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">
                                             {entry.compensated ? (
-                                                <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1.5 w-fit">
+                                                <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1.5 w-fit">
                                                     <CheckCircle size={12} />
                                                     Compensated
                                                 </span>
                                             ) : (
-                                                <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 flex items-center gap-1.5 w-fit">
+                                                <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20 flex items-center gap-1.5 w-fit">
                                                     <AlertCircle size={12} />
                                                     Late
                                                 </span>
