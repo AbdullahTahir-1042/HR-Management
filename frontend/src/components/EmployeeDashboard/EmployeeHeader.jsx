@@ -1,4 +1,4 @@
-import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
 const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, setSidebarOpen }) => {
@@ -10,6 +10,9 @@ const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, set
         'hr-requests': { icon: <MessageSquare size={24} className="text-indigo-600" />, label: 'HR Requests' },
         announcements: { icon: <Bell size={24} className="text-indigo-600" />, label: 'Announcements' },
         profile: { icon: <User size={24} className="text-indigo-600" />, label: 'My Profile' },
+        messages: { icon: <MessageCircle size={24} className="text-indigo-600" />, label: 'Messages' },
+        training: { icon: <MonitorPlay size={24} className="text-indigo-600" />, label: 'Training' },
+        myTeam: { icon: <Users size={24} className="text-indigo-600" />, label: 'My Team' },
     };
 
     const current = config[activeTab] || config.dashboard;
