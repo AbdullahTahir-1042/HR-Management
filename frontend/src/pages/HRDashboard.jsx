@@ -24,7 +24,7 @@ import HRMistakeReports from '../components/HRDashboard/HRMistakeReports';
 import HRHolidayManagement from '../components/HRDashboard/HRHolidayManagement';
 import HRRequestsManagement from '../components/HRDashboard/HRRequestsManagement';
 import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManagement';
-import LatecomersPage from '../components/HRDashboard/LatecomersPage';
+
 import HRTrainingManagement from '../components/HRDashboard/HRTrainingManagement'; // ✅ NEW
 import OfficeScheduleManagement from '../components/HRDashboard/OfficeScheduleManagement'; // ✅ NEW
 import MessagesPage from '../components/MessagesPage';
@@ -53,7 +53,7 @@ const HRDashboard = () => {
 
     const getTodayStr = () => new Date().toISOString().slice(0, 10);
     const [departments, setDepartments] = useState([]);
-    const [latecomerDateFilter, setLatecomerDateFilter] = useState(getTodayStr());
+
     const [leaveFilter, setLeaveFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceDateFilter, setAttendanceDateFilter] = useState(getTodayStr());
@@ -368,38 +368,7 @@ const HRDashboard = () => {
         }
     };
 
-    const latecomers = attendance
-        .filter(record => record.checkIn)
-        .map(record => {
-            const checkIn = new Date(record.checkIn);
-            
-            // Read expected start and end from record, fallback to 09:00 and 19:00
-            const expectedStartStr = record.expectedCheckIn || '09:00';
-            const expectedEndStr = record.expectedCheckOut || '19:00';
-            
-            const [startHour, startMin] = expectedStartStr.split(':').map(Number);
-            const [endHour, endMin] = expectedEndStr.split(':').map(Number);
 
-            const shiftStart = new Date(checkIn);
-            shiftStart.setHours(startHour, startMin, 0, 0);
-            
-            const shiftEnd = new Date(checkIn);
-            shiftEnd.setHours(endHour, endMin, 0, 0);
-            
-            const minutesLate = Math.round((checkIn - shiftStart) / 60000);
-            let compensated = false;
-            
-            if (record.checkOut && minutesLate > 0) {
-                const checkOut = new Date(record.checkOut);
-                const expectedEnd = new Date(shiftEnd);
-                const overtimeMinutes = Math.round((checkOut - expectedEnd) / 60000);
-                if (overtimeMinutes >= minutesLate) compensated = true;
-            }
-            return { ...record, minutesLate, compensated };
-        })
-        .filter(record => record.status === 'late');
-
-    const filteredLatecomers = latecomers.filter(l => latecomerDateFilter ? l.date === latecomerDateFilter : true);
     const filteredLeaves = leaves.filter(l => leaveFilter === 'all' ? true : l.status === leaveFilter);
     const filteredAttendance = attendance.filter(a => {
         const matchesSearch =
@@ -477,7 +446,7 @@ const HRDashboard = () => {
                                 attendance={attendance}
                                 employees={employees}
                                 holidays={holidays}
-                                latecomers={latecomers}
+
                                 announcements={announcements}
                                 mistakeReports={mistakeReports}
                                 hrRequests={hrRequests}
@@ -620,13 +589,7 @@ const HRDashboard = () => {
                             <HRMistakeReports />
                         )}
 
-                        {activeTab === 'latecomers' && (
-                            <LatecomersPage
-                                latecomers={filteredLatecomers}
-                                dateFilter={latecomerDateFilter}
-                                setDateFilter={setLatecomerDateFilter}
-                            />
-                        )}
+
 
                         {activeTab === 'office-schedule' && (
                             <OfficeScheduleManagement />

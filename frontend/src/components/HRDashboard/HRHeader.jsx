@@ -41,7 +41,7 @@ const HRHeader = ({
         'employees': { icon: <Users size={24} className="text-indigo-600" />, title: 'Staff Directory' },
         'leaves': { icon: <CalendarCheck size={24} className="text-indigo-600" />, title: 'Leave Requests' },
         'leave-types': { icon: <CalendarRange size={24} className="text-indigo-600" />, title: 'Leave Types' },
-        'latecomers': { icon: <Clock size={24} className="text-indigo-600" />, title: 'Late Comers' },
+
         'attendance': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'Attendance Master' },
         'departments': { icon: <Building2 size={24} className="text-indigo-600" />, title: 'Departments' },
         'reports': { icon: <BarChart2 size={24} className="text-indigo-600" />, title: 'User Report Center' },
