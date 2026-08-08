@@ -26,18 +26,7 @@ export default defineConfig({
             if (id.includes('framer-motion')) {
               return 'framer-motion';
             }
-            // Group other vendor dependencies together
             return 'vendor';
-            if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('react')) {
-              return 'vendor-react';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-lucide';
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-motion';
-            }
-            return 'vendor-libs';
           }
         }
       }

@@ -25,7 +25,6 @@ import MessagesPage from '../components/MessagesPage';
 import FirstLoginModal from '../components/FirstLoginModal';
 import EmployeeTrainingCenter from '../components/EmployeeDashboard/EmployeeTrainingCenter'; // ✅ NEW
 import EmployeeReviews from '../components/EmployeeDashboard/EmployeeReviews';
-import TeamLeaves from '../components/EmployeeDashboard/TeamLeaves';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -636,9 +635,6 @@ const EmployeeDashboard = () => {
                             <EmployeeHolidays holidays={holidays} />
                         )}
 
-                        {activeTab === 'team-leaves' && (
-                            <TeamLeaves />
-                        )}
 
                         {activeTab === 'hr-requests' && (
                             <EmployeeHRRequests
