@@ -598,7 +598,7 @@ const AddEmployeePage = ({ onBack, onEmployeeAdded }) => {
                                     <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                     <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="input-field pl-10">
                                         <option value="full time">Full Time</option>
-                                        <option value="probation">Probation</option>
+                                        <option value="probation">On Probation</option>
                                         <option value="internship">Internship</option>
                                     </select>
                                 </div>

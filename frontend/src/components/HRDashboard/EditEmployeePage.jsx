@@ -573,7 +573,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
                                         <select disabled={disableProtectedFields} value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`}>
                                             <option value="full time">Full Time</option>
-                                            <option value="probation">Probation</option>
+                                            <option value="probation">On Probation</option>
                                             <option value="internship">Internship</option>
                                         </select>
                                     </div>

@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
     Sparkles, GraduationCap, BookOpen, X, MessageCircle, MonitorPlay,
-    Sun, Moon
+    Sun, Moon, Star
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
     { id: 'attendance',   label: 'Mark Attendance',   icon: Clock },
     { id: 'leaves',       label: 'Request Leave',     icon: Calendar },
     { id: 'holidays',     label: 'Holiday Calendar',  icon: PartyPopper },
+    { id: 'performance',  label: 'My Performance',    icon: Star },
     { id: 'hr-requests',  label: 'HR Requests',       icon: MessageSquare },
     { id: 'messages',     label: 'Messages',          icon: MessageCircle },
     { id: 'announcements',label: 'Announcements',     icon: Bell },
@@ -36,8 +37,8 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight block leading-tight transition-colors duration-200 truncate max-w-[150px]">
                             {user?.name || 'Employee Portal'}
                         </span>
-                        <span className="text-xs text-slate-500 font-medium truncate max-w-[150px] block">
-                            {user?.designation || 'Staff'}
+                        <span className="text-xs text-slate-500 font-medium truncate max-w-[150px] block capitalize">
+                            {user?.department || 'Staff'}
                         </span>
                         {user?.isTeamLead && (
                             <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">

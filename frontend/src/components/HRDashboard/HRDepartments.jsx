@@ -8,6 +8,28 @@ import {
 
 // ─── Small reusable components ───────────────────────────────────────────────
 
+
+const formatTime12hr = (timeString) => {
+    if (!timeString) return '';
+    const [h, m] = timeString.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${m} ${ampm}`;
+};
+
+const getEmployeeTimingStr = (emp, deptShiftDetails) => {
+    const hasCustomShift = emp?.shiftDetails?.startTime && emp?.shiftDetails?.endTime;
+    const hasDeptShift = !hasCustomShift && deptShiftDetails?.startTime && deptShiftDetails?.endTime;
+    const startTimeStr = hasCustomShift ? emp.shiftDetails.startTime : (hasDeptShift ? deptShiftDetails.startTime : null);
+    const endTimeStr = hasCustomShift ? emp.shiftDetails.endTime : (hasDeptShift ? deptShiftDetails.endTime : null);
+    
+    if (startTimeStr && endTimeStr) {
+        return `${formatTime12hr(startTimeStr)} - ${formatTime12hr(endTimeStr)}`;
+    }
+    return '';
+};
+
 const TeamLeadBadge = () => (
     <span className="bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs font-semibold px-2 py-0.5 rounded-full">
         Team Lead
@@ -356,7 +378,14 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
                                     />
                                     <MemberAvatar name={emp.name} />
                                     <span className="text-sm text-slate-700">{emp.name}</span>
-                                    <span className="text-xs text-slate-400 ml-auto">{emp.status}</span>
+                                    <span className="text-[10px] text-slate-400 ml-auto flex flex-col items-end">
+                                        <span className="capitalize">{emp.status || 'Employee'}</span>
+                                        {getEmployeeTimingStr(emp, shiftDetails) && (
+                                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded mt-0.5 flex items-center gap-1">
+                                                <Clock size={9} /> {getEmployeeTimingStr(emp, shiftDetails)}
+                                            </span>
+                                        )}
+                                    </span>
                                 </label>
                             ))}
                         </div>
@@ -586,7 +615,14 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
                                     />
                                     <MemberAvatar name={emp.name} />
                                     <span className="text-sm text-slate-700">{emp.name}</span>
-                                    <span className="text-xs text-slate-400 ml-auto">{emp.status}</span>
+                                    <span className="text-[10px] text-slate-400 ml-auto flex flex-col items-end">
+                                        <span className="capitalize">{emp.status || 'Employee'}</span>
+                                        {getEmployeeTimingStr(emp, shiftDetails) && (
+                                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded mt-0.5 flex items-center gap-1">
+                                                <Clock size={9} /> {getEmployeeTimingStr(emp, shiftDetails)}
+                                            </span>
+                                        )}
+                                    </span>
                                 </label>
                             ))}
                         </div>

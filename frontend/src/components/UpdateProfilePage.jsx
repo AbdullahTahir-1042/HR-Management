@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import apiClient from '../api/axiosClient';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil, Bell, MessageSquare, Megaphone, CalendarCheck, CheckCircle2, FileText, ArrowRight } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, Trash2, Pencil, Bell, MessageSquare, Megaphone, CalendarCheck, CheckCircle2, FileText, ArrowRight, Award } from 'lucide-react';
 import ContractModal from './ContractModal';
 
 const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
@@ -28,6 +28,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isContractModalOpen, setIsContractModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [awards, setAwards] = useState([]);
 
     // Fetch full user data to ensure we have everything
     useEffect(() => {
@@ -37,6 +38,12 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                 setFormData(prev => ({ ...prev, ...res.data }));
             } catch (err) {
                 console.error("Error fetching user data", err);
+            }
+            try {
+                const awardRes = await apiClient.get(`/awards/employee/${user.id || user._id}`);
+                setAwards(awardRes.data || []);
+            } catch (err) {
+                console.error("Error fetching employee awards", err);
             }
         };
         fetchUserData();
@@ -118,6 +125,36 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                         )}
                         <h3 className="font-bold text-slate-800">{formData.name}</h3>
                         <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">{user?.role}</p>
+                    </div>
+
+                    {/* Awards & Recognition */}
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-4 mt-6">
+                        <h3 className="font-bold text-slate-800 text-[10px] uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-2">
+                            <Award className="text-indigo-600" size={16} /> Awards & Recognition
+                        </h3>
+                        {awards.length === 0 ? (
+                            <p className="text-xs text-slate-400 text-center py-4">No awards or recognition recorded yet.</p>
+                        ) : (
+                            <div className="space-y-3.5 max-h-80 overflow-y-auto pr-1">
+                                {awards.map(a => (
+                                    <div key={a._id} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col gap-2 relative">
+                                        <div className="flex gap-2.5 items-start">
+                                            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                                                <Award size={16} />
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <h4 className="font-bold text-slate-800 text-xs truncate" title={a.title}>{a.title}</h4>
+                                                {a.description && <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{a.description}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-1.5 border-t border-slate-100/50 text-[9px] text-slate-400 font-bold uppercase tracking-tight">
+                                            <span>{a.date ? new Date(a.date).toLocaleDateString('default', { month: 'short', year: 'numeric' }) : '-'}</span>
+                                            <span>By: {a.awardedBy?.name || 'HR'}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 

@@ -1,7 +1,7 @@
 import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
-const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, setSidebarOpen }) => {
+const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, setSidebarOpen, onNotificationNavigate }) => {
     const config = {
         dashboard: { icon: <LayoutDashboard size={24} className="text-indigo-600" />, label: 'Overview' },
         attendance: { icon: <Clock size={24} className="text-indigo-600" />, label: 'Mark Attendance' },
@@ -45,7 +45,7 @@ const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, set
             </div>
             
             <div className="flex items-center ml-2">
-                <NotificationsPanel />
+                <NotificationsPanel onNavigate={onNotificationNavigate} />
             </div>
         </header>
     );

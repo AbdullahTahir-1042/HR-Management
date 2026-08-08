@@ -4,6 +4,8 @@ import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Calendar, User, Plus, Trash2, X, Loader2, ArrowLeft, Pencil, Check, CheckCheck, Eye } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
+import { formatDate } from '../../utils/dateUtils';
+
 
 const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnnouncements }) => {
     const { user } = useContext(AuthContext);
@@ -74,7 +76,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
             .filter(Boolean);
     };
 
-    const formatDate = (dateStr) => {
+    const localFormatDate_unused = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
         return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
@@ -82,9 +84,9 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
 
     const formatDateLong = (dateStr) => {
         if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-PK', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-        });
+        const datePart = formatDate(dateStr);
+        const timePart = new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `${datePart} at ${timePart}`;
     };
 
     const handleCreate = async (e) => {
@@ -409,7 +411,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                                                 </span>
                                                 <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-medium">
                                                     <Calendar size={12} />
-                                                    {formatDate(entry.createdAt)}
+                                                    {formatDateLong(entry.createdAt)}
                                                 </span>
                                             </div>
                                         </div>

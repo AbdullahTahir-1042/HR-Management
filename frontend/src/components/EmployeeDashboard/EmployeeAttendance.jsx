@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, LogIn, LogOut, CheckCircle, ClipboardList, AlertTriangle } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
+
 
 const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -51,7 +53,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         if (lateStr) isLate = true;
     }
 
-    const formatDate = (dateStr) => {
+    const localFormatDate = (dateStr) => {
         if (!dateStr) return '-';
         const [year, month, day] = dateStr.split('-');
         return `${day}/${month}/${year}`;

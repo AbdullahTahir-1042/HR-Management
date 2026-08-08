@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../api/axiosClient';
 import { Calendar, Clock, Edit2, Trash2, Plus, Save, Bell, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { formatDate } from '../../utils/dateUtils';
+
 
 const OfficeScheduleManagement = () => {
     const [schedules, setSchedules] = useState([]);
@@ -258,7 +260,7 @@ const OfficeScheduleManagement = () => {
                                 {customSchedules.map(schedule => (
                                     <tr key={schedule._id} className="border-b border-slate-100 dark:border-slate-700 last:border-0">
                                         <td className="py-4 font-medium text-slate-800 dark:text-white">
-                                            {new Date(schedule.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                            {formatDate(schedule.date)}
                                         </td>
                                         <td className="py-4 text-slate-600 dark:text-slate-300">
                                             {formatTime12hr(schedule.startTime)} - {formatTime12hr(schedule.endTime)}

@@ -6,14 +6,44 @@ import {
     MessageCircle, Search, Plus, Send, Users, X, Loader2,
     ArrowLeft, UserPlus, Check, CheckCheck, Clock, Reply,
     Trash2, Settings, ShieldCheck, ShieldOff, LogOut, ChevronUp, Sparkles,
-    Info, Mail, Building2, BadgeCheck, Bell, BellRing, BellOff
+    Info, Mail, Building2, BadgeCheck, Bell, BellRing, BellOff, SquarePen
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { formatDate } from '../utils/dateUtils';
+
 
 const POLL_INTERVAL_MS = 3000;
 const TYPING_PING_THROTTLE_MS = 2000;
 const ONLINE_THRESHOLD_MS = 20000;
 const PAGE_SIZE = 50;
+
+const StatusTicks = ({ message }) => {
+    let status = 'sent';
+    if (message._sending) status = 'sending';
+    else if (message.totalRecipients > 0 && message.readCount >= message.totalRecipients) status = 'seen';
+    else if (message.totalRecipients > 0 && message.deliveredCount >= message.totalRecipients) status = 'delivered';
+
+    const icons = {
+        sending: <Clock size={13} className="text-white/70" />,
+        sent: <Check size={13} className="text-white/70" />,
+        delivered: <CheckCheck size={13} className="text-white/70" />,
+        seen: <CheckCheck size={13} className="text-sky-300" />
+    };
+
+    return (
+        <AnimatePresence mode="wait">
+            <motion.span
+                key={status}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                className="inline-flex"
+            >
+                {icons[status]}
+            </motion.span>
+        </AnimatePresence>
+    );
+};
 
 const MessagesPage = () => {
     const { user: authUser } = useContext(AuthContext);
@@ -405,7 +435,7 @@ const MessagesPage = () => {
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
         if (isToday) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return formatDate(date);
     };
 
     const isOnline = (lastSeenAt) => lastSeenAt && Date.now() - new Date(lastSeenAt).getTime() < ONLINE_THRESHOLD_MS;
@@ -448,33 +478,7 @@ const MessagesPage = () => {
 
     const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
 
-    const StatusTicks = ({ message }) => {
-        let status = 'sent';
-        if (message._sending) status = 'sending';
-        else if (message.totalRecipients > 0 && message.readCount >= message.totalRecipients) status = 'seen';
-        else if (message.totalRecipients > 0 && message.deliveredCount >= message.totalRecipients) status = 'delivered';
 
-        const icons = {
-            sending: <Clock size={13} className="text-white/70" />,
-            sent: <Check size={13} className="text-white/70" />,
-            delivered: <CheckCheck size={13} className="text-white/70" />,
-            seen: <CheckCheck size={13} className="text-sky-300" />
-        };
-
-        return (
-            <AnimatePresence mode="wait">
-                <motion.span
-                    key={status}
-                    initial={{ scale: 0.4, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                    className="inline-flex"
-                >
-                    {icons[status]}
-                </motion.span>
-            </AnimatePresence>
-        );
-    };
 
     return (
         <div className="space-y-5">
@@ -509,12 +513,12 @@ const MessagesPage = () => {
                     )}
                     <motion.button
                         onClick={() => setShowNewChat(true)}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.96 }}
-                        className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm shadow-indigo-200 hover:shadow-md hover:shadow-indigo-200 transition-shadow"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="p-2 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        title="New Chat"
                     >
-                        <Plus size={16} />
-                        New Chat
+                        <SquarePen size={20} />
                     </motion.button>
                 </div>
             </div>

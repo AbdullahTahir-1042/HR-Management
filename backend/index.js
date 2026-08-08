@@ -63,6 +63,7 @@ app.use('/api/performance-reviews', require('./routes/performanceReviews'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/loans', require('./routes/loans'));
 app.use('/api/payroll', require('./routes/payroll')); // ✅ NEW
+app.use('/api/awards', require('./routes/award')); // ✅ NEW
 app.use('/api/office-schedule', require('./routes/officeSchedule')); // ✅ NEW
 app.use('/api/test', require('./routes/test'));
 console.log('✓ Test Route Registered');
