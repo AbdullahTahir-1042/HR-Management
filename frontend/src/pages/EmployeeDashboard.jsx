@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
-import { useState, useEffect, useContext, useRef, useCallback } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -72,6 +72,12 @@ const EmployeeDashboard = () => {
     const [leaveTypes, setLeaveTypes] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Check if team lead
+    const isTeamLead = (fullUser || authUser)?.role === 'lead';
+
     // ── UC-09: HR Requests state ──────────────────────────────────────────────
     const [hrRequests, setHrRequests] = useState([]);
     const [hrRequestSubmitting, setHrRequestSubmitting] = useState(false);
@@ -86,7 +92,7 @@ const EmployeeDashboard = () => {
             mainRef.current.scrollTop = 0;
         }
         window.scrollTo(0, 0);
-    }, [activeTab]);
+    }, [location.pathname]);
 
     const handleSidebarNavigate = (newTab) => {
         setActiveTab(newTab);
@@ -115,7 +121,7 @@ const EmployeeDashboard = () => {
         setActiveTab('dashboard');
     };
 
-    const canGoBack = activeTab !== 'dashboard';
+    
 
     // Filters
     const [announcements, setAnnouncements] = useState([]);
@@ -508,14 +514,14 @@ const EmployeeDashboard = () => {
 
     useEffect(() => {
         setSidebarOpen(false);
-    }, [activeTab]);
+    }, [location.pathname]);
 
     // ── Refresh leaves & balances whenever the Leaves tab is opened ────────────
     useEffect(() => {
-        if (activeTab === 'leaves') {
+        if (location.pathname.includes('leaves')) {
             refreshLeavesAndBalances();
         }
-    }, [activeTab]);
+    }, [location.pathname]);
 
     // ── BroadcastChannel: sync instantly when HR approves/rejects a leave ─────
     // Same pattern as announcements_channel — zero polling, instant update.
@@ -562,8 +568,8 @@ const EmployeeDashboard = () => {
 
             <EmployeeSidebar
                 unreadMessages={unreadMessages}
-                activeTab={activeTab}
-                setActiveTab={handleSidebarNavigate}
+                
+                
                 user={fullUser || authUser}
                 logout={logout}
                 isOpen={isSidebarOpen}
@@ -579,107 +585,50 @@ const EmployeeDashboard = () => {
 
             <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <EmployeeHeader
-                    activeTab={activeTab}
-                    setActiveTab={handleTabChange}
-                    onBack={handleGoBack}
-                    canGoBack={canGoBack}
+                    
+                    
+                    
+                    
                     setSidebarOpen={setSidebarOpen}
-                    onNotificationNavigate={handleTabChange}
+                    
                 />
 
 
                 <div className="p-4 lg:p-6 max-w-full mx-auto">
-                    <AnimatePresence mode="wait">
-
-                        {activeTab === 'dashboard' && (
+                    <Routes>
+                        <Route path="/" element={
                             <EmployeeOverview
-                                user={fullUser || authUser}
-                                attendance={attendance}
-                                leaves={leaves}
-                                holidays={holidays}
-                                announcements={announcements}
-                                setActiveTab={setActiveTab}
-                                performanceSummary={performanceSummary}
+                                user={fullUser || authUser} attendance={attendance} leaves={leaves} holidays={holidays}
+                                announcements={announcements} performanceSummary={performanceSummary}
                             />
-                        )}
-
-                        {activeTab === 'attendance' && (
+                        } />
+                        <Route path="attendance" element={
                             <EmployeeAttendance
                                 attendance={attendance}
-                                history={attendanceHistory.filter(a =>
-                                    attendanceDateFilter ? a.date === attendanceDateFilter : true
-                                )}
-                                dateFilter={attendanceDateFilter}
-                                setDateFilter={setAttendanceDateFilter}
-                                handleCheckIn={handleCheckIn}
-                                handleCheckOut={handleCheckOut}
+                                history={attendanceHistory.filter(a => attendanceDateFilter ? a.date === attendanceDateFilter : true)}
+                                dateFilter={attendanceDateFilter} setDateFilter={setAttendanceDateFilter}
+                                handleCheckIn={handleCheckIn} handleCheckOut={handleCheckOut}
                             />
-                        )}
-
-                        {activeTab === 'leaves' && (
+                        } />
+                        <Route path="leaves" element={
                             <EmployeeLeaves
-                                user={fullUser || authUser}
-                                leaveForm={leaveForm}
-                                setLeaveForm={setLeaveForm}
-                                handleApplyLeave={handleApplyLeave}
-                                leaves={leaves}
-                                statusFilter={leaveStatusFilter}
-                                setStatusFilter={setLeaveStatusFilter}
-                                leaveBalances={leaveBalances}
-                                leaveTypes={leaveTypes}
-                                onRefresh={refreshLeavesAndBalances}
+                                user={fullUser || authUser} leaveForm={leaveForm} setLeaveForm={setLeaveForm} handleApplyLeave={handleApplyLeave}
+                                leaves={leaves} statusFilter={leaveStatusFilter} setStatusFilter={setLeaveStatusFilter}
+                                leaveBalances={leaveBalances} leaveTypes={leaveTypes} onRefresh={refreshLeavesAndBalances}
                             />
-                        )}
-
-                        {activeTab === 'holidays' && (
-                            <EmployeeHolidays holidays={holidays} />
-                        )}
-
-
-                        {activeTab === 'hr-requests' && (
-                            <EmployeeHRRequests
-                                requests={hrRequests}
-                                onSubmit={handleSubmitHRRequest}
-                                submitting={hrRequestSubmitting}
-                            />
-                        )}
-
-                        {/* ── NEW: Messages tab from feature/chat ── */}
-                        {activeTab === 'messages' && (
-                            <MessagesPage />
-                        )}
-
-                        {activeTab === 'training' && (
-                            <EmployeeTrainingCenter />
-                        )}
-
-                        {activeTab === 'announcements' && (
-                            <EmployeeAnnouncement
-                                initialAnnouncements={announcements}
-                                onRefreshAnnouncements={fetchAllAnnouncements}
-                            />
-                        )}
-
-                        {activeTab === 'performance' && <EmployeeReviews />}
-
-                        {activeTab === 'profile' && (
-                            <UpdateProfilePage
-                                user={fullUser || authUser}
-                                onBack={() => setActiveTab('dashboard')}
-                                onUpdate={(updatedUser) => setFullUser(updatedUser)}
-                            />
-                        )}
-
-                        {/* ── My Team (Team Leads only) ── */}
-                        {activeTab === 'myTeam' && (
-                            <MyTeamSection key="myTeam" />
-                        )}
-
-                        {activeTab === 'teamLeaves' && (
-                            <TeamLeaves key="teamLeaves" />
-                        )}
-
-                    </AnimatePresence>
+                        } />
+                        <Route path="holidays" element={<EmployeeHolidays holidays={holidays} />} />
+                        <Route path="hr-requests" element={<EmployeeHRRequests requests={hrRequests} onSubmit={handleSubmitHRRequest} submitting={hrRequestSubmitting} />} />
+                        <Route path="messages" element={<MessagesPage />} />
+                        <Route path="training" element={<EmployeeTrainingCenter />} />
+                        <Route path="announcements" element={<EmployeeAnnouncement initialAnnouncements={announcements} onRefreshAnnouncements={fetchAllAnnouncements} />} />
+                        <Route path="performance" element={<EmployeeReviews />} />
+                        <Route path="profile" element={
+                            <UpdateProfilePage user={fullUser || authUser} onBack={() => navigate('/employee')} onUpdate={(updatedUser) => setFullUser(updatedUser)} />
+                        } />
+                        <Route path="myTeam" element={<MyTeamSection />} />
+                        <Route path="*" element={<Navigate to="/employee" replace />} />
+                    </Routes>
                 </div>
             </main>
 

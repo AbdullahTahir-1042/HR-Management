@@ -1,7 +1,17 @@
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft } from 'lucide-react';
 import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
-const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, setSidebarOpen, onNotificationNavigate }) => {
+const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    let activeTab = location.pathname.split('/').pop();
+    if (activeTab === 'employee' || activeTab === '') activeTab = 'dashboard';
+
+    const canGoBack = activeTab !== 'dashboard';
+
     const config = {
         dashboard: { icon: <LayoutDashboard size={24} className="text-indigo-600" />, label: 'Overview' },
         attendance: { icon: <Clock size={24} className="text-indigo-600" />, label: 'Mark Attendance' },
@@ -10,10 +20,10 @@ const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, set
         'hr-requests': { icon: <MessageSquare size={24} className="text-indigo-600" />, label: 'HR Requests' },
         announcements: { icon: <Bell size={24} className="text-indigo-600" />, label: 'Announcements' },
         profile: { icon: <User size={24} className="text-indigo-600" />, label: 'My Profile' },
-        messages: { icon: <MessageCircle size={24} className="text-indigo-600" />, label: 'Messages' },
-        training: { icon: <MonitorPlay size={24} className="text-indigo-600" />, label: 'Training' },
-        myTeam: { icon: <Users size={24} className="text-indigo-600" />, label: 'My Team' },
-        teamLeaves: { icon: <Calendar size={24} className="text-indigo-600" />, label: 'Team Leaves' },
+        messages: { icon: <MessageSquare size={24} className="text-indigo-600" />, label: 'Messages' },
+        myTeam: { icon: <User size={24} className="text-indigo-600" />, label: 'My Team' },
+        training: { icon: <User size={24} className="text-indigo-600" />, label: 'Training Center' },
+        performance: { icon: <User size={24} className="text-indigo-600" />, label: 'My Performance' },
     };
 
     const current = config[activeTab] || config.dashboard;
@@ -30,7 +40,7 @@ const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, set
                 </button>
                 {canGoBack && (
                     <button
-                        onClick={onBack}
+                        onClick={() => navigate('/employee')}
                         className="flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl transition-all font-semibold text-xs sm:text-sm group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shrink-0 shadow-xs"
                         aria-label="Go Back"
                         title="Go Back"
