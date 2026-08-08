@@ -1,11 +1,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/axiosClient';
 import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare, Star, AlertCircle , MessageCircle, MonitorPlay, Users} from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 
 const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab, performanceSummary }) => {
     const todayAttendance = attendance;
+    const navigate = useNavigate();
 
     const [todaySchedule, setTodaySchedule] = useState(null);
     const [upcomingSchedules, setUpcomingSchedules] = useState([]);
@@ -142,7 +144,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                 </div>
                             ) : (
                                 <button 
-                                    onClick={() => setActiveTab('attendance')} 
+                                    onClick={() => navigate('/employee/attendance')} 
                                     className="bg-white dark:bg-slate-800 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2"
                                 >
                                     Check In Now <ArrowRight size={16} />
@@ -150,14 +152,14 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             )
                         ) : !todayAttendance.checkOut ? (
                                 <button 
-                                    onClick={() => setActiveTab('attendance')} 
+                                    onClick={() => navigate('/employee/attendance')} 
                                     className="bg-rose-500 dark:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-rose-600 dark:hover:bg-rose-700 hover:scale-105 transition-all flex items-center gap-2"
                                 >
                                     Check Out <ArrowRight size={16} />
                                 </button>
                         ) : (
                             <button 
-                                onClick={() => setActiveTab('leaves')} 
+                                onClick={() => navigate('/employee/leaves')} 
                                 className="bg-white dark:bg-slate-800/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white dark:bg-slate-800/30 transition-colors flex items-center gap-2"
                             >
                                 Request Leave <Calendar size={16} />
@@ -242,7 +244,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 {/* Performance Rating Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
-                    onClick={() => setActiveTab('performance')}
+                    onClick={() => navigate('/employee/performance')}
                     className={`bg-white dark:bg-slate-800 p-5 rounded-2xl border ${performanceSummary?.totalComplaints > 0 ? 'border-rose-200 hover:border-rose-300' : 'border-amber-200 hover:border-amber-300'} shadow-sm cursor-pointer transition-all group`}
                 >
                     <div className="flex justify-between items-start mb-3">
@@ -264,7 +266,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 {/* Today Status Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
-                    onClick={() => setActiveTab('attendance')}
+                    onClick={() => navigate('/employee/attendance')}
                     className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
                 >
                     <div className="flex justify-between items-start mb-3">
@@ -299,7 +301,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 {/* Leaves Month Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
-                    onClick={() => setActiveTab('leaves')}
+                    onClick={() => navigate('/employee/leaves')}
                     className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
                 >
                     <div className="flex justify-between items-start mb-3">
@@ -320,7 +322,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 {/* HR Request Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
-                    onClick={() => setActiveTab('hr-requests')}
+                    onClick={() => navigate('/employee/hr-requests')}
                     className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-blue-200 dark:hover:border-blue-500/50"
                 >
                     <div className="flex justify-between items-start mb-3">
@@ -344,7 +346,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 {/* Announcements Card */}
                 <motion.div 
                     whileHover={{ y: -4 }}
-                    onClick={() => setActiveTab('announcements')}
+                    onClick={() => navigate('/employee/announcements')}
                     className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
                 >
                     <div className="flex justify-between items-start mb-3">
@@ -370,21 +372,21 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-6xl">
                     
-                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('messages')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate('/employee/messages')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <MessageCircle size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Messages</span>
                     </motion.div>
 
-                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('training')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate('/employee/training')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <MonitorPlay size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Training Center</span>
                     </motion.div>
                     
-                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('holidays')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate('/employee/holidays')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <PartyPopper size={24} />
                         </div>
@@ -392,7 +394,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     </motion.div>
 
                     {user?.isTeamLead && (
-                        <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('myTeam')} className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20 shadow-sm cursor-pointer transition-all group hover:border-amber-400 dark:hover:border-amber-500/50 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <motion.div whileHover={{ y: -4 }} onClick={() => navigate('/employee/myTeam')} className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20 shadow-sm cursor-pointer transition-all group hover:border-amber-400 dark:hover:border-amber-500/50 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
                             <div className="p-3 bg-amber-100 dark:bg-amber-500/20 text-amber-600 rounded-xl group-hover:bg-amber-200 dark:bg-amber-500/30 transition-colors">
                                 <Users size={24} />
                             </div>
@@ -406,7 +408,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
             {/* ── UC-07: Upcoming Holiday Banner ── */}
             <motion.div
                 whileHover={{ y: -2 }}
-                onClick={() => setActiveTab('holidays')}
+                onClick={() => navigate('/employee/holidays')}
                 className="bg-white dark:bg-slate-800 rounded-2xl border border-indigo-100 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md p-5 max-w-6xl"
             >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

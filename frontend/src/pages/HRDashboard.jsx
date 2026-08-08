@@ -1,8 +1,8 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
-import { AnimatePresence } from 'framer-motion';
 
 // --- FIREBASE IMPORTS ---
 import { requestForToken, onMessageListener } from '../firebase';
@@ -29,6 +29,58 @@ import HRTrainingManagement from '../components/HRDashboard/HRTrainingManagement
 import OfficeScheduleManagement from '../components/HRDashboard/OfficeScheduleManagement'; // ✅ NEW
 import MessagesPage from '../components/MessagesPage';
 
+const EmployeeDetailsRouteWrapper = ({ employees, leaves, leaveTypes, fetchAllEmployees, setEmployees }) => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const employee = employees.find(e => e._id === id);
+    if (!employee) return <div className="p-10 text-center">Loading or not found...</div>;
+    return (
+        <EmployeeDetailsPage
+            employee={employee}
+            leaves={leaves}
+            leaveTypes={leaveTypes}
+            onBack={() => navigate('/hr/employees')}
+            onEdit={() => navigate(`/hr/employees/${id}/edit`)}
+            onDelete={async (empId) => {
+                if (!await window.confirmModal("Are you sure you want to delete this employee?")) return;
+                try {
+                    await apiClient.delete(`/auth/users/${empId}`);
+                    fetchAllEmployees();
+                    navigate('/hr/employees');
+                } catch (err) {
+                    toast.error(err.response?.data?.msg || "Failed to delete employee");
+                }
+            }}
+            onRestore={async (empId) => {
+                if (!await window.confirmModal("Are you sure you want to mark this employee as Active?")) return;
+                try {
+                    await apiClient.put(`/auth/users/${empId}/restore`);
+                    const res = await apiClient.get('/auth/users');
+                    setEmployees(res.data);
+                } catch (err) {
+                    toast.error(err.response?.data?.msg || "Failed to restore employee");
+                }
+            }}
+        />
+    );
+};
+
+const EditEmployeeRouteWrapper = ({ employees, fetchAllEmployees }) => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const employee = employees.find(e => e._id === id);
+    if (!employee) return <div className="p-10 text-center">Loading or not found...</div>;
+    return (
+        <EditEmployeePage
+            employee={employee}
+            onBack={() => navigate(`/hr/employees/${id}`)}
+            onEmployeeUpdated={() => {
+                fetchAllEmployees();
+                navigate(`/hr/employees/${id}`);
+            }}
+        />
+    );
+};
 
 const HRDashboard = () => {
     const mainRef = useRef(null);
@@ -45,10 +97,6 @@ const HRDashboard = () => {
     const [loans, setLoans] = useState([]);
     const [hrRequestsSubTab, setHrRequestsSubTab] = useState('general');
     const [announcements, setAnnouncements] = useState([]);
-    const [activeTab, setActiveTab] = useState('dashboard');
-    const [isAddingEmployee, setIsAddingEmployee] = useState(false);
-    const [isEditingEmployee, setIsEditingEmployee] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const getTodayStr = () => new Date().toISOString().slice(0, 10);
@@ -60,6 +108,9 @@ const HRDashboard = () => {
 
     const [performanceReviews, setPerformanceReviews] = useState([]);
     const [awards, setAwards] = useState([]);
+
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -194,10 +245,10 @@ const HRDashboard = () => {
             mainRef.current.scrollTop = 0;
         }
         window.scrollTo(0, 0);
-    }, [activeTab, selectedEmployee, isAddingEmployee, isEditingEmployee]);
+    }, []);
 
     const handleSidebarNavigate = (tabKey) => {
-        setActiveTab(tabKey);
+        
         setSelectedEmployee(null);
         setIsAddingEmployee(false);
         setIsEditingEmployee(false);
@@ -209,7 +260,7 @@ const HRDashboard = () => {
         setNavHistory(prev => [
             ...prev,
             {
-                activeTab,
+                
                 selectedEmployee,
                 isAddingEmployee,
                 isEditingEmployee
@@ -218,13 +269,13 @@ const HRDashboard = () => {
     };
 
     const handleTabChange = (newTab) => {
-        if (newTab === activeTab && !selectedEmployee && !isAddingEmployee && !isEditingEmployee) return;
+        
         if (newTab === 'dashboard') {
             setNavHistory([]);
         } else {
             pushNavState();
         }
-        setActiveTab(newTab);
+        
         setIsAddingEmployee(false);
         setIsEditingEmployee(false);
         setSelectedEmployee(null);
@@ -250,7 +301,7 @@ const HRDashboard = () => {
         if (navHistory.length > 0) {
             const lastState = navHistory[navHistory.length - 1];
             setNavHistory(prev => prev.slice(0, -1));
-            setActiveTab(lastState.activeTab || 'employees');
+            
             setSelectedEmployee(lastState.selectedEmployee || null);
             setIsAddingEmployee(!!lastState.isAddingEmployee);
             setIsEditingEmployee(!!lastState.isEditingEmployee);
@@ -268,11 +319,10 @@ const HRDashboard = () => {
             setIsAddingEmployee(false);
             return;
         }
-        setActiveTab('dashboard');
+        
     };
 
-    const canGoBack = activeTab !== 'dashboard' || !!selectedEmployee || isAddingEmployee || isEditingEmployee;
-
+    
     const fetchAllLeaves = async () => {
         const res = await apiClient.get('/leaves/all');
         setLeaves(res.data);
@@ -388,7 +438,7 @@ const HRDashboard = () => {
     const pendingRequestsCount = (hrRequests || []).filter(r => r.status === 'Pending').length;
 
     const handleNotificationNavigate = (tab, subTab) => {
-        setActiveTab(tab);
+        
         if (tab === 'hr-requests' && subTab) {
             setHrRequestsSubTab(subTab);
         }
@@ -408,8 +458,8 @@ const HRDashboard = () => {
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 font-sans relative">
             <HRSidebar
-                activeTab={activeTab}
-                setActiveTab={handleSidebarNavigate}
+                
+                
                 user={user}
                 logout={logout}
                 isOpen={isSidebarOpen}
@@ -426,13 +476,6 @@ const HRDashboard = () => {
 
             <main ref={mainRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
                 <HRHeader
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    onBack={handleGoBack}
-                    canGoBack={canGoBack}
-                    selectedEmployee={selectedEmployee}
-                    isAddingEmployee={isAddingEmployee}
-                    isEditingEmployee={isEditingEmployee}
                     leaveFilter={leaveFilter}
                     setLeaveFilter={setLeaveFilter}
                     attendanceDateFilter={attendanceDateFilter}
@@ -440,183 +483,56 @@ const HRDashboard = () => {
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     setSidebarOpen={setSidebarOpen}
-                    onNotificationNavigate={handleNotificationNavigate}
                 />
 
                 <div className="p-4 lg:p-6 max-w-full mx-auto">
 
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'dashboard' && (
+                    <Routes>
+                        <Route path="/" element={
                             <HROverview
-                                user={user}
-                                leaves={leaves}
-                                attendance={attendance}
-                                employees={employees}
-                                holidays={holidays}
-
-                                announcements={announcements}
-                                mistakeReports={mistakeReports}
-                                hrRequests={hrRequests}
-                                loans={loans}
-                                setActiveTab={setActiveTab}
+                                user={user} leaves={leaves} attendance={attendance} employees={employees} holidays={holidays}
+                                announcements={announcements} mistakeReports={mistakeReports} hrRequests={hrRequests} loans={loans}
                                 setHrRequestsSubTab={setHrRequestsSubTab}
                             />
-                        )}
-
-                        {activeTab === 'employees' && (
-                            <>
-                                {isAddingEmployee ? (
-                                    <AddEmployeePage
-                                        onBack={() => setIsAddingEmployee(false)}
-                                        onEmployeeAdded={fetchAllEmployees}
-                                    />
-                                ) : isEditingEmployee ? (
-                                    <EditEmployeePage
-                                        employee={selectedEmployee}
-                                        onBack={() => setIsEditingEmployee(false)}
-                                        onEmployeeUpdated={(updatedEmp) => {
-                                            fetchAllEmployees();
-                                            setSelectedEmployee(updatedEmp);
-                                        }}
-                                    />
-                                ) : selectedEmployee ? (
-                                    <EmployeeDetailsPage
-                                        employee={selectedEmployee}
-                                        leaves={leaves}
-                                        leaveTypes={leaveTypes}
-                                        onBack={() => setSelectedEmployee(null)}
-                                        onEdit={() => setIsEditingEmployee(true)}
-                                        onDelete={async (id) => {
-                                            if (!await window.confirmModal("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
-                                            try {
-                                                await apiClient.delete(`/auth/users/${id}`);
-                                                setSelectedEmployee(null);
-                                                fetchAllEmployees();
-                                            } catch (err) {
-                                                console.error("Error deleting employee:", err);
-                                                toast.error(err.response?.data?.msg || "Failed to delete employee");
-                                            }
-                                        }}
-                                        onRestore={async (id) => {
-                                            if (!await window.confirmModal("Are you sure you want to mark this employee as Active?")) return;
-                                            try {
-                                                await apiClient.put(`/auth/users/${id}/restore`);
-                                                const res = await apiClient.get('/auth/users');
-                                                setEmployees(res.data);
-                                                const updatedEmp = res.data.find(e => e._id === id);
-                                                if (updatedEmp) setSelectedEmployee(updatedEmp);
-                                            } catch (err) {
-                                                console.error("Error restoring employee:", err);
-                                                toast.error(err.response?.data?.msg || "Failed to restore employee");
-                                            }
-                                        }}
-                                    />
-                                ) : (
-                                    <HREmployeeList
-                                        employees={employees}
-                                        performanceReviews={performanceReviews}
-                                        mistakeReports={mistakeReports}
-                                        awards={awards}
-                                        searchTerm={searchTerm}
-                                        onAddNew={() => setIsAddingEmployee(true)}
-                                        onSelect={setSelectedEmployee}
-                                        onDelete={async (id) => {
-                                            if (!await window.confirmModal("Are you sure you want to delete this employee? Active employees will be marked as Inactive. If they are already Inactive, they will be permanently deleted.")) return;
-                                            try {
-                                                await apiClient.delete(`/auth/users/${id}`);
-                                                fetchAllEmployees();
-                                            } catch (err) {
-                                                console.error("Error deleting employee:", err);
-                                                toast.error(err.response?.data?.msg || "Failed to delete employee");
-                                            }
-                                        }}
-                                    />
-                                )}
-                            </>
-                        )}
-
-                        {activeTab === 'leaves' && (
-                            <HRLeaveManagement
-                                filteredLeaves={filteredLeaves}
-                                handleStatusUpdate={handleStatusUpdate}
-                                handleDeleteLeave={handleDeleteLeave}
-                                employees={employees}
-                                departments={departments}
+                        } />
+                        <Route path="employees" element={
+                            <HREmployeeList
+                                employees={employees} performanceReviews={performanceReviews} mistakeReports={mistakeReports} awards={awards} searchTerm={searchTerm}
+                                onAddNew={() => navigate('/hr/employees/add')}
+                                onSelect={(emp) => navigate(`/hr/employees/${emp._id}`)}
+                                onDelete={async (id) => {
+                                    if (!await window.confirmModal("Are you sure you want to delete this employee?")) return;
+                                    try { await apiClient.delete(`/auth/users/${id}`); fetchAllEmployees(); } 
+                                    catch (err) { toast.error("Failed to delete employee"); }
+                                }}
                             />
-                        )}
-
-                        {activeTab === 'leave-types' && (
-                            <HRLeaveTypeManagement
-                                leaveTypes={leaveTypes}
-                                fetchLeaveTypes={fetchLeaveTypes}
+                        } />
+                        <Route path="employees/add" element={
+                            <AddEmployeePage onBack={() => navigate('/hr/employees')} onEmployeeAdded={() => { fetchAllEmployees(); navigate('/hr/employees'); }} />
+                        } />
+                        <Route path="employees/:id" element={
+                            <EmployeeDetailsRouteWrapper 
+                                employees={employees} leaves={leaves} leaveTypes={leaveTypes} fetchAllEmployees={fetchAllEmployees} setEmployees={setEmployees}
                             />
-                        )}
-
-                        {activeTab === 'attendance' && (
-                            <HRAttendanceTracking
-                                filteredAttendance={filteredAttendance}
-                                searchTerm={searchTerm}
-                            />
-                        )}
-
-                        {activeTab === 'holidays' && (
-                            <HRHolidayManagement
-                                holidays={holidays}
-                                fetchHolidays={fetchHolidays}
-                            />
-                        )}
-
-                        {activeTab === 'hr-requests' && (
-                            <HRRequestsManagement
-                                requests={hrRequests}
-                                onUpdate={handleUpdateHRRequest}
-                                initialSubTab={hrRequestsSubTab}
-                                externalLoans={loans}
-                                onRefreshLoans={(updatedLoans) => setLoans(updatedLoans)}
-                            />
-                        )}
-
-                        {activeTab === 'profile' && (
-                            <UpdateProfilePage
-                                user={user}
-                                onBack={() => setActiveTab('dashboard')}
-                            />
-                        )}
-
-                        {activeTab === 'departments' && (
-                            <HRDepartments />
-                        )}
-
-                        {activeTab === 'training' && (
-                            <HRTrainingManagement />
-                        )}
-
-                        {activeTab === 'reports' && (
-                            <HRReports employees={employees} loans={loans} />
-                        )}
-
-                        {activeTab === 'mistake-reports' && (
-                            <HRMistakeReports />
-                        )}
-
-
-
-                        {activeTab === 'office-schedule' && (
-                            <OfficeScheduleManagement />
-                        )}
-
-                        {activeTab === 'announcements' && (
-                            <AnnouncementPage
-                                initialAnnouncements={announcements}
-                                initialEmployees={employees}
-                                onRefreshAnnouncements={fetchAllAnnouncements}
-                            />
-                        )}
-
-                        {activeTab === 'messages' && (
-                            <MessagesPage />
-                        )}
-                    </AnimatePresence>
+                        } />
+                        <Route path="employees/:id/edit" element={
+                            <EditEmployeeRouteWrapper employees={employees} fetchAllEmployees={fetchAllEmployees} />
+                        } />
+                        <Route path="leaves" element={<HRLeaveManagement filteredLeaves={filteredLeaves} handleStatusUpdate={handleStatusUpdate} handleDeleteLeave={handleDeleteLeave} employees={employees} departments={departments} />} />
+                        <Route path="leave-types" element={<HRLeaveTypeManagement leaveTypes={leaveTypes} fetchLeaveTypes={fetchLeaveTypes} />} />
+                        <Route path="attendance" element={<HRAttendanceTracking filteredAttendance={filteredAttendance} searchTerm={searchTerm} />} />
+                        <Route path="holidays" element={<HRHolidayManagement holidays={holidays} fetchHolidays={fetchHolidays} />} />
+                        <Route path="hr-requests" element={<HRRequestsManagement requests={hrRequests} onUpdate={handleUpdateHRRequest} initialSubTab={hrRequestsSubTab} externalLoans={loans} onRefreshLoans={setLoans} />} />
+                        <Route path="profile" element={<UpdateProfilePage user={user} onBack={() => navigate('/hr')} />} />
+                        <Route path="departments" element={<HRDepartments />} />
+                        <Route path="training" element={<HRTrainingManagement />} />
+                        <Route path="reports" element={<HRReports employees={employees} loans={loans} />} />
+                        <Route path="mistake-reports" element={<HRMistakeReports />} />
+                        <Route path="office-schedule" element={<OfficeScheduleManagement />} />
+                        <Route path="announcements" element={<AnnouncementPage initialAnnouncements={announcements} initialEmployees={employees} onRefreshAnnouncements={fetchAllAnnouncements} />} />
+                        <Route path="messages" element={<MessagesPage />} />
+                        <Route path="*" element={<Navigate to="/hr" replace />} />
+                    </Routes>
                 </div>
             </main>
         </div>

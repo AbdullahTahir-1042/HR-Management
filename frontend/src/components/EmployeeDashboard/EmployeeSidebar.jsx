@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     LayoutDashboard, Clock, Calendar, LogOut, User,
     PartyPopper, MessageSquare, Bell, Users, Crown,
@@ -19,14 +19,24 @@ const NAV_ITEMS = [
     { id: 'training',     label: 'Training Center',   icon: MonitorPlay },
 ];
 
-const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
+const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const getIsActive = (path) => {
+        if (path === 'dashboard' && (location.pathname === '/employee' || location.pathname === '/employee/')) return true;
+        if (path !== 'dashboard' && location.pathname.includes('/employee/' + path)) return true;
+        return false;
+    };
+
     const { isDark, toggleTheme } = useTheme();
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
-                <button
-                    onClick={() => setActiveTab('dashboard')}
+                <Link
+                    to="/employee"
+                    onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 cursor-pointer group text-left p-1 -ml-1 rounded-xl hover:bg-slate-50 transition-all focus:outline-none"
                     title="Go to Dashboard Overview"
                 >
@@ -46,7 +56,7 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                             </span>
                         )}
                     </div>
-                </button>
+                </Link>
                 <button
                     onClick={() => setIsOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden focus:outline-none"
@@ -59,11 +69,12 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
             {/* Nav */}
             <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto no-scrollbar">
                 {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-                    <button
+                    <Link
                         key={id}
-                        onClick={() => setActiveTab(id)}
+                        to={`/employee${id === 'dashboard' ? '' : '/' + id}`}
+                        onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                            ${activeTab === id
+                            ${getIsActive(id)
                                 ? 'bg-indigo-50 text-indigo-600 font-bold'
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                     >
@@ -74,15 +85,16 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                                 {unreadMessages}
                             </span>
                         )}
-                    </button>
+                    </Link>
                 ))}
 
                 {/* My Team — only visible to Team Leads */}
                 {user?.isTeamLead && (
-                    <button
-                        onClick={() => setActiveTab('myTeam')}
+                    <Link
+                        to="/employee/myTeam"
+                        onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                            ${activeTab === 'myTeam'
+                            ${getIsActive('myTeam')
                                 ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
                                 : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'}`}
                     >
@@ -91,7 +103,7 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         <span className="ml-auto text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full">
                             Lead
                         </span>
-                    </button>
+                    </Link>
                 )}
             </nav>
 
@@ -110,8 +122,9 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                     <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
                 </button>
 
-                <div
-                    onClick={() => setActiveTab('profile')}
+                <Link
+                    to="/employee/profile"
+                    onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"
                 >
                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -123,7 +136,7 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
                         </p>
                         <p className="text-[10px] text-slate-400 truncate">View Profile</p>
                     </div>
-                </div>
+                </Link>
                 <button
                     onClick={logout}
                     className="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors text-sm font-bold"

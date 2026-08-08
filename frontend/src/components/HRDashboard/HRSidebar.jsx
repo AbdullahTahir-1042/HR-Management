@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
     ShieldCheck, 
     CalendarCheck, 
@@ -28,24 +28,33 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, unreadMessages = 0, pendingRequestsCount = 0 }) => {
+const HRSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0, pendingRequestsCount = 0 }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { isDark, toggleTheme } = useTheme();
+
+    const getIsActive = (path) => {
+        if (path === 'dashboard' && (location.pathname === '/hr' || location.pathname === '/hr/')) return true;
+        if (path !== 'dashboard' && location.pathname.includes('/hr/' + path)) return true;
+        return false;
+    };
+
     return (
         <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
             {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
-                <button
-                    onClick={() => setActiveTab('dashboard')}
+                <Link
+                    to="/hr"
                     className="flex items-center gap-3 cursor-pointer group text-left p-1 -ml-1 rounded-xl hover:bg-slate-50 transition-all focus:outline-none"
                     title="Go to Dashboard Overview"
+                    onClick={() => setIsOpen(false)}
                 >
                     <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform duration-200">
                         <ShieldCheck size={24} />
                     </div>
                     <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight transition-colors duration-200">HR Admin</span>
-                </button>
+                </Link>
                 <button
                     onClick={() => setIsOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden focus:outline-none"
@@ -59,33 +68,36 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                 {/* ── SECTION: OVERVIEW ── */}
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Overview</p>
-                    <button
-                        onClick={() => setActiveTab('dashboard')}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                    <Link
+                        to="/hr"
+                        onClick={() => setIsOpen(false)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('dashboard') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                     >
                         <LayoutDashboard size={18} />
                         <span>Dashboard</span>
-                    </button>
+                    </Link>
                 </div>
 
                 {/* ── SECTION: MANAGEMENT ── */}
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Organization</p>
                     <div className="space-y-0.5">
-                        <button
-                            onClick={() => setActiveTab('employees')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'employees' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        <Link
+                            to="/hr/employees"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('employees') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <User size={18} />
                             <span>Employees</span>
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('departments')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'departments' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link 
+                            to="/hr/departments"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('departments') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <Building2 size={18} />
                             <span>Departments</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -93,21 +105,23 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Time & Attendance</p>
                     <div className="space-y-0.5">
-                        <button 
-                            onClick={() => setActiveTab('attendance')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'attendance' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        <Link 
+                            to="/hr/attendance"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('attendance') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <Calendar size={18} />
                             <span>Attendance Logs</span>
-                        </button>
+                        </Link>
 
-                        <button 
-                            onClick={() => setActiveTab('office-schedule')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'office-schedule' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        <Link 
+                            to="/hr/office-schedule"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('office-schedule') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <CalendarClock size={18} />
                             <span>Office Schedule</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -115,27 +129,30 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Requests & Leaves</p>
                     <div className="space-y-0.5">
-                        <button
-                            onClick={() => setActiveTab('leaves')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'leaves' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        <Link
+                            to="/hr/leaves"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('leaves') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <CalendarCheck size={18} />
                             <span>Leave Requests</span>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('leave-types')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'leave-types' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link
+                            to="/hr/leave-types"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('leave-types') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <CalendarRange size={18} />
                             <span>Leave Types</span>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('hr-requests')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'hr-requests' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link
+                            to="/hr/hr-requests"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('hr-requests') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <ClipboardList size={18} />
                             <span>HR Requests</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -143,9 +160,10 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">Communication</p>
                     <div className="space-y-0.5">
-                        <button
-                            onClick={() => setActiveTab('messages')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'messages' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        <Link
+                            to="/hr/messages"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('messages') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <MessageCircle size={18} />
                             <span>Messages</span>
@@ -154,14 +172,15 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                                     {unreadMessages}
                                 </span>
                             )}
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('announcements')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'announcements' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link 
+                            to="/hr/announcements"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('announcements') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <Bell size={18} />
                             <span>Announcements</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
@@ -169,34 +188,38 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                 <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-4 mb-1">System & Reports</p>
                     <div className="space-y-0.5">
-                        <button 
-                            onClick={() => setActiveTab('reports')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        <Link 
+                            to="/hr/reports"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('reports') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <BarChart2 size={18} />
                             <span>User Reports</span>
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('mistake-reports')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'mistake-reports' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link 
+                            to="/hr/mistake-reports"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('mistake-reports') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <AlertTriangle size={18} />
                             <span>Mistake Reports</span>
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('training')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'training' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link 
+                            to="/hr/training"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('training') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <MonitorPlay size={18} />
                             <span>Training Management</span>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('holidays')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'holidays' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                        </Link>
+                        <Link
+                            to="/hr/holidays"
+                            onClick={() => setIsOpen(false)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${getIsActive('holidays') ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                         >
                             <CalendarDays size={18} />
                             <span>Holidays</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </nav>
@@ -215,8 +238,9 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                     <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
                 </button>
 
-                <div
-                    onClick={() => setActiveTab('profile')}
+                <Link
+                    to="/hr/profile"
+                    onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"
                 >
                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -226,7 +250,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                         <p className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{user?.name}</p>
                         <p className="text-[10px] text-slate-400 truncate">View Profile</p>
                     </div>
-                </div>
+                </Link>
                 <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors text-sm font-bold">
                     <LogOut size={18} />
                     <span>Sign Out</span>
