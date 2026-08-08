@@ -78,19 +78,34 @@ const EmployeeSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsO
 
                 {/* My Team — only visible to Team Leads */}
                 {user?.isTeamLead && (
-                    <button
-                        onClick={() => setActiveTab('myTeam')}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                            ${activeTab === 'myTeam'
-                                ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'}`}
-                    >
-                        <Users size={20} />
-                        <span className="text-sm">My Team</span>
-                        <span className="ml-auto text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full">
-                            Lead
-                        </span>
-                    </button>
+                    <>
+                        <button
+                            onClick={() => setActiveTab('myTeam')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                                ${activeTab === 'myTeam'
+                                    ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'}`}
+                        >
+                            <Users size={20} />
+                            <span className="text-sm">My Team</span>
+                            <span className="ml-auto text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full">
+                                Lead
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('team-leaves')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                                ${activeTab === 'team-leaves'
+                                    ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
+                        >
+                            <Calendar size={20} />
+                            <span className="text-sm">Team Leaves</span>
+                            <span className="ml-auto text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold px-1.5 py-0.5 rounded-full">
+                                Lead
+                            </span>
+                        </button>
+                    </>
                 )}
             </nav>
 

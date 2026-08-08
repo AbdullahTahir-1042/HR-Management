@@ -25,9 +25,9 @@ const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
         return diffDays;
     };
 
-    const handleConfirmAction = async (id, action) => {
+    const handleConfirmAction = async (id, action, remark) => {
         if (onStatusUpdate) {
-            await onStatusUpdate(id, action);
+            await onStatusUpdate(id, action, remark);
         }
         setConfirmAction(null);
         onClose();
@@ -116,13 +116,16 @@ const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Status</p>
                                     <div className="flex items-center gap-2 justify-end">
                                         {leave.status === 'approved' && <CheckCircle size={16} className="text-emerald-500" />}
-                                        {leave.status === 'pending' && <Clock size={16} className="text-amber-500" />}
-                                        {leave.status === 'rejected' && <AlertCircle size={16} className="text-rose-500" />}
-                                        <span className={`font-bold capitalize ${
+                                        {(leave.status === 'pending_hr' || leave.status === 'pending_team_lead' || leave.status === 'pending') && <Clock size={16} className="text-amber-500" />}
+                                        {(leave.status === 'rejected' || leave.status === 'hr_rejected') && <AlertCircle size={16} className="text-rose-500" />}
+                                        <span className={`font-bold ${
                                             leave.status === 'approved' ? 'text-emerald-600' : 
-                                            leave.status === 'pending' ? 'text-amber-600' : 'text-rose-600'
+                                            (leave.status === 'rejected' || leave.status === 'hr_rejected') ? 'text-rose-600' : 'text-amber-600'
                                         }`}>
-                                            {leave.status}
+                                            {leave.status === 'pending_hr' ? 'Pending HR' : 
+                                             leave.status === 'pending_team_lead' ? 'Pending TL' : 
+                                             leave.status === 'hr_rejected' ? 'HR Rejected' : 
+                                             leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
                                         </span>
                                     </div>
                                 </div>
@@ -131,10 +134,32 @@ const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
                             {/* Reason */}
                             <div className="space-y-2">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reason for Leave</p>
-                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed min-h-[100px] text-sm italic">
+                                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed min-h-[80px] text-sm italic mb-2">
                                     "{leave.reason}"
                                 </div>
                             </div>
+
+                            {/* Remarks */}
+                            {(leave.hrRemark || leave.teamLeadRemark) && (
+                                <div className="space-y-3 mt-4">
+                                    {leave.hrRemark && (
+                                        <div className="space-y-1.5">
+                                            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">HR Remark</p>
+                                            <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50 text-slate-600 text-sm">
+                                                {leave.hrRemark}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {leave.teamLeadRemark && (
+                                        <div className="space-y-1.5">
+                                            <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Team Lead Remark</p>
+                                            <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100/50 text-slate-600 text-sm">
+                                                {leave.teamLeadRemark}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Footer - Actions allowed for all statuses */}
