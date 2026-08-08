@@ -75,24 +75,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                 </motion.div>
 
-                {/* Latecomers Card */}
-                <motion.div
-                    whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
-                    onClick={() => setActiveTab('attendance')}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-red-200"
-                >
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-red-50 text-red-600 rounded-xl group-hover:bg-red-100 transition-colors">
-                            <Clock size={20} />
-                        </div>
-                        <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg group-hover:bg-red-100 transition-colors">Late</span>
-                    </div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Latecomers Today</p>
-                    <div className="flex items-end justify-between mt-0.5">
-                        <p className="text-xl font-bold text-slate-800">{attendance.filter(l => l.date === new Date().toISOString().split('T')[0] && l.status === 'late').length}</p>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-red-500 transition-colors" />
-                    </div>
-                </motion.div>
+
 
                 {/* Total Employees Card */}
                 <motion.div
