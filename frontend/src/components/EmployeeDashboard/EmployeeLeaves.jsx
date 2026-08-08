@@ -181,7 +181,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
 
             // Calculate approved and pending used days from leaves list
             const usedDays = leaves
-                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending'].includes(l.status))
+                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending_hr', 'pending_team_lead'].includes(l.status))
                 .reduce((acc, l) => {
                     const ls = String(l.startDate).slice(0, 10);
                     const le = String(l.endDate).slice(0, 10);
@@ -203,7 +203,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         
         leaves.forEach(l => {
             const lType = leaveTypes.find(t => String(t._id || t.id) === String(l.leaveType?._id || l.leaveType));
-            if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending'].includes(l.status)) {
+            if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending_hr', 'pending_team_lead'].includes(l.status)) {
                 const leaveYear = new Date(l.startDate).getFullYear();
                 if (leaveYear === currentYear) {
                     const ls = String(l.startDate).slice(0, 10);
@@ -670,13 +670,13 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-                                {['all', 'pending', 'approved', 'rejected'].map(status => (
+                                {['all', 'pending_hr', 'pending_team_lead', 'approved', 'hr_rejected', 'rejected'].map(status => (
                                     <button
                                         key={status}
                                         onClick={() => setStatusFilter(status)}
                                         className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${statusFilter === status ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
-                                        {status}
+                                        {status.replace('_', ' ')}
                                     </button>
                                 ))}
                             </div>
@@ -733,11 +733,15 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                         <td className="px-3 py-3 text-right">
                                             <span className={`
                                                         px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block
-                                                        ${leave.status === 'pending' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' : ''}
+                                                        ${(leave.status === 'pending_hr' || leave.status === 'pending') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' : ''}
+                                                        ${leave.status === 'pending_team_lead' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : ''}
                                                         ${leave.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' : ''}
-                                                        ${leave.status === 'rejected' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20' : ''}
+                                                        ${(leave.status === 'rejected' || leave.status === 'hr_rejected') ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20' : ''}
                                                     `}>
-                                                {leave.status}
+                                                {leave.status === 'pending_hr' ? 'Pending HR' :
+                                                 leave.status === 'pending_team_lead' ? 'Pending TL' :
+                                                 leave.status === 'hr_rejected' ? 'HR Rejected' : 
+                                                 leave.status}
                                             </span>
                                         </td>
                                     </tr>

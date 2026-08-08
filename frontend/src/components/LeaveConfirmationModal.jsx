@@ -5,6 +5,7 @@ import { formatDate } from '../utils/dateUtils';
 
 
 const LeaveConfirmationModal = ({ leave, action, onConfirm, onCancel }) => {
+    const [remark, setRemark] = React.useState('');
     if (!leave) return null;
 
     const localFormatDate = (dateStr) => {
@@ -90,7 +91,17 @@ const LeaveConfirmationModal = ({ leave, action, onConfirm, onCancel }) => {
                             </div>
                         </div>
 
-                        <div className="pt-4 flex gap-3">
+                        <div className="pt-2">
+                            <input
+                                type="text"
+                                placeholder="Add an optional remark..."
+                                value={remark}
+                                onChange={(e) => setRemark(e.target.value)}
+                                className="w-full text-sm px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 focus:bg-white transition-all"
+                            />
+                        </div>
+
+                        <div className="pt-2 flex gap-3">
                             <button 
                                 onClick={onCancel}
                                 className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all"
@@ -98,7 +109,7 @@ const LeaveConfirmationModal = ({ leave, action, onConfirm, onCancel }) => {
                                 Cancel
                             </button>
                             <button 
-                                onClick={() => onConfirm(leave._id, action)}
+                                onClick={() => onConfirm(leave._id, action, remark)}
                                 className={`flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 ${isApprove ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100'}`}
                             >
                                 {isApprove ? 'Approve' : 'Reject'} Request

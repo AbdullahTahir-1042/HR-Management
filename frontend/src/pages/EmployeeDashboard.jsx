@@ -9,6 +9,8 @@ import { X, Megaphone, AlertTriangle } from 'lucide-react';
 // --- FIREBASE IMPORTS ---
 import { requestForToken, onMessageListener } from '../firebase';
 
+import EmployeePracticeOnboarding from '../components/EmployeeDashboard/EmployeePracticeOnboarding';
+import TeamLeaves from '../components/EmployeeDashboard/TeamLeaves';
 import EmployeeSidebar from '../components/EmployeeDashboard/EmployeeSidebar';
 import EmployeeHeader from '../components/EmployeeDashboard/EmployeeHeader';
 import EmployeeOverview from '../components/EmployeeDashboard/EmployeeOverview';
@@ -517,7 +519,7 @@ const EmployeeDashboard = () => {
     }, [activeTab]);
 
     // ── BroadcastChannel: sync instantly when HR approves/rejects a leave ─────
-    // Same pattern as announcements_channel \u2014 zero polling, instant update.
+    // Same pattern as announcements_channel — zero polling, instant update.
     useEffect(() => {
         if (!('BroadcastChannel' in window)) return;
         let bc;
@@ -525,7 +527,7 @@ const EmployeeDashboard = () => {
             bc = new BroadcastChannel('leaves_channel');
             bc.onmessage = (event) => {
                 if (event.data?.type === 'LEAVE_STATUS_CHANGED') {
-                    // Silently refresh leaves & balances \u2014 no loading flash
+                    // Silently refresh leaves & balances — no loading flash
                     refreshLeavesAndBalances();
                 }
             };
@@ -632,6 +634,10 @@ const EmployeeDashboard = () => {
 
                         {activeTab === 'holidays' && (
                             <EmployeeHolidays holidays={holidays} />
+                        )}
+
+                        {activeTab === 'team-leaves' && (
+                            <TeamLeaves />
                         )}
 
                         {activeTab === 'hr-requests' && (

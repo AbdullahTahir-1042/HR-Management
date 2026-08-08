@@ -25,8 +25,32 @@ const LeaveRequestSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
+        enum: ['pending_hr', 'pending_team_lead', 'approved', 'hr_rejected', 'rejected'],
+        default: 'pending_hr'
+    },
+    hrRemark: {
+        type: String,
+        default: ''
+    },
+    hrDecision: {
+        type: String,
+        enum: ['approved', 'rejected', 'pending'],
         default: 'pending'
+    },
+    hrReviewedAt: {
+        type: Date
+    },
+    teamLeadRemark: {
+        type: String,
+        default: ''
+    },
+    teamLeadDecision: {
+        type: String,
+        enum: ['approved', 'rejected', 'pending'],
+        default: 'pending'
+    },
+    teamLeadReviewedAt: {
+        type: Date
     },
     isUrgent: {
         type: Boolean,

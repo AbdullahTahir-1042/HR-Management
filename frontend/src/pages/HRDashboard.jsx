@@ -343,9 +343,9 @@ const HRDashboard = () => {
         }
     };
 
-    const handleStatusUpdate = async (id, status) => {
+    const handleStatusUpdate = async (id, status, remark) => {
         try {
-            await apiClient.put(`/leaves/${id}/status`, { status });
+            await apiClient.put(`/leaves/${id}/hr-review`, { action: status, remark });
             fetchAllLeaves();
             try {
                 const bc = new BroadcastChannel('leaves_channel');
