@@ -1,8 +1,12 @@
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Plus, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+import { formatDate } from '../../utils/dateUtils';
+
 
 // ─── Add / Edit Modal ────────────────────────────────────────────────────────
 const HolidayModal = ({ holiday, onClose, onSaved }) => {
@@ -116,32 +120,36 @@ const HolidayModal = ({ holiday, onClose, onSaved }) => {
                     </div>
 
                     {/* Start & End Date */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                                From <span className="text-rose-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                name="startDate"
-                                value={form.startDate}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                                To <span className="text-rose-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                name="endDate"
-                                value={form.endDate}
-                                onChange={handleChange}
-                                min={form.startDate}
-                                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                            />
-                        </div>
+                    <div className="mb-4">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between mb-1.5">
+                            <span>Duration (Start to End)</span>
+                            {(form.startDate || form.endDate) && (
+                                <span className="text-[9px] font-extrabold text-indigo-600">Selected</span>
+                            )}
+                        </label>
+                        <DatePicker
+                            selectsRange={true}
+                            startDate={form.startDate ? new Date(form.startDate) : null}
+                            endDate={form.endDate ? new Date(form.endDate) : null}
+                            onChange={(update) => {
+                                const [start, end] = update;
+                                const parseDate = (d) => {
+                                    if (!d) return '';
+                                    const offset = d.getTimezoneOffset() * 60000;
+                                    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+                                };
+                                setForm(prev => ({ 
+                                    ...prev, 
+                                    startDate: parseDate(start), 
+                                    endDate: parseDate(end) 
+                                }));
+                            }}
+                            dateFormat="yyyy-MM-dd"
+                            isClearable={true}
+                            placeholderText="Select date range"
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
+                            wrapperClassName="w-full"
+                        />
                     </div>
 
                     {/* Days Counter */}
@@ -230,7 +238,7 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
     const [editingHoliday, setEditingHoliday] = useState(null);
     const [deletingId,     setDeletingId]     = useState(null);
 
-    const formatDate = (dateStr) => {
+    const localFormatDate = (dateStr) => {
         if (!dateStr) return '—';
         const [year, month, day] = dateStr.split('-');
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -346,7 +354,7 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
                                         {calculateDays(h.startDate, h.endDate)}d
                                     </span>
 
-                                    <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="col-span-2 flex items-center justify-end gap-2 transition-opacity">
                                         <button
                                             onClick={() => openEdit(h)}
                                             className="p-1.5 rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"

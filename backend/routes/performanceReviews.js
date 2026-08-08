@@ -73,6 +73,20 @@ router.get('/summary/:employeeId', auth, async (req, res) => {
     }
 });
 
+// GET all performance reviews (HR/Admin only)
+router.get('/', [auth, isHR], async (req, res) => {
+    try {
+        const reviews = await PerformanceReview.find()
+            .populate('employee', 'name email department')
+            .populate('createdBy', 'name')
+            .sort({ reviewDate: -1 });
+        res.json(reviews);
+    } catch (err) {
+        console.error('Error fetching all reviews:', err.message);
+        res.status(500).json({ msg: 'Server error', error: err.message });
+    }
+});
+
 // ─────────────────────────────────────────────
 // GET /api/performance-reviews/:employeeId
 // Get all reviews for an employee

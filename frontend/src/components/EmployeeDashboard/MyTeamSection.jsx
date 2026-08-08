@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PerformanceReviewModal from './PerformanceReviewModal';
+import AwardModal from '../AwardModal';
 
 // ─── Animated Number ─────────────────────────────────────────────────────────
 const AnimatedNumber = ({ value }) => (
@@ -98,7 +99,7 @@ const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
 
 // ─── Member Card ─────────────────────────────────────────────────────────────
 
-const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick }) => {
+const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick, onAwardClick }) => {
     const [perf, setPerf] = useState(null);
     useEffect(() => {
         if (currentUserIsLead) {
@@ -139,12 +140,20 @@ const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick })
                         </span>
                     </div>
                     {!isLead && (
-                        <button 
-                            onClick={() => onReviewClick(member)}
-                            className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded transition-colors"
-                        >
-                            + Review
-                        </button>
+                        <div className="flex gap-1.5 mt-0.5">
+                            <button 
+                                onClick={() => onReviewClick(member)}
+                                className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded transition-colors"
+                            >
+                                + Review
+                            </button>
+                            <button 
+                                onClick={() => onAwardClick(member)}
+                                className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded transition-colors"
+                            >
+                                ★ Award
+                            </button>
+                        </div>
                     )}
                 </div>
             )}
@@ -403,6 +412,7 @@ const MyTeamSection = () => {
     const [history, setHistory] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
     const [reviewMember, setReviewMember] = useState(null);
+    const [awardMember, setAwardMember] = useState(null);
 
     // Table States
     const [expandedId, setExpandedId] = useState(null);
@@ -606,6 +616,7 @@ const MyTeamSection = () => {
                                 index={i}
                                 currentUserIsLead={isTeamLead}
                                 onReviewClick={setReviewMember}
+                                onAwardClick={setAwardMember}
                             />
                         ))}
                     </div>
@@ -847,6 +858,17 @@ const MyTeamSection = () => {
                         onSuccess={() => {
                             setReviewMember(null);
                             fetchMyDept();
+                        }}
+                    />
+                )}
+                {awardMember && (
+                    <AwardModal
+                        isOpen={!!awardMember}
+                        onClose={() => setAwardMember(null)}
+                        employeeId={awardMember._id || awardMember.id}
+                        onSave={() => {
+                            setAwardMember(null);
+                            toast.success('Award issued successfully!');
                         }}
                     />
                 )}

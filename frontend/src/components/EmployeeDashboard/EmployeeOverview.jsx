@@ -1,7 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/axiosClient';
-import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare, Star, AlertCircle } from 'lucide-react';
+import { User, ArrowRight, Clock, Calendar, Megaphone, TrendingUp, PartyPopper, MessageSquare, Star, AlertCircle , MessageCircle, MonitorPlay, Users} from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
+
 const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcements = [], setActiveTab, performanceSummary }) => {
     const todayAttendance = attendance;
 
@@ -108,10 +110,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
         }).format(amount);
 
     const formatShortDate = (dateStr) =>
-        new Date(dateStr).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-        });
+        formatDate(dateStr);
 
     return (
         <motion.div
@@ -215,7 +214,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-bold text-slate-800 dark:text-white text-sm">
-                                                {new Date(schedule.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                {formatDate(schedule.date)}
                                             </span>
                                             {schedule.reason && (
                                                 <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
@@ -361,6 +360,47 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     </div>
                 </motion.div>
 
+            </div>
+
+            
+            {/* ── Quick Access Features ── */}
+            <div>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span> Workspace
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-6xl">
+                    
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('messages')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                            <MessageCircle size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Messages</span>
+                    </motion.div>
+
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('training')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                            <MonitorPlay size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Training Center</span>
+                    </motion.div>
+                    
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('holidays')} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                            <PartyPopper size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Holidays</span>
+                    </motion.div>
+
+                    {user?.isTeamLead && (
+                        <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('myTeam')} className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20 shadow-sm cursor-pointer transition-all group hover:border-amber-400 dark:hover:border-amber-500/50 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                            <div className="p-3 bg-amber-100 dark:bg-amber-500/20 text-amber-600 rounded-xl group-hover:bg-amber-200 dark:bg-amber-500/30 transition-colors">
+                                <Users size={24} />
+                            </div>
+                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">My Team</span>
+                        </motion.div>
+                    )}
+
+                </div>
             </div>
 
             {/* ── UC-07: Upcoming Holiday Banner ── */}

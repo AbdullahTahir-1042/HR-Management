@@ -582,6 +582,7 @@ const EmployeeDashboard = () => {
                     onBack={handleGoBack}
                     canGoBack={canGoBack}
                     setSidebarOpen={setSidebarOpen}
+                    onNotificationNavigate={handleTabChange}
                 />
 
 

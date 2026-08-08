@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarCheck, Check, X, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import LeaveDetailModal from '../LeaveDetailModal';
 import LeaveConfirmationModal from '../LeaveConfirmationModal';
+import { formatDate } from '../../utils/dateUtils';
+
 
 // ── Mini Calendar Hover Tooltip Component ─────────────────────────────────────
 const DurationCalendarTooltip = ({ startDateStr, endDateStr, targetRef }) => {
@@ -162,7 +164,7 @@ const DurationCell = ({ leave, isHovered, onHoverStart, onHoverEnd }) => {
         >
             <span className="flex items-center gap-1.5 font-medium px-2.5 py-1 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 rounded-lg transition-colors cursor-pointer">
                 <CalendarIcon size={14} className="text-indigo-500" />
-                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
             </span>
 
             <AnimatePresence>

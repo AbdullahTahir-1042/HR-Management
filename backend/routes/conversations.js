@@ -5,6 +5,7 @@ const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const TypingStatus = require('../models/TypingStatus');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { auth } = require('../middleware/auth');
 const { messaging } = require('../config/firebaseAdmin');
 
@@ -444,6 +445,27 @@ router.post('/:id/messages', auth, async (req, res) => {
 
         // The sender is, by definition, no longer "typing" once they've sent.
         TypingStatus.deleteOne({ conversation: conversation._id, user: req.user.id }).catch(() => {});
+
+        // Create Database Notifications for the notification center
+        const senderName = conversation.participants.find(p => String(p._id) === req.user.id)?.name || 'Someone';
+        
+        try {
+            const notificationsToCreate = conversation.participants
+                .filter(p => String(p._id) !== req.user.id)
+                .map(p => ({
+                    recipient: p._id,
+                    title: conversation.type === 'group' ? `${senderName} in ${conversation.name}` : senderName,
+                    message: text.trim().slice(0, 120),
+                    type: 'chat',
+                    relatedId: conversation._id
+                }));
+            
+            if (notificationsToCreate.length > 0) {
+                await Notification.insertMany(notificationsToCreate);
+            }
+        } catch (dbNotifErr) {
+            console.error('Error creating chat DB notifications:', dbNotifErr);
+        }
 
         // Best-effort push — never blocks the send response.
         (async () => {

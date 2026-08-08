@@ -1,17 +1,14 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarDays, Clock, Tag, Info, PartyPopper, X } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
+
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
-const formatDate = (dateStr) => {
+const localFormatDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    return formatDate(date);
 };
 
 const getDurationDays = (start, end) => {

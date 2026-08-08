@@ -23,7 +23,8 @@ import {
     MonitorPlay,
     CalendarClock,
     Sun,
-    Moon
+    Moon,
+    Trophy
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -99,13 +100,7 @@ const HRSidebar = ({ activeTab, setActiveTab, user, logout, isOpen, setIsOpen, u
                             <Calendar size={18} />
                             <span>Attendance Logs</span>
                         </button>
-                        <button 
-                            onClick={() => setActiveTab('latecomers')}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'latecomers' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                        >
-                            <Clock size={18} />
-                            <span>Late Comers</span>
-                        </button>
+
                         <button 
                             onClick={() => setActiveTab('office-schedule')}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'office-schedule' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}

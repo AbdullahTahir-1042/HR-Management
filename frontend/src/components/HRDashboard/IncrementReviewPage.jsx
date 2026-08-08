@@ -9,6 +9,8 @@ import {
 import apiClient from '../../api/axiosClient';
 import { AuthContext } from '../../context/AuthContext';
 import RestoreCardModal from './RestoreCardModal';
+import { formatDate } from '../../utils/dateUtils';
+
 
 // ── Rating Labels ─────────────────────────────────────────────────────────────
 const RATING_LABELS = {
@@ -110,10 +112,10 @@ const formatSalary = (amount) => {
     }).format(val);
 };
 
-const formatDate = (dateStr) => {
+const localFormatDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-        return new Date(dateStr).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' });
+        return formatDate(dateStr);
     } catch { return '-'; }
 };
 

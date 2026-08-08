@@ -7,11 +7,34 @@ import {
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 
-const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, onEdit, onDelete }) => {
+const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReports = [], awards = [], searchTerm = '', onAddNew, onSelect, onEdit, onDelete }) => {
     const { user: currentUser } = useContext(AuthContext);
     const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
     const [deptFilter, setDeptFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'full time' | 'probation' | 'teamLeads' | 'inactive'
+
+    const getEmployeePerformanceStats = (empId) => {
+        const empReviews = performanceReviews.filter(r => (r.employee?._id || r.employee) === empId);
+        const empMistakes = mistakeReports.filter(m => (m.agentId?._id || m.agentId) === empId);
+        const empAwards = awards.filter(a => (a.employee?._id || a.employee) === empId);
+
+        let sum = empReviews.length > 0 ? empReviews.reduce((acc, rev) => acc + (rev.overallRating || 0), 0) : 5.0;
+        let count = empReviews.length > 0 ? empReviews.length : 1;
+        
+        let totalPenalty = 0;
+        empMistakes.forEach(m => { totalPenalty += (m.severityPoints || 0); });
+        
+        let adjustedSum = sum - totalPenalty;
+        if (adjustedSum < 0) adjustedSum = 0;
+        let adjustedRating = adjustedSum / count;
+        if (adjustedRating > 5.0) adjustedRating = 5.0;
+        
+        return {
+            rating: adjustedRating.toFixed(1),
+            mistakes: empMistakes.length,
+            awards: empAwards.length
+        };
+    };
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
@@ -242,12 +265,13 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                 >
                     <table className="table-base table-fixed">
                         <colgroup>
-                            <col className="w-[22%]" />
-                            <col className="w-[16%]" />
+                            <col className="w-[20%]" />
                             <col className="w-[14%]" />
-                            <col className="w-[13%]" />
-                            <col className="w-[13%]" />
                             <col className="w-[12%]" />
+                            <col className="w-[10%]" />
+                            <col className="w-[10%]" />
+                            <col className="w-[14%]" />
+                            <col className="w-[10%]" />
                             <col className="w-[10%]" />
                         </colgroup>
                         <thead>
@@ -257,6 +281,7 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                 <th>Reporting To</th>
                                 <th>Status</th>
                                 <th>Salary</th>
+                                <th>Performance</th>
                                 <th>Joined</th>
                                 <th className="text-right">Actions</th>
                             </tr>
@@ -340,6 +365,28 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                             <div className="text-slate-800 font-black text-[11px] tabular-nums">
                                                 {formatSalary(emp.salary)}
                                             </div>
+                                        </td>
+
+                                        {/* Performance */}
+                                        <td className="px-3 py-3">
+                                            {(() => {
+                                                const stats = getEmployeePerformanceStats(emp._id);
+                                                return (
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <div className="flex items-center gap-1 text-[11px]">
+                                                            <span className="font-bold text-amber-500">★ {stats.rating}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                                                            <span className="flex items-center gap-0.5" title="Mistakes">
+                                                                <Trash2 size={9} className={stats.mistakes > 0 ? 'text-rose-500' : ''} /> {stats.mistakes}
+                                                            </span>
+                                                            <span className="flex items-center gap-0.5" title="Awards">
+                                                                <Crown size={9} className={stats.awards > 0 ? 'text-violet-500' : ''} /> {stats.awards}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* Joined On */}
@@ -448,9 +495,22 @@ const HREmployeeList = ({ employees = [], searchTerm = '', onAddNew, onSelect, o
                                     </div>
                                     <div className="flex justify-between items-center text-slate-600">
                                         <span className="flex items-center gap-1.5 text-slate-400 font-medium">
-                                            <TrendingUp size={13} /> Rank:
+                                            <TrendingUp size={13} /> Performance:
                                         </span>
-                                        <span className="font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded text-[10px]">{emp.promotionRank || 'Junior'}</span>
+                                        {(() => {
+                                            const stats = getEmployeePerformanceStats(emp._id);
+                                            return (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-amber-500 text-[10px]">★ {stats.rating}</span>
+                                                    <span className="flex items-center gap-0.5 text-[10px] text-slate-500" title="Mistakes">
+                                                        <Trash2 size={10} className={stats.mistakes > 0 ? 'text-rose-500' : ''} /> {stats.mistakes}
+                                                    </span>
+                                                    <span className="flex items-center gap-0.5 text-[10px] text-slate-500" title="Awards">
+                                                        <Crown size={10} className={stats.awards > 0 ? 'text-violet-500' : ''} /> {stats.awards}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                     <div className="flex justify-between items-center text-slate-600">
                                         <span className="flex items-center gap-1.5 text-slate-400 font-medium">

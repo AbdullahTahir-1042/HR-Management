@@ -8,6 +8,8 @@ import {
 import ContractModal from '../ContractModal';
 import IncrementReviewPage from './IncrementReviewPage';
 import apiClient from '../../api/axiosClient';
+import toast from 'react-hot-toast';
+import AwardModal from '../AwardModal';
 import RestoreCardModal from './RestoreCardModal';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -30,6 +32,8 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
     const [reviews, setReviews] = useState([]);
     const [performanceSummary, setPerformanceSummary] = useState(null);
     const [loadingSummary, setLoadingSummary] = useState(false);
+    const [awards, setAwards] = useState([]);
+    const [isAwardModalOpen, setIsAwardModalOpen] = useState(false);
 
     // Scroll to top on detail sub-tab changes
     useEffect(() => {
@@ -60,6 +64,12 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                 setPerformanceSummary(summaryRes.data || null);
             } catch (e) {
                 console.error('Error fetching performance summary:', e);
+            }
+            try {
+                const awardRes = await apiClient.get(`/awards/employee/${employee._id}`);
+                setAwards(awardRes.data || []);
+            } catch (e) {
+                console.error('Error fetching awards:', e);
             } finally {
                 setLoadingSummary(false);
             }
@@ -313,6 +323,43 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
         } catch (e) {
             console.error('Error updating card visibility:', e);
         }
+    };
+
+    const handleDeleteAward = (awardId) => {
+        toast((t) => (
+            <div className="flex flex-col gap-3 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-xl">
+                <span className="text-sm font-bold text-slate-800 dark:text-white">
+                    Are you sure you want to revoke this award?
+                </span>
+                <div className="flex justify-end gap-2 mt-1">
+                    <button 
+                        onClick={() => toast.dismiss(t.id)} 
+                        className="px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={async () => {
+                            toast.dismiss(t.id);
+                            try {
+                                await apiClient.delete(`/awards/${awardId}`);
+                                setAwards(prev => prev.filter(a => a._id !== awardId));
+                                toast.success('Award revoked');
+                            } catch (e) {
+                                console.error('Error deleting award:', e);
+                                toast.error('Error revoking award');
+                            }
+                        }} 
+                        className="px-3 py-1.5 text-xs font-bold bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors shadow-sm"
+                    >
+                        Revoke
+                    </button>
+                </div>
+            </div>
+        ), {
+            duration: 8000,
+            style: { background: 'transparent', boxShadow: 'none', padding: 0 }
+        });
     };
 
     if (!employee || !employee._id) {
@@ -833,6 +880,55 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                 )}
                             </div>
 
+                            {/* Awards & Recognition Card */}
+                            <div className="card">
+                                <div className="flex items-center justify-between mb-5 border-b border-indigo-50 pb-3">
+                                    <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest">
+                                        <Award size={16} /> Awards & Recognition
+                                    </h3>
+                                    {currentUser?.role === 'hr' && (
+                                        <button
+                                            onClick={() => setIsAwardModalOpen(true)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-indigo-200"
+                                        >
+                                            <Plus size={12} /> Give Award
+                                        </button>
+                                    )}
+                                </div>
+                                {awards.length === 0 ? (
+                                    <p className="text-xs text-slate-400 text-center py-6">No awards or recognition recorded yet.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                        {awards.map(a => (
+                                            <div key={a._id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between hover:border-indigo-100 hover:shadow-xs transition-all duration-200 relative group">
+                                                {currentUser?.role === 'hr' && (
+                                                    <button
+                                                        onClick={() => handleDeleteAward(a._id)}
+                                                        title="Revoke award"
+                                                        className="absolute top-2 right-2 w-5 h-5 rounded-full bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-400 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 cursor-pointer border border-slate-200/50 z-10"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                )}
+                                                <div className="flex gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center shrink-0">
+                                                        <Award size={18} />
+                                                    </div>
+                                                    <div className="overflow-hidden">
+                                                        <h4 className="font-bold text-slate-800 text-sm truncate">{a.title}</h4>
+                                                        {a.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{a.description}</p>}
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 font-bold uppercase tracking-tight">
+                                                    <span>{a.date ? new Date(a.date).toLocaleDateString('default', { month: 'short', year: 'numeric' }) : '-'}</span>
+                                                    <span>By: {a.awardedBy?.name || 'HR'}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Recent Leave History */}
                             <div className="card space-y-6">
                                 <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-3">
@@ -890,9 +986,17 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                 contractDetails={employee?.contractDetails} 
                 employeeName={employee?.name} 
             />
+            <AwardModal
+                isOpen={isAwardModalOpen}
+                onClose={() => setIsAwardModalOpen(false)}
+                employeeId={employee._id}
+                onSave={(newAward) => setAwards(prev => [newAward, ...prev])}
+            />
         </motion.div>
     );
 };
+
+
 
 const ProfileDetailItem = ({ label, value, icon: Icon, uppercase }) => (
     <div className="flex items-center gap-3 w-full bg-slate-50 p-2.5 rounded-2xl border border-slate-100">

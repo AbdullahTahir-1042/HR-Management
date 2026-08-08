@@ -7,6 +7,8 @@ import {
     Coins, Plus, Calendar, AlertTriangle, ShieldCheck, FileSpreadsheet, Eye, Info, X
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+import { formatDate } from '../../utils/dateUtils';
+
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -57,10 +59,8 @@ const TYPE_COLORS = {
 
 const formatPKR = (amount) => `₨ ${(amount || 0).toLocaleString()}`;
 
-const formatDate = (dateStr) =>
-    new Date(dateStr).toLocaleDateString('en-US', {
-        year: 'numeric', month: 'short', day: 'numeric'
-    });
+const localFormatDate = (dateStr) =>
+    formatDate(dateStr);
 
 // ── Custom Dropdowns ────────────────────────────────────────────────────────────
 

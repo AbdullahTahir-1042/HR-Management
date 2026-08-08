@@ -1,3 +1,4 @@
+import { formatDate } from '../../utils/dateUtils';
 import { useState, useEffect, useContext } from 'react';
 import apiClient from '../../api/axiosClient';
 import { motion } from 'framer-motion';
@@ -35,7 +36,7 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
         }
     };
 
-    const formatDate = (dateStr) => {
+    const localFormatDate_unused = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
         return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
@@ -43,9 +44,9 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
 
     const formatDateLong = (dateStr) => {
         if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('en-PK', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-        });
+        const datePart = formatDate(dateStr);
+        const timePart = new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `${datePart} at ${timePart}`;
     };
 
     if (selected) {
@@ -144,7 +145,7 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
                                             </span>
                                             <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-medium">
                                                 <Calendar size={12} />
-                                                {formatDate(entry.createdAt)}
+                                                {formatDateLong(entry.createdAt)}
                                             </span>
                                         </div>
                                     </div>
