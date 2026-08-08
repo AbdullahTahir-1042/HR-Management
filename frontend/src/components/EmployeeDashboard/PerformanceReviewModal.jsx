@@ -12,8 +12,8 @@ const EMPTY_FORM = {
     goals: '',
 };
 
-const PerformanceReviewModal = ({ employee, onClose, onSuccess }) => {
-    const [form, setForm] = useState(EMPTY_FORM);
+const PerformanceReviewModal = ({ employee, members, onClose, onSuccess }) => {
+    const [form, setForm] = useState({ ...EMPTY_FORM, employeeId: employee ? employee._id : '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [submitted, setSubmitted] = useState(false);
@@ -30,11 +30,17 @@ const PerformanceReviewModal = ({ employee, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!form.employeeId) {
+            setError('Please select an employee.');
+            return;
+        }
+
         setLoading(true);
         setError('');
         try {
             await apiClient.post('/performance-reviews', {
-                employee: employee._id,
+                employee: form.employeeId,
                 reviewDate: new Date().toISOString(),
                 ...form
             });
@@ -59,7 +65,9 @@ const PerformanceReviewModal = ({ employee, onClose, onSuccess }) => {
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
                     <div className="flex items-center gap-2">
                         <Star size={18} className="text-amber-500 fill-amber-500" />
-                        <h3 className="font-bold text-slate-800">Performance Review for {employee.name}</h3>
+                        <h3 className="font-bold text-slate-800">
+                            {employee ? `Performance Review for ${employee.name}` : 'Submit Performance Review'}
+                        </h3>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
                         <X size={18} />
@@ -87,6 +95,28 @@ const PerformanceReviewModal = ({ employee, onClose, onSuccess }) => {
                         {error && (
                             <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
                                 <AlertTriangle size={15} /> {error}
+                            </div>
+                        )}
+
+                        {members && !employee && (
+                            <div className="bg-slate-50 rounded-xl p-4 space-y-4">
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-600 mb-1.5 block">
+                                        Select Team Member <span className="text-rose-500">*</span>
+                                    </label>
+                                    <select
+                                        name="employeeId"
+                                        value={form.employeeId}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                                    >
+                                        <option value="">Select a team member...</option>
+                                        {members.map(m => (
+                                            <option key={m._id || m.id} value={m._id || m.id}>{m.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         )}
 

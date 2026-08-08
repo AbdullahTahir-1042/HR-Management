@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle, MessageSquare, Coins, ClipboardList } from 'lucide-react';
+import { ArrowRight, Calendar, Users, TrendingUp, CalendarDays, Clock, Bell, AlertTriangle, MessageSquare, Coins, ClipboardList , Building2, CalendarClock, CalendarRange, MessageCircle, BarChart2, MonitorPlay} from 'lucide-react';
 
 const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], employees = [], holidays = [], announcements = [], mistakeReports = [], hrRequests = [], loans = [], setActiveTab, setHrRequestsSubTab }) => {
     return (
@@ -208,8 +208,61 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     </div>
                 </motion.div>
             </div>
+
+            {/* ── Quick Access Features ── */}
+            <div className="mt-8">
+                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span> Workspace
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-7xl">
+                    
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('departments')} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <Building2 size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">Departments</span>
+                    </motion.div>
+
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('office-schedule')} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <CalendarClock size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">Office Schedule</span>
+                    </motion.div>
+                    
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('leave-types')} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <CalendarRange size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">Leave Types</span>
+                    </motion.div>
+
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('messages')} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <MessageCircle size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">Messages</span>
+                    </motion.div>
+
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('reports')} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <BarChart2 size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">User Reports</span>
+                    </motion.div>
+
+                    <motion.div whileHover={{ y: -4 }} onClick={() => setActiveTab('training')} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                            <MonitorPlay size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-700">Training</span>
+                    </motion.div>
+
+                </div>
+            </div>
         </motion.div>
     );
 };
+
 
 export default HROverview;

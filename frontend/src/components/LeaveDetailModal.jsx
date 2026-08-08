@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, User, FileText, CheckCircle, Clock, AlertCircle, Check, Edit2 } from 'lucide-react';
 import LeaveConfirmationModal from './LeaveConfirmationModal';
+import { formatDate } from '../utils/dateUtils';
+
 
 const LeaveDetailModal = ({ leave, onClose, onStatusUpdate }) => {
     const [confirmAction, setConfirmAction] = useState(null);
 
     if (!leave) return null;
 
-    const formatDate = (dateStr) => {
+    const localFormatDate = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
         const day = String(date.getDate()).padStart(2, '0');

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Trash2, CalendarCheck, Megaphone, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import apiClient from '../api/axiosClient';
+import { formatDate } from '../utils/dateUtils';
+
 
 const ICONS = {
     leave: <CalendarCheck size={16} className="text-emerald-500" />,
@@ -76,6 +78,8 @@ const NotificationsPanel = ({ onNavigate }) => {
                 onNavigate('leaves');
             } else if (notif.type === 'MistakeReport') {
                 onNavigate('mistake-reports');
+            } else if (notif.type === 'chat') {
+                onNavigate('messages');
             }
         }
         setSelectedNotification(null);
@@ -152,7 +156,7 @@ const NotificationsPanel = ({ onNavigate }) => {
                                                         {notif.title}
                                                     </p>
                                                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
-                                                        {new Date(notif.createdAt).toLocaleDateString()}
+                                                        {formatDate(notif.createdAt)}
                                                     </span>
                                                 </div>
                                                 <p className={`text-xs ${!notif.isRead ? 'text-slate-600 dark:text-slate-300 font-medium' : 'text-slate-500 dark:text-slate-500'} line-clamp-2 leading-relaxed`}>

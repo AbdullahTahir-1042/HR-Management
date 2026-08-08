@@ -23,7 +23,8 @@ import {
     MonitorPlay,
     CalendarClock,
     Sun,
-    Moon
+    Moon,
+    Trophy
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 

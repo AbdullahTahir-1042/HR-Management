@@ -58,10 +58,13 @@ const HRDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [attendanceDateFilter, setAttendanceDateFilter] = useState(getTodayStr());
 
+    const [performanceReviews, setPerformanceReviews] = useState([]);
+    const [awards, setAwards] = useState([]);
+
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, loansRes, leaveTypesRes, announcementsRes, mistakeReportsRes, deptsRes] = await Promise.all([
+            const [leavesRes, attendanceRes, employeesRes, holidaysRes, hrRequestsRes, loansRes, leaveTypesRes, announcementsRes, mistakeReportsRes, deptsRes, reviewsRes, awardsRes] = await Promise.all([
                 apiClient.get('/leaves/all'),
                 apiClient.get('/attendance/all'),
                 apiClient.get('/auth/users'),
@@ -71,7 +74,9 @@ const HRDashboard = () => {
                 apiClient.get('/leaves/types'),
                 apiClient.get('/announcements'),
                 apiClient.get('/mistake-reports'),
-                apiClient.get('/departments')
+                apiClient.get('/departments'),
+                apiClient.get('/performance-reviews').catch(e => ({data: []})),
+                apiClient.get('/awards').catch(e => ({data: []}))
             ]);
             setLeaves(leavesRes.data);
             setAttendance(attendanceRes.data);
@@ -83,6 +88,8 @@ const HRDashboard = () => {
             setAnnouncements(announcementsRes.data);
             setMistakeReports(mistakeReportsRes.data);
             setDepartments(deptsRes.data || []);
+            setPerformanceReviews(reviewsRes.data || []);
+            setAwards(awardsRes.data || []);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
         } finally {
@@ -507,6 +514,9 @@ const HRDashboard = () => {
                                 ) : (
                                     <HREmployeeList
                                         employees={employees}
+                                        performanceReviews={performanceReviews}
+                                        mistakeReports={mistakeReports}
+                                        awards={awards}
                                         searchTerm={searchTerm}
                                         onAddNew={() => setIsAddingEmployee(true)}
                                         onSelect={setSelectedEmployee}

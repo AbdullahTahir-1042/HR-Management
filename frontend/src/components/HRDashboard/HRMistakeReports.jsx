@@ -8,6 +8,8 @@ import {
     TrendingUp, FileText, User, Sparkles, Download, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatDate } from '../../utils/dateUtils';
+
 
 // ─── Animated Number ─────────────────────────────────────────────────────────
 const AnimatedNumber = ({ value }) => (
@@ -179,11 +181,9 @@ const HRMistakeReports = () => {
         return found ? found.name : (report.teamName || 'Unassigned');
     };
 
-    const formatDate = (dateStr) => {
+    const localFormatDate = (dateStr) => {
         if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric'
-        });
+        return formatDate(dateStr);
     };
 
     const formatDateTime = (dateStr) => {

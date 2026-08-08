@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Calendar, AlertCircle } from 'lucide-react';
+import { formatDate } from '../../utils/dateUtils';
+
 
 const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
     const sortedAttendance = [...filteredAttendance]
@@ -11,7 +13,7 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
             return dateB - dateA;
         });
 
-    const formatDate = (dateStr) => {
+    const localFormatDate = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
         const day = String(date.getDate()).padStart(2, '0');
@@ -55,7 +57,21 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
             return <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />Absent</span>;
         }
         if (record.status === 'late') {
-            return <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />Late</span>;
+            const expectedStr = record.expectedCheckIn || '09:00';
+            const [startHour, startMin] = expectedStr.split(':').map(Number);
+            const checkInTime = new Date(record.checkIn);
+            const expectedTime = new Date(record.checkIn);
+            expectedTime.setHours(startHour, startMin, 0, 0);
+            
+            const lateMs = checkInTime - expectedTime;
+            let lateText = 'Late';
+            if (lateMs > 0) {
+                const lateHrs = Math.floor(lateMs / (1000 * 60 * 60));
+                const lateMins = Math.floor((lateMs % (1000 * 60 * 60)) / (1000 * 60));
+                lateText = `Late (${lateHrs > 0 ? `${lateHrs}H ` : ''}${lateMins}M)`;
+            }
+
+            return <span className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />{lateText}</span>;
         }
         return <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider w-fit">Present</span>;
     };
@@ -102,12 +118,12 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                     </span>
                                 </td>
                                 <td className="table-cell px-6 py-5">
-                                    <div className={`flex items-center gap-2 font-medium ${isLate ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    <div className={`flex items-center gap-2 font-medium ${isLate ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                                         {record.status === 'absent' || !record.checkIn ? (
                                             <span className="text-slate-400">-</span>
                                         ) : (
                                             <>
-                                                <div className={`w-2 h-2 rounded-full ${isLate ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+                                                <div className={`w-2 h-2 rounded-full ${isLate ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
                                                 {new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </>
                                         )}

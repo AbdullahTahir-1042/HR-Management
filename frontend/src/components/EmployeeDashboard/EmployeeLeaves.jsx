@@ -1,3 +1,5 @@
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Lock, AlertCircle } from 'lucide-react';
@@ -251,24 +253,24 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                         {leaveBalances.map(b => {
                             const usedPercent = b.allocated > 0 ? Math.min(100, Math.round((b.used / b.allocated) * 100)) : 0;
                             return (
-                                <div key={b.leaveType?._id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md space-y-3">
+                                <div key={b.leaveType?._id} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:border-indigo-200 dark:hover:border-indigo-500/50 hover:shadow-md space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg">
+                                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-3 py-1 rounded-lg">
                                             {b.leaveType?.name}
                                         </span>
-                                        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 rounded-md">
                                             {b.used} {b.used === 1 ? 'Day Used' : 'Days Used'}
                                         </span>
                                     </div>
 
                                     <div>
                                         <div className="flex items-baseline justify-between">
-                                            <p className="text-2xl font-black text-slate-800">{b.remaining} <span className="text-sm font-semibold text-slate-500">Days Left</span></p>
-                                            <span className="text-xs text-slate-400 font-medium">Total: {b.allocated} Days</span>
+                                            <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{b.remaining} <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Days Left</span></p>
+                                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Total: {b.allocated} Days</span>
                                         </div>
 
                                         {/* Progress Bar */}
-                                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2">
+                                        <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-2">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-300 ${usedPercent > 80 ? 'bg-amber-500' : 'bg-indigo-600'
                                                     }`}
@@ -338,39 +340,37 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                         })()}
                                     </div>
                                     {/* Start & End Date Status Cards */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between">
-                                                <span>Start Date</span>
-                                                {leaveForm.startDate && (
-                                                    <span className="text-[9px] font-extrabold text-indigo-600">Selected</span>
-                                                )}
-                                            </label>
-                                            <input
-                                                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
-                                                type="date"
-                                                min={todayStr}
-                                                value={leaveForm.startDate}
-                                                onChange={e => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between">
-                                                <span>End Date</span>
-                                                {leaveForm.endDate && (
-                                                    <span className="text-[9px] font-extrabold text-indigo-600">Selected</span>
-                                                )}
-                                            </label>
-                                            <input
-                                                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
-                                                type="date"
-                                                min={todayStr}
-                                                value={leaveForm.endDate}
-                                                onChange={e => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
-                                                required
-                                            />
-                                        </div>
+                                    <div className="mb-4">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between mb-1.5">
+                                            <span>Duration (Start to End)</span>
+                                            {(leaveForm.startDate || leaveForm.endDate) && (
+                                                <span className="text-[9px] font-extrabold text-indigo-600">Selected</span>
+                                            )}
+                                        </label>
+                                        <DatePicker
+                                            selectsRange={true}
+                                            startDate={leaveForm.startDate ? new Date(leaveForm.startDate) : null}
+                                            endDate={leaveForm.endDate ? new Date(leaveForm.endDate) : null}
+                                            onChange={(update) => {
+                                                const [start, end] = update;
+                                                const parseDate = (d) => {
+                                                    if (!d) return '';
+                                                    const offset = d.getTimezoneOffset() * 60000;
+                                                    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+                                                };
+                                                setLeaveForm(prev => ({ 
+                                                    ...prev, 
+                                                    startDate: parseDate(start), 
+                                                    endDate: parseDate(end) 
+                                                }));
+                                            }}
+                                            dateFormat="yyyy-MM-dd"
+                                            isClearable={true}
+                                            placeholderText="Select date range"
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
+                                            wrapperClassName="w-full"
+                                            minDate={new Date()}
+                                        />
                                     </div>
 
                                     {/* Expandable/Collapsible Visual Calendar Switch & Clear Button */}
@@ -652,7 +652,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                         </div>
                         <button
                             disabled={deductionPreview?.isFullyBooked}
-                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm mt-auto cursor-pointer"
+                            className="w-full py-3.5 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20 transition-all flex items-center justify-center gap-2 text-sm mt-auto cursor-pointer"
                         >
                             <Send size={18} /> Submit Application
                         </button>
@@ -703,39 +703,39 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                     <th className="px-3 py-3 text-right">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                 {filteredLeavesForTable.map(leave => (
                                     <tr
                                         key={leave._id}
-                                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                                        className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group"
                                         onClick={() => setSelectedLeave(leave)}
                                     >
                                         <td className="px-3 py-3">
-                                            <span className="font-bold text-slate-800 text-xs bg-indigo-50/60 border border-indigo-100/80 px-2.5 py-1 rounded-lg inline-block">
+                                            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs bg-indigo-50/60 dark:bg-indigo-500/10 border border-indigo-100/80 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg inline-block">
                                                 {leave.leaveType?.name || 'Annual Leave'}
                                             </span>
                                         </td>
                                         <td className="px-3 py-3">
-                                            <div className="text-slate-700 font-medium text-xs whitespace-nowrap">
+                                            <div className="text-slate-700 dark:text-slate-300 font-medium text-xs whitespace-nowrap">
                                                 {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
                                             </div>
                                         </td>
                                         <td className="px-3 py-3 text-center">
-                                            <span className="text-slate-600 font-bold text-xs bg-slate-100 px-2.5 py-0.5 rounded-md inline-block">
+                                            <span className="text-slate-600 dark:text-slate-400 font-bold text-xs bg-slate-100 dark:bg-slate-700/50 px-2.5 py-0.5 rounded-md inline-block">
                                                 {calculateDays(leave.startDate, leave.endDate)}
                                             </span>
                                         </td>
                                         <td className="px-3 py-3">
-                                            <span className="text-slate-600 text-xs bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 group-hover:border-indigo-200 transition-colors block truncate max-w-[180px]">
+                                            <span className="text-slate-600 dark:text-slate-400 text-xs bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-100 dark:border-slate-700 group-hover:border-indigo-200 dark:group-hover:border-indigo-500/50 transition-colors block truncate max-w-[180px]">
                                                 {truncateReason(leave.reason)}
                                             </span>
                                         </td>
                                         <td className="px-3 py-3 text-right">
                                             <span className={`
                                                         px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block
-                                                        ${leave.status === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200' : ''}
-                                                        ${leave.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ''}
-                                                        ${leave.status === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' : ''}
+                                                        ${leave.status === 'pending' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' : ''}
+                                                        ${leave.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' : ''}
+                                                        ${leave.status === 'rejected' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20' : ''}
                                                     `}>
                                                 {leave.status}
                                             </span>

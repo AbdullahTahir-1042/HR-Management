@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, Calendar, Hash, User } from 'lucide-react';
+import { formatDate } from '../utils/dateUtils';
+
 
 const LeaveConfirmationModal = ({ leave, action, onConfirm, onCancel }) => {
     if (!leave) return null;
 
-    const formatDate = (dateStr) => {
+    const localFormatDate = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
         const day = String(date.getDate()).padStart(2, '0');

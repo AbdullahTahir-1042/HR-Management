@@ -8,6 +8,8 @@ import {
     Banknote, Wallet, ChevronRight, TrendingUp
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
+import { formatDate } from '../../utils/dateUtils';
+
 
 const HRReports = ({ employees, loans = [] }) => {
     // ── Report Type Tab ─────────────────────────────────────
@@ -525,8 +527,8 @@ const HRReports = ({ employees, loans = [] }) => {
         return dates.map(dStr => {
             const data = dateMap[dStr] || { count: 0, lateCount: 0, activeCount: 0 };
             const dateObj = new Date(dStr + 'T00:00:00');
-            const dayName = dateObj.toLocaleDateString([], { weekday: 'short' });
-            const monthDay = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            const dayName = formatDate(dateObj);
+            const monthDay = formatDate(dateObj);
             return {
                 rawDate: dStr,
                 dateLabel: monthDay,
@@ -686,7 +688,7 @@ const HRReports = ({ employees, loans = [] }) => {
                 kpis = [
                     ['Total Headcount', `${employeeSummary.total} staff`],
                     ['Full Time Staff Ratio', `${employeeSummary.fullTime} staff`],
-                    ['Probation Status', `${employeeSummary.probation} staff`],
+                    ['On Probation', `${employeeSummary.probation} staff`],
                     ['Internship Status', `${employeeSummary.internship} staff`]
                 ];
             }
@@ -735,8 +737,8 @@ const HRReports = ({ employees, loans = [] }) => {
                 tableRows = filteredLeaves.map(l => [
                     `${l.employee?.name || '—'}\n(${l.employee?.email || '—'})`,
                     l.employee?.department || '—',
-                    l.startDate ? new Date(l.startDate).toLocaleDateString() : '—',
-                    l.endDate ? new Date(l.endDate).toLocaleDateString() : '—',
+                    l.startDate ? formatDate(l.startDate) : '—',
+                    l.endDate ? formatDate(l.endDate) : '—',
                     l.reason || '—',
                     l.status.toUpperCase()
                 ]);
@@ -758,7 +760,7 @@ const HRReports = ({ employees, loans = [] }) => {
                     `${e.email || '—'}\n${e.phone || '—'}`,
                     formatCurrency(e.salary),
                     e.status.toUpperCase(),
-                    e.createdAt ? new Date(e.createdAt).toLocaleDateString() : '—'
+                    e.createdAt ? formatDate(e.createdAt) : '—'
                 ]);
             }
 
@@ -1148,7 +1150,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                     const late = isLate(record);
                                                     const active = record.checkIn && !record.checkOut;
                                                     const hoursVal = getDecimalHours(record.checkIn, record.checkOut);
-                                                    const formattedDate = record.date ? new Date(record.date + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                                                    const formattedDate = record.date ? formatDate(record.date + 'T00:00:00') : '—';
                                                     return (
                                                         <tr key={record._id} className="hover:bg-slate-50/60 transition-colors group">
                                                             {/* Employee Info */}
@@ -1413,8 +1415,8 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                 {log.employee?.department || 'General'}
                                                             </span>
                                                         </td>
-                                                        <td className="px-3 py-3 text-slate-700 text-xs font-semibold">{new Date(log.startDate).toLocaleDateString()}</td>
-                                                        <td className="px-3 py-3 text-slate-700 text-xs font-semibold">{new Date(log.endDate).toLocaleDateString()}</td>
+                                                        <td className="px-3 py-3 text-slate-700 text-xs font-semibold">{formatDate(log.startDate)}</td>
+                                                        <td className="px-3 py-3 text-slate-700 text-xs font-semibold">{formatDate(log.endDate)}</td>
                                                         <td className="px-3 py-3 text-slate-600 text-xs italic max-w-[180px] truncate" title={log.reason}>{log.reason}</td>
                                                         <td className="px-3 py-3">
                                                             {log.status === 'approved' ? (
@@ -1515,7 +1517,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                 {empDeductions.map(d => (
                                                                     <div key={d._id} className="text-[9px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-600 flex justify-between items-center w-full max-w-[200px]">
                                                                         <span className="truncate mr-2" title={d.reason}>{d.reason}</span>
-                                                                        <span className="font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{new Date(d.date).toLocaleDateString()}</span>
+                                                                        <span className="font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDate(d.date)}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -1558,7 +1560,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                 />
                                 <SummaryCard
                                     icon={Clock}
-                                    label="Probation Status"
+                                    label="On Probation"
                                     value={employeeSummary.probation}
                                     color="amber"
                                     isActive={directoryStatusFilter === 'probation'}
@@ -1621,7 +1623,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                             {[
                                                 { id: 'all', label: 'All' },
                                                 { id: 'full time', label: 'Full Time' },
-                                                { id: 'probation', label: 'Probation' },
+                                                { id: 'probation', label: 'On Probation' },
                                                 { id: 'internship', label: 'Internship' },
                                             ].map(pill => (
                                                 <button
@@ -1701,13 +1703,13 @@ const HRReports = ({ employees, loans = [] }) => {
                                                             {emp.status === 'full time' ? (
                                                                 <Badge color="emerald" label="Full Time" />
                                                             ) : emp.status === 'probation' ? (
-                                                                <Badge color="amber" label="Probation" />
+                                                                <Badge color="amber" label="On Probation" />
                                                             ) : (
                                                                 <Badge color="slate" label="Internship" />
                                                             )}
                                                         </td>
                                                         <td className="px-3 py-3 text-slate-500 dark:text-slate-400 text-[11px] font-semibold">
-                                                            {emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : '—'}
+                                                            {emp.createdAt ? formatDate(emp.createdAt) : '—'}
                                                         </td>
                                                     </tr>
                                                 ))}
