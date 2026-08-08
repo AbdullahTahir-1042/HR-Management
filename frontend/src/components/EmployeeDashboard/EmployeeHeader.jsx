@@ -13,6 +13,7 @@ const EmployeeHeader = ({ activeTab, setActiveTab, onBack, canGoBack = true, set
         messages: { icon: <MessageCircle size={24} className="text-indigo-600" />, label: 'Messages' },
         training: { icon: <MonitorPlay size={24} className="text-indigo-600" />, label: 'Training' },
         myTeam: { icon: <Users size={24} className="text-indigo-600" />, label: 'My Team' },
+        teamLeaves: { icon: <Calendar size={24} className="text-indigo-600" />, label: 'Team Leaves' },
     };
 
     const current = config[activeTab] || config.dashboard;
