@@ -1,5 +1,4 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft } from 'lucide-react';
 import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
@@ -21,9 +20,10 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
         announcements: { icon: <Bell size={24} className="text-indigo-600" />, label: 'Announcements' },
         profile: { icon: <User size={24} className="text-indigo-600" />, label: 'My Profile' },
         messages: { icon: <MessageSquare size={24} className="text-indigo-600" />, label: 'Messages' },
-        myTeam: { icon: <User size={24} className="text-indigo-600" />, label: 'My Team' },
-        training: { icon: <User size={24} className="text-indigo-600" />, label: 'Training Center' },
-        performance: { icon: <User size={24} className="text-indigo-600" />, label: 'My Performance' },
+        myTeam: { icon: <Users size={24} className="text-indigo-600" />, label: 'My Team' },
+        'team-leaves': { icon: <Calendar size={24} className="text-indigo-600" />, label: 'Team Leaves' },
+        training: { icon: <MonitorPlay size={24} className="text-indigo-600" />, label: 'Training Center' },
+        performance: { icon: <PartyPopper size={24} className="text-indigo-600" />, label: 'My Performance' },
     };
 
     const current = config[activeTab] || config.dashboard;

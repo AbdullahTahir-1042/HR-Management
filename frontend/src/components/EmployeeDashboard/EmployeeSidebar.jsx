@@ -105,6 +105,21 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                         </span>
                     </Link>
                 )}
+
+                {/* Team Leaves — only visible to Team Leads */}
+                {user?.isTeamLead && (
+                    <Link
+                        to="/employee/team-leaves"
+                        onClick={() => setIsOpen(false)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                            ${getIsActive('team-leaves')
+                                ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                                : 'text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400'}`}
+                    >
+                        <Calendar size={20} />
+                        <span className="text-sm">Team Leaves</span>
+                    </Link>
+                )}
             </nav>
 
             {/* Profile + Logout */}

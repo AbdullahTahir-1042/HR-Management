@@ -627,6 +627,7 @@ const EmployeeDashboard = () => {
                             <UpdateProfilePage user={fullUser || authUser} onBack={() => navigate('/employee')} onUpdate={(updatedUser) => setFullUser(updatedUser)} />
                         } />
                         <Route path="myTeam" element={<MyTeamSection />} />
+                        <Route path="team-leaves" element={<TeamLeaves />} />
                         <Route path="*" element={<Navigate to="/employee" replace />} />
                     </Routes>
                 </div>
