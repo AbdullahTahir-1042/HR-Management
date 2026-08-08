@@ -484,7 +484,6 @@ const MessagesPage = () => {
         <div className="space-y-5">
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 tracking-tight">Messages</h2>
                     <p className="text-sm text-slate-400 font-medium mt-0.5">
                         {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
                         {totalUnread > 0 && <span className="text-rose-500 font-semibold"> · {totalUnread} unread</span>}

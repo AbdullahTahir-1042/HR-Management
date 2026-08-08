@@ -16,7 +16,7 @@ const NAV_ITEMS = [
     { id: 'hr-requests',  label: 'HR Requests',       icon: MessageSquare },
     { id: 'messages',     label: 'Messages',          icon: MessageCircle },
     { id: 'announcements',label: 'Announcements',     icon: Bell },
-    { id: 'training',     label: 'Training Center',   icon: MonitorPlay },
+    { id: 'training',     label: 'Training',          icon: MonitorPlay },
 ];
 
 const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }) => {

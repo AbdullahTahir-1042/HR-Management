@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
 const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {

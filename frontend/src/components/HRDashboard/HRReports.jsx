@@ -1,15 +1,102 @@
 import toast from 'react-hot-toast';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     BarChart2, Users, Clock, AlertCircle, Filter, Calendar, 
     DollarSign, ClipboardList, Download, CheckCircle, XCircle, 
     AlertTriangle, Building2, UserCheck, Search, Briefcase, FileText,
-    Banknote, Wallet, ChevronRight, TrendingUp
+    Banknote, Wallet, ChevronRight, TrendingUp, ChevronDown, Check
 } from 'lucide-react';
 import apiClient from '../../api/axiosClient';
 import { formatDate } from '../../utils/dateUtils';
 
+
+// ─── Searchable Employee Dropdown ───────────────────────────
+const EmployeeSearchDropdown = ({ availableStaff, value, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedEmp = availableStaff.find(emp => emp._id === value);
+    
+    const filteredStaff = availableStaff.filter(emp => 
+        emp.name.toLowerCase().includes(search.toLowerCase()) || 
+        emp.email?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <div 
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-slate-50/50 dark:bg-slate-900/50 cursor-pointer flex justify-between items-center transition-colors hover:border-slate-300 dark:hover:border-slate-600"
+            >
+                <span className="truncate">{selectedEmp ? selectedEmp.name : `All Employees (${availableStaff.length})`}</span>
+                <ChevronDown size={14} className="text-slate-400" />
+            </div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden"
+                    >
+                        <div className="p-2 border-b border-slate-100 dark:border-slate-700/50">
+                            <div className="relative">
+                                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Search name or email..."
+                                    className="w-full pl-7 pr-2 py-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-md text-xs focus:outline-none focus:border-indigo-500 dark:text-slate-200 transition-colors"
+                                />
+                            </div>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                            <div 
+                                onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}
+                                className={`px-3 py-2 text-xs rounded-md cursor-pointer transition-colors ${!value ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                            >
+                                All Employees ({availableStaff.length})
+                            </div>
+                            {filteredStaff.length === 0 ? (
+                                <div className="px-3 py-4 text-center text-xs text-slate-400">No employees found</div>
+                            ) : (
+                                filteredStaff.map(emp => (
+                                    <div 
+                                        key={emp._id}
+                                        onClick={() => { onChange(emp._id); setIsOpen(false); setSearch(''); }}
+                                        className={`px-3 py-2 text-xs rounded-md cursor-pointer transition-colors ${value === emp._id ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'} flex justify-between items-center`}
+                                    >
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="truncate">{emp.name}</span>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{emp.email}</span>
+                                        </div>
+                                        {value === emp._id && <Check size={14} className="flex-shrink-0 ml-2" />}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const HRReports = ({ employees, loans = [] }) => {
     // ── Report Type Tab ─────────────────────────────────────
@@ -467,9 +554,12 @@ const HRReports = ({ employees, loans = [] }) => {
         });
     };
 
-    const calcHours = (checkIn, checkOut) => {
+    const calcHours = (checkIn, checkOut, recordDate) => {
         if (!checkIn) return '—';
-        if (!checkOut) return 'Active Now';
+        if (!checkOut) {
+            const isToday = new Date(recordDate || checkIn).toDateString() === new Date().toDateString();
+            return isToday ? 'Active Now' : '—';
+        }
         const diff = new Date(checkOut) - new Date(checkIn);
         const h = Math.floor(diff / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -972,16 +1062,11 @@ const HRReports = ({ employees, loans = [] }) => {
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-700 uppercase mb-1 block">Employee Name</label>
-                        <select
+                        <EmployeeSearchDropdown 
+                            availableStaff={availableStaff}
                             value={filters.employeeId}
-                            onChange={e => setFilters({ ...filters, employeeId: e.target.value })}
-                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50"
-                        >
-                            <option value="">All Employees ({availableStaff.length})</option>
-                            {availableStaff.map(emp => (
-                                <option key={emp._id} value={emp._id}>{emp.name}</option>
-                            ))}
-                        </select>
+                            onChange={(empId) => setFilters({ ...filters, employeeId: empId })}
+                        />
                     </div>
                 </div>
             </div>
@@ -1099,7 +1184,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                     : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
                                             }`}
                                         >
-                                            Active Now ({filteredAttendance.filter(r => r.checkIn && !r.checkOut).length})
+                                            Active Now ({filteredAttendance.filter(r => r.checkIn && !r.checkOut && new Date(r.date || r.checkIn).toDateString() === new Date().toDateString()).length})
                                         </button>
                                     </div>
 
@@ -1148,7 +1233,9 @@ const HRReports = ({ employees, loans = [] }) => {
                                             <tbody className="divide-y divide-slate-100">
                                                 {displayedAttendance.map(record => {
                                                     const late = isLate(record);
-                                                    const active = record.checkIn && !record.checkOut;
+                                                    const isToday = new Date(record.date || record.checkIn).toDateString() === new Date().toDateString();
+                                                    const active = record.checkIn && !record.checkOut && isToday;
+                                                    const missingCheckout = record.checkIn && !record.checkOut && !isToday;
                                                     const hoursVal = getDecimalHours(record.checkIn, record.checkOut);
                                                     const formattedDate = record.date ? formatDate(record.date + 'T00:00:00') : '—';
                                                     return (
@@ -1207,6 +1294,10 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-full text-[10px] font-bold">
                                                                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" /> Active Now
                                                                     </span>
+                                                                ) : missingCheckout ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                                                        Missing Checkout
+                                                                    </span>
                                                                 ) : (
                                                                     <span className="text-xs text-slate-600 font-semibold tabular-nums">
                                                                         {formatTime(record.checkOut)}
@@ -1219,7 +1310,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                 <div className="space-y-1">
                                                                     <div className="flex items-center justify-between text-xs">
                                                                         <span className="font-black text-slate-800 tabular-nums">
-                                                                            {calcHours(record.checkIn, record.checkOut)}
+                                                                            {calcHours(record.checkIn, record.checkOut, record.date)}
                                                                         </span>
                                                                         {!record.checkIn || record.status === 'absent' ? (
                                                                             <div className="flex flex-col items-end">
@@ -1230,10 +1321,12 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                                     </span>
                                                                                 )}
                                                                             </div>
+                                                                        ) : missingCheckout ? (
+                                                                            <Badge color="amber" label="Missing Checkout" />
                                                                         ) : late ? (
                                                                             <Badge color="amber" label="Late Entry" />
                                                                         ) : active ? (
-                                                                            <Badge color="rose" label="Active" />
+                                                                            <Badge color="rose" label="Active Now" />
                                                                         ) : (
                                                                             <Badge color="emerald" label="Present" />
                                                                         )}

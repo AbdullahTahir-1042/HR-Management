@@ -16,7 +16,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
             <div className="bg-gradient-to-r from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg">
                 <h1 className="text-xl font-bold mb-1">Welcome back, {user?.name}</h1>
                 <p className="text-indigo-200 text-sm">
-                    {leaves.filter(l => l.status === 'pending').length} pending leave {leaves.filter(l => l.status === 'pending').length === 1 ? 'request' : 'requests'} awaiting review.
+                    {leaves.filter(l => l.status === 'pending' || l.status === 'pending_hr').length} pending leave {leaves.filter(l => l.status === 'pending' || l.status === 'pending_hr').length === 1 ? 'request' : 'requests'} awaiting review.
                 </p>
                 <div className="mt-4">
                     <button
@@ -48,7 +48,7 @@ const HROverview = ({ user, leaves = [], attendance = [], latecomers = [], emplo
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Leave Requests</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <p className="text-xl font-bold text-slate-800">
-                            {leaves.filter(l => l.status === 'pending').length}
+                            {leaves.filter(l => l.status === 'pending' || l.status === 'pending_hr').length}
                         </p>
                         <ArrowRight size={14} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
                     </div>

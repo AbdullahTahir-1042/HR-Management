@@ -198,8 +198,8 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
         return diffDays;
     };
 
-    const onConfirmAction = async (id, action) => {
-        await handleStatusUpdate(id, action);
+    const onConfirmAction = async (id, action, remark) => {
+        await handleStatusUpdate(id, action, remark);
         setConfirmAction(null);
     };
 
@@ -309,32 +309,44 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                     <td className="px-8 py-6">
                                         <span className={`
                                             px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
-                                            ${leave.status === 'pending' ? 'bg-amber-100 text-amber-700' : ''}
+                                            ${(leave.status === 'pending' || leave.status === 'pending_hr') ? 'bg-amber-100 text-amber-700' : ''}
+                                            ${leave.status === 'pending_team_lead' ? 'bg-indigo-100 text-indigo-700' : ''}
                                             ${leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : ''}
-                                            ${leave.status === 'rejected' ? 'bg-rose-100 text-rose-700' : ''}
+                                            ${(leave.status === 'rejected' || leave.status === 'hr_rejected') ? 'bg-rose-100 text-rose-700' : ''}
                                         `}>
-                                            {leave.status}
+                                            {leave.status === 'pending_hr' ? 'Pending HR' :
+                                             leave.status === 'pending_team_lead' ? 'Pending TL' :
+                                             leave.status === 'hr_rejected' ? 'HR Rejected' : 
+                                             leave.status}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex gap-2 justify-end items-center">
-                                            {leave.status === 'pending' ? (
+                                            {(leave.status === 'pending' || leave.status === 'pending_hr') ? (
                                                 <>
                                                     <button 
-                                                        onClick={() => setConfirmAction({ leave, action: 'approved' })}
+                                                        onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'approved' }); }}
                                                         className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-sm transition-colors"
-                                                        title="Approve Leave"
+                                                        title="Approve Leave (Send to TL)"
                                                     >
                                                         <Check size={16} />
                                                     </button>
                                                     <button 
-                                                        onClick={() => setConfirmAction({ leave, action: 'rejected' })}
+                                                        onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'rejected' }); }}
                                                         className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors"
                                                         title="Reject Leave"
                                                     >
                                                         <X size={16} />
                                                     </button>
                                                 </>
+                                            ) : leave.status === 'pending_team_lead' ? (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'rejected' }); }}
+                                                    className="px-2.5 py-1 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-lg transition-colors"
+                                                    title="Reject Leave before TL review"
+                                                >
+                                                    Reject
+                                                </button>
                                             ) : leave.status === 'approved' ? (
                                                 <button 
                                                     onClick={() => setConfirmAction({ leave, action: 'rejected' })}

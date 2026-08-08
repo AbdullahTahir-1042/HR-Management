@@ -22,7 +22,7 @@ const trainingSchema = new mongoose.Schema({
     },
     resourceType: {
         type: String,
-        enum: ['Video', 'Document'],
+        enum: ['Video', 'Document', 'PDF', 'Image'],
         default: 'Video'
     },
     documentUrl: {

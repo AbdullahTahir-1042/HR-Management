@@ -55,13 +55,15 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         if (!leaves || !Array.isArray(leaves)) return map;
 
         leaves.forEach(l => {
-            if (l.status === 'rejected') return; // Ignore rejected
             if (!l.startDate || !l.endDate) return;
             const lStart = String(l.startDate).slice(0, 10);
             const lEnd = String(l.endDate).slice(0, 10);
             const dateList = getDatesInRange(lStart, lEnd);
             dateList.forEach(d => {
-                map.set(d, l);
+                // If a date already has an approved leave, don't overwrite with rejected
+                if (!map.has(d) || l.status === 'approved') {
+                    map.set(d, l);
+                }
             });
         });
         return map;
@@ -181,7 +183,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
 
             // Calculate approved and pending used days from leaves list
             const usedDays = leaves
-                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending'].includes(l.status))
+                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending_hr', 'pending_team_lead'].includes(l.status))
                 .reduce((acc, l) => {
                     const ls = String(l.startDate).slice(0, 10);
                     const le = String(l.endDate).slice(0, 10);
@@ -203,7 +205,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
         
         leaves.forEach(l => {
             const lType = leaveTypes.find(t => String(t._id || t.id) === String(l.leaveType?._id || l.leaveType));
-            if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending'].includes(l.status)) {
+            if (lType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(lType.name) && ['approved', 'pending_hr', 'pending_team_lead'].includes(l.status)) {
                 const leaveYear = new Date(l.startDate).getFullYear();
                 if (leaveYear === currentYear) {
                     const ls = String(l.startDate).slice(0, 10);
@@ -424,7 +426,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
 
                                             {/* Instructions Banner */}
                                             <p className="text-[10px] text-slate-500 font-semibold bg-white p-2 rounded-lg border border-slate-200/60">
-                                                👉 <strong>Click any day</strong> for Start Date, then <strong>click a second day</strong> for End Date. Booked leave dates are marked in gold.
+                                                👉 <strong>Click any day</strong> for Start Date, then <strong>click a second day</strong> for End Date. Leave dates are color-coded: <span className="text-emerald-600 font-bold">green</span> = approved, <span className="text-amber-600 font-bold">yellow</span> = pending, <span className="text-rose-600 font-bold">red</span> = rejected.
                                             </p>
 
                                             {/* Calendar Weekday Headers */}
@@ -450,6 +452,11 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
 
                                                     const isConflict = isBooked && isInSelectedRange;
 
+                                                    // Determine booked leave status color
+                                                    const bookedStatus = bookedLeaveObj?.status || '';
+                                                    const isApproved = bookedStatus === 'approved';
+                                                    const isRejected = bookedStatus === 'rejected' || bookedStatus === 'hr_rejected';
+
                                                     let btnStyle = "bg-white text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200/80 cursor-pointer";
 
                                                     if (isPast) {
@@ -460,7 +467,12 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                         btnStyle = "bg-indigo-600 text-white font-black shadow-md ring-2 ring-indigo-400 cursor-pointer";
                                                     } else if (isInSelectedRange) {
                                                         btnStyle = "bg-indigo-100 text-indigo-900 font-bold border-t border-b border-indigo-200 cursor-pointer";
+                                                    } else if (isBooked && isApproved) {
+                                                        btnStyle = "bg-emerald-100/90 text-emerald-900 border border-emerald-300 font-extrabold opacity-95 cursor-default";
+                                                    } else if (isBooked && isRejected) {
+                                                        btnStyle = "bg-rose-100/90 text-rose-900 border border-rose-300 font-extrabold opacity-95 cursor-default";
                                                     } else if (isBooked) {
+                                                        // Pending (pending_hr, pending_team_lead)
                                                         btnStyle = "bg-amber-100/90 text-amber-900 border border-amber-300 font-extrabold opacity-95 cursor-default";
                                                     }
 
@@ -483,7 +495,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                         >
                                                             <span>{dayNumber}</span>
                                                             {isBooked && !isConflict && (
-                                                                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                                <span className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full ${isApproved ? 'bg-emerald-500' : isRejected ? 'bg-rose-500' : 'bg-amber-500'}`} />
                                                             )}
                                                         </button>
                                                     );
@@ -491,15 +503,21 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             </div>
 
                                             {/* Color Legend */}
-                                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[9px] font-bold text-slate-500 flex-wrap gap-1">
+                                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[9px] font-bold text-slate-500 flex-wrap gap-1.5">
                                                 <span className="flex items-center gap-1">
-                                                    <span className="w-2.5 h-2.5 rounded bg-indigo-600 inline-block" /> Selected Range
+                                                    <span className="w-2.5 h-2.5 rounded bg-indigo-600 inline-block" /> Selected
                                                 </span>
                                                 <span className="flex items-center gap-1">
-                                                    <span className="w-2.5 h-2.5 rounded bg-amber-200 border border-amber-400 inline-block" /> Booked Leave
+                                                    <span className="w-2.5 h-2.5 rounded bg-emerald-200 border border-emerald-400 inline-block" /> Approved
                                                 </span>
                                                 <span className="flex items-center gap-1">
-                                                    <span className="w-2.5 h-2.5 rounded bg-slate-200 border border-slate-300 inline-block" /> Past Date
+                                                    <span className="w-2.5 h-2.5 rounded bg-amber-200 border border-amber-400 inline-block" /> Pending
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-2.5 h-2.5 rounded bg-rose-200 border border-rose-400 inline-block" /> Rejected
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-2.5 h-2.5 rounded bg-slate-200 border border-slate-300 inline-block" /> Past
                                                 </span>
                                             </div>
                                         </div>
@@ -537,11 +555,19 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             <Calendar size={12} className="text-indigo-600" /> Your Booked Leave Dates ({bookedDatesMap.size} days):
                                         </p>
                                         <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pt-0.5">
-                                            {Array.from(bookedDatesMap.entries()).map(([dStr, lObj]) => (
-                                                <span key={dStr} className="text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md" title={`${lObj.status?.toUpperCase()}`}>
-                                                    {dStr}
-                                                </span>
-                                            ))}
+                                            {Array.from(bookedDatesMap.entries()).map(([dStr, lObj]) => {
+                                                const st = lObj.status || '';
+                                                const tagStyle = st === 'approved'
+                                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                    : (st === 'rejected' || st === 'hr_rejected')
+                                                        ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                                        : 'bg-amber-50 text-amber-800 border-amber-200';
+                                                return (
+                                                    <span key={dStr} className={`text-[9px] font-bold border px-2 py-0.5 rounded-md ${tagStyle}`} title={`${st?.toUpperCase()}`}>
+                                                        {dStr}
+                                                    </span>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -670,13 +696,13 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-                                {['all', 'pending', 'approved', 'rejected'].map(status => (
+                                {['all', 'pending_hr', 'pending_team_lead', 'approved', 'hr_rejected', 'rejected'].map(status => (
                                     <button
                                         key={status}
                                         onClick={() => setStatusFilter(status)}
                                         className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${statusFilter === status ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
-                                        {status}
+                                        {status.replace('_', ' ')}
                                     </button>
                                 ))}
                             </div>
@@ -733,11 +759,15 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                         <td className="px-3 py-3 text-right">
                                             <span className={`
                                                         px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block
-                                                        ${leave.status === 'pending' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' : ''}
+                                                        ${(leave.status === 'pending_hr' || leave.status === 'pending') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' : ''}
+                                                        ${leave.status === 'pending_team_lead' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : ''}
                                                         ${leave.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' : ''}
-                                                        ${leave.status === 'rejected' ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20' : ''}
+                                                        ${(leave.status === 'rejected' || leave.status === 'hr_rejected') ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20' : ''}
                                                     `}>
-                                                {leave.status}
+                                                {leave.status === 'pending_hr' ? 'Pending HR' :
+                                                 leave.status === 'pending_team_lead' ? 'Pending TL' :
+                                                 leave.status === 'hr_rejected' ? 'HR Rejected' : 
+                                                 leave.status}
                                             </span>
                                         </td>
                                     </tr>

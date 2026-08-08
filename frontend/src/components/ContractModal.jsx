@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Building2, Download, Loader2, PenTool } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
-import html2pdf from 'html2pdf.js';
+import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 
 const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
     const documentRef = useRef();

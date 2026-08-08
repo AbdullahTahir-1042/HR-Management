@@ -152,7 +152,7 @@ router.get('/balances', auth, async (req, res) => {
         // Find all approved and pending leave requests for this user in the current year
         const approvedLeaves = await LeaveRequest.find({
             employee: req.user.id,
-            status: { $in: ['approved', 'pending'] },
+            status: { $in: ['approved', 'pending_hr', 'pending_team_lead'] },
             startDate: { $gte: startOfYear, $lte: endOfYear }
         });
 
@@ -222,7 +222,7 @@ router.post('/apply', auth, async (req, res) => {
         // Check for overlapping existing leaves
         const overlappingLeaves = await LeaveRequest.find({
             employee: req.user.id,
-            status: { $in: ['pending', 'approved'] },
+            status: { $in: ['pending_hr', 'pending_team_lead', 'approved'] },
             $or: [
                 { startDate: { $lte: endDate }, endDate: { $gte: startDate } }
             ]
@@ -271,7 +271,7 @@ router.post('/apply', auth, async (req, res) => {
             const lastLeave = await LeaveRequest.findOne({
                 employee: req.user.id,
                 leaveType: leaveTypeId,
-                status: { $in: ['approved', 'pending'] }
+                status: { $in: ['approved', 'pending_hr', 'pending_team_lead'] }
             }).sort({ endDate: -1 });
 
             if (lastLeave) {
@@ -293,7 +293,7 @@ router.post('/apply', auth, async (req, res) => {
             const approvedAndPendingLeavesThisYear = await LeaveRequest.find({
                 employee: req.user.id,
                 leaveType: leaveTypeId,
-                status: { $in: ['approved', 'pending'] },
+                status: { $in: ['approved', 'pending_hr', 'pending_team_lead'] },
                 startDate: { $gte: startOfYear, $lte: endOfYear }
             });
 
@@ -316,7 +316,7 @@ router.post('/apply', auth, async (req, res) => {
             // Find all non-exempt leaves for the current year
             const allYearlyLeaves = await LeaveRequest.find({
                 employee: req.user.id,
-                status: { $in: ['approved', 'pending'] },
+                status: { $in: ['approved', 'pending_hr', 'pending_team_lead'] },
                 startDate: { $gte: startOfYear, $lte: endOfYear }
             }).populate('leaveType');
 
@@ -402,34 +402,91 @@ router.delete('/:id', [auth, isHR], async (req, res) => {
     }
 });
 
-// @route   PUT api/leaves/:id/status
-// @desc    Update leave status (HR only)
+// @route   PUT api/leaves/:id/hr-review
+// @desc    HR review of leave (approve sends to TL, reject ends it)
 // @access  Private (HR)
-router.put('/:id/status', [auth, isHR], async (req, res) => {
-    const { status } = req.body; // 'approved' or 'rejected'
+router.put('/:id/hr-review', [auth, isHR], async (req, res) => {
+    const { action, remark } = req.body; // 'approve' or 'reject'
 
     try {
-        let leave = await LeaveRequest.findById(req.params.id).populate('leaveType');
+        let leave = await LeaveRequest.findById(req.params.id)
+            .populate('leaveType')
+            .populate('employee', ['isTeamLead']);
         if (!leave) return res.status(404).json({ msg: 'Leave request not found' });
 
         const start = new Date(leave.startDate);
         const today = new Date();
         today.setHours(0,0,0,0);
         
-        if (start < today) {
-            return res.status(400).json({ msg: 'Cannot edit or approve leave requests from the past.' });
+        if (start < today && (action === 'approve' || action === 'approved')) {
+            return res.status(400).json({ msg: 'Cannot approve leave requests from the past.' });
         }
 
-        leave.status = status;
+        leave.hrRemark = remark || '';
+        leave.hrReviewedAt = new Date();
+        
+        if (action === 'approve' || action === 'approved') {
+            if (leave.employee.isTeamLead) {
+                // Team Leads don't have a team lead above them, HR approval is final
+                
+                // Revalidate quota for final approval
+                const currentYear = new Date().getFullYear();
+                const startOfYear = new Date(currentYear, 0, 1);
+                const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
+                
+                const approvedLeavesThisYear = await LeaveRequest.find({
+                    employee: leave.employee._id,
+                    leaveType: leave.leaveType._id,
+                    status: 'approved',
+                    startDate: { $gte: startOfYear, $lte: endOfYear }
+                });
+                
+                let usedDays = 0;
+                approvedLeavesThisYear.forEach(l => {
+                    const startDate = new Date(l.startDate);
+                    const endDate = new Date(l.endDate);
+                    const diffTime = Math.abs(endDate - startDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    usedDays += diffDays;
+                });
+                
+                const startDate = new Date(leave.startDate);
+                const endDate = new Date(leave.endDate);
+                const diffTime = Math.abs(endDate - startDate);
+                const duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                if (usedDays + duration > leave.leaveType.quota) {
+                    return res.status(400).json({
+                        msg: `Cannot approve: Employee only has ${Math.max(0, leave.leaveType.quota - usedDays)} days of ${leave.leaveType.name} remaining.`
+                    });
+                }
+                
+                leave.status = 'approved';
+                leave.hrDecision = 'approved';
+            } else {
+                leave.status = 'pending_team_lead';
+                leave.hrDecision = 'approved';
+            }
+        } else {
+            leave.status = 'hr_rejected';
+            leave.hrDecision = 'rejected';
+        }
+        
         await leave.save();
         
         const Notification = require('../models/Notification');
-        const user = await User.findById(leave.employee).select('notificationPreferences');
-        if (!user || (user.notificationPreferences?.all !== false && user.notificationPreferences?.leaves !== false)) {
+        const userPrefs = await User.findById(leave.employee._id).select('notificationPreferences');
+        if (!userPrefs || (userPrefs.notificationPreferences?.all !== false && userPrefs.notificationPreferences?.leaves !== false)) {
+            let statusMsg;
+            if (action === 'approve' || action === 'approved') {
+                statusMsg = leave.employee.isTeamLead ? 'Approved by HR' : 'Reviewed by HR (Pending Team Lead)';
+            } else {
+                statusMsg = 'Rejected by HR';
+            }
             await Notification.create({
-                recipient: leave.employee,
-                title: `Leave Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                message: `Your leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been ${status}.`,
+                recipient: leave.employee._id,
+                title: `Leave Request ${statusMsg}`,
+                message: `Your leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been ${statusMsg.toLowerCase()}.`,
                 type: 'leave',
                 relatedId: leave._id
             });
@@ -441,7 +498,141 @@ router.put('/:id/status', [auth, isHR], async (req, res) => {
 
         res.json(populatedLeave);
     } catch (err) {
-        console.error('Leave status update error:', err.message);
+        console.error('HR review update error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET api/leaves/team
+// @desc    Get all leave requests for the logged-in user's team (Team Lead only)
+// @access  Private
+router.get('/team', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate('departmentId');
+        if (!user || !user.isTeamLead || !user.departmentId) {
+            return res.status(403).json({ msg: 'Not authorized as Team Lead.' });
+        }
+
+        // Fetch leaves for all employees in the same department, excluding the team lead themselves
+        const teamLeaves = await LeaveRequest.find({
+            status: { $ne: 'pending_hr' }
+        })
+        .populate({
+            path: 'employee',
+            match: { departmentId: user.departmentId._id, _id: { $ne: user._id } },
+            select: 'name email departmentId'
+        })
+        .populate('leaveType')
+        .sort({ createdAt: -1 });
+
+        // Filter out null employees (those who didn't match the populate condition)
+        const filteredLeaves = teamLeaves.filter(leave => leave.employee != null);
+
+        res.json(filteredLeaves);
+    } catch (err) {
+        console.error('Fetch team leaves error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT api/leaves/:id/team-lead-review
+// @desc    Team Lead final review of leave (approve or reject)
+// @access  Private (Team Lead only)
+router.put('/:id/team-lead-review', auth, async (req, res) => {
+    const { action, remark } = req.body; // 'approve' or 'reject'
+
+    try {
+        const user = await User.findById(req.user.id).populate('departmentId');
+        if (!user || !user.isTeamLead) {
+            return res.status(403).json({ msg: 'Not authorized as Team Lead.' });
+        }
+
+        let leave = await LeaveRequest.findById(req.params.id)
+            .populate('employee', ['name', 'email', 'departmentId', '_id'])
+            .populate('leaveType');
+            
+        if (!leave) return res.status(404).json({ msg: 'Leave request not found' });
+
+        if (String(leave.employee.departmentId) !== String(user.departmentId._id)) {
+            return res.status(403).json({ msg: 'Not authorized to review leaves for this department.' });
+        }
+
+        const start = new Date(leave.startDate);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        if (start < today && (action === 'approve' || action === 'approved')) {
+            return res.status(400).json({ msg: 'Cannot approve leave requests from the past.' });
+        }
+
+        // Prevent self-approval by Team Leads
+        if (leave.employee._id.toString() === req.user.id) {
+            return res.status(403).json({ msg: 'You cannot review your own leave requests.' });
+        }
+
+        leave.teamLeadRemark = remark || '';
+        leave.teamLeadReviewedAt = new Date();
+        
+        if (action === 'approve') {
+            const currentYear = new Date().getFullYear();
+            const startOfYear = new Date(currentYear, 0, 1);
+            const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+            const approvedLeavesThisYear = await LeaveRequest.find({
+                employee: leave.employee._id,
+                leaveType: leave.leaveType._id,
+                status: 'approved',
+                startDate: { $gte: startOfYear, $lte: endOfYear }
+            });
+            let usedDays = 0;
+            approvedLeavesThisYear.forEach(l => {
+                const startDate = new Date(l.startDate);
+                const endDate = new Date(l.endDate);
+                const diffTime = Math.abs(endDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                usedDays += diffDays;
+            });
+            
+            const startDate = new Date(leave.startDate);
+            const endDate = new Date(leave.endDate);
+            const diffTime = Math.abs(endDate - startDate);
+            const duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            if (usedDays + duration > leave.leaveType.quota) {
+                return res.status(400).json({
+                    msg: `Cannot approve: Employee only has ${Math.max(0, leave.leaveType.quota - usedDays)} days of ${leave.leaveType.name} remaining.`
+                });
+            }
+        }
+        if (action === 'approve' || action === 'approved') {
+            leave.status = 'approved';
+            leave.teamLeadDecision = 'approved';
+        } else {
+            leave.status = 'rejected';
+            leave.teamLeadDecision = 'rejected';
+        }
+        
+        await leave.save();
+        
+        const Notification = require('../models/Notification');
+        const userPrefs = await User.findById(leave.employee._id).select('notificationPreferences');
+        if (!userPrefs || (userPrefs.notificationPreferences?.all !== false && userPrefs.notificationPreferences?.leaves !== false)) {
+            const statusMsg = (action === 'approve' || action === 'approved') ? 'Approved by Team Lead' : 'Rejected by Team Lead';
+            await Notification.create({
+                recipient: leave.employee._id,
+                title: `Leave Request ${statusMsg}`,
+                message: `Your leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} has been ${statusMsg.toLowerCase()}.`,
+                type: 'leave',
+                relatedId: leave._id
+            });
+        }
+
+        const populatedLeave = await LeaveRequest.findById(leave._id)
+            .populate('employee', ['name', 'email'])
+            .populate('leaveType');
+
+        res.json(populatedLeave);
+    } catch (err) {
+        console.error('Team Lead leave review error:', err.message);
         res.status(500).send('Server Error');
     }
 });

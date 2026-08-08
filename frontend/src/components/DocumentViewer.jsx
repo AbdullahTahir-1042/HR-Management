@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FileText, X, ExternalLink } from 'lucide-react';
+import { FileText, X, ExternalLink, Image as ImageIcon, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DocumentViewer = ({ documentUrl, title }) => {
+const DocumentViewer = ({ documentUrl, title, type = 'Document' }) => {
     const [isViewing, setIsViewing] = useState(false);
 
     // Some URLs (like Google Drive viewing links) might need to be converted to preview links for iframes
@@ -35,10 +35,12 @@ const DocumentViewer = ({ documentUrl, title }) => {
             >
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                     <div className="w-16 h-16 bg-white dark:bg-slate-700 rounded-2xl shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
-                        <FileText className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
+                        {type === 'Image' && <ImageIcon className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />}
+                        {type === 'PDF' && <File className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />}
+                        {type === 'Document' && <FileText className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />}
                     </div>
                     <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100 line-clamp-2 px-4">
-                        Click to view document
+                        Click to view {type.toLowerCase()}
                     </span>
                 </div>
             </div>
