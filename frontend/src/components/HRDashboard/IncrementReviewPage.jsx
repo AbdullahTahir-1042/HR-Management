@@ -9,6 +9,7 @@ import {
 import apiClient from '../../api/axiosClient';
 import { AuthContext } from '../../context/AuthContext';
 import RestoreCardModal from './RestoreCardModal';
+import PerformanceReviewModal from '../EmployeeDashboard/PerformanceReviewModal';
 import { formatDate } from '../../utils/dateUtils';
 
 
@@ -137,6 +138,7 @@ const IncrementReviewPage = ({ employee }) => {
     const [reviews, setReviews] = useState([]);
     const [loadingInc, setLoadingInc] = useState(true);
     const [loadingRev, setLoadingRev] = useState(true);
+    const [showReviewModal, setShowReviewModal] = useState(false);
 
     // Increment form state
     const [showIncForm, setShowIncForm] = useState(false);
@@ -971,6 +973,11 @@ const IncrementReviewPage = ({ employee }) => {
                             <h3 className="text-xs font-bold text-indigo-600 flex items-center gap-2 uppercase tracking-widest border-b border-indigo-50 pb-2">
                                 <Star size={16} /> Performance Review History
                             </h3>
+                            {employee?.isTeamLead && (
+                                <button onClick={() => setShowReviewModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all">
+                                    <Plus size={14} /> Add Review
+                                </button>
+                            )}
                         </div>
 
                         {/* Redesigned Premium Performance Review History Cards */}
