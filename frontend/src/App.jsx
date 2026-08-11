@@ -17,11 +17,30 @@ const ScrollToTop = () => {
     return null;
 };
 
-const Login = lazy(() => import('./pages/Login'));
-const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'));
-const HRDashboard = lazy(() => import('./pages/HRDashboard'));
-const PracticeOnboarding = lazy(() => import('./pages/PracticeOnboarding'));
-const PracticeOnboardingWizard = lazy(() => import('./components/PracticeOnboardingWizard'));
+const lazyWithRetry = (componentImport) =>
+    lazy(async () => {
+        const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+            window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+        );
+        try {
+            const component = await componentImport();
+            window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+            return component;
+        } catch (error) {
+            if (!pageHasAlreadyBeenForceRefreshed) {
+                window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+                window.location.reload();
+                return new Promise(() => {}); // Wait for reload
+            }
+            throw error;
+        }
+    });
+
+const Login = lazyWithRetry(() => import('./pages/Login'));
+const EmployeeDashboard = lazyWithRetry(() => import('./pages/EmployeeDashboard'));
+const HRDashboard = lazyWithRetry(() => import('./pages/HRDashboard'));
+const PracticeOnboarding = lazyWithRetry(() => import('./pages/PracticeOnboarding'));
+const PracticeOnboardingWizard = lazyWithRetry(() => import('./components/PracticeOnboardingWizard'));
 
 const PageLoader = () => (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-3">
