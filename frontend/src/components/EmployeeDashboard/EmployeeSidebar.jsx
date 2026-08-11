@@ -23,9 +23,11 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
     const navigate = useNavigate();
     const location = useLocation();
 
+    const userId = user?._id || user?.id || '';
+
     const getIsActive = (path) => {
-        if (path === 'dashboard' && (location.pathname === `/employee/${user?._id || user?.id}` || location.pathname === `/employee/${user?._id || user?.id}/`)) return true;
-        if (path !== 'dashboard' && location.pathname.includes(`/employee/${user?._id || user?.id}/` + path)) return true;
+        if (path === 'dashboard' && (location.pathname === `/employee/${userId}` || location.pathname === `/employee/${userId}/`)) return true;
+        if (path !== 'dashboard' && location.pathname.includes(`/employee/${userId}/` + path)) return true;
         return false;
     };
 
@@ -35,7 +37,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
             {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
                 <Link
-                    to={`/employee/${user?._id || user?.id}`}
+                    to={`/employee/${userId}`}
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 cursor-pointer group text-left p-1 -ml-1 rounded-xl hover:bg-slate-50 transition-all focus:outline-none"
                     title="Go to Dashboard Overview"
@@ -71,7 +73,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
                     <Link
                         key={id}
-                        to={`/employee/${user?._id || user?.id}${id === 'dashboard' ? '' : '/' + id}`}
+                        to={`/employee/${userId}${id === 'dashboard' ? '' : '/' + id}`}
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive(id)
@@ -91,7 +93,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 {/* My Team — only visible to Team Leads */}
                 {user?.isTeamLead && (
                     <Link
-                        to={`/employee/${user?._id || user?.id}/myTeam`}
+                        to={`/employee/${userId}/myTeam`}
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive('myTeam')
@@ -109,7 +111,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 {/* Team Leaves — only visible to Team Leads */}
                 {user?.isTeamLead && (
                     <Link
-                        to={`/employee/${user?._id || user?.id}/team-leaves`}
+                        to={`/employee/${userId}/team-leaves`}
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive('team-leaves')

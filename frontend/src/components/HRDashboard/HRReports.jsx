@@ -484,6 +484,7 @@ const HRReports = ({ employees, loans = [] }) => {
 
             const leaveDeduction = Math.round(unpaidLeaveDays * dailyRate);
             const totalDeduction = lateDeduction + leaveDeduction + loanDeduction + absenceDeduction;
+            const absenceCount = dailyRate > 0 ? Math.round(absenceDeduction / dailyRate) : 0;
             const netSalary = Math.max(0, baseSalary - totalDeduction);
 
             return {
@@ -498,6 +499,7 @@ const HRReports = ({ employees, loans = [] }) => {
                 leaveDeduction,
                 loanDeduction,
                 absenceDeduction,
+                absenceCount,
                 deduction: totalDeduction,
                 netSalary
             };
@@ -544,7 +546,29 @@ const HRReports = ({ employees, loans = [] }) => {
     // ── Formatter & Helper Functions ─────────────────────────
     const isLate = (record) => {
         if (!record) return false;
-        return record.status === 'late';
+        if (record.status === 'late') return true;
+        if (record.checkIn) {
+            const checkInTime = new Date(record.checkIn);
+            const shiftStart = new Date(record.checkIn);
+            shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
+            if (checkInTime > shiftStart) return true;
+        }
+        return false;
+    };
+
+    const getLateness = (dateObj) => {
+        if (!dateObj) return null;
+        const shiftStart = new Date(dateObj);
+        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
+
+        if (dateObj > shiftStart) {
+            const diffMs = dateObj - shiftStart;
+            const diffMins = Math.floor(diffMs / 60000);
+            const hours = Math.floor(diffMins / 60);
+            const mins = diffMins % 60;
+            return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        }
+        return null;
     };
 
     const formatTime = (dateStr) => {
@@ -1275,15 +1299,21 @@ const HRReports = ({ employees, loans = [] }) => {
 
                                                             {/* Check In */}
                                                             <td className="px-3 py-3">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${late ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
-                                                                    <span className={`text-xs font-bold tabular-nums ${late ? 'text-rose-600' : 'text-emerald-700'}`}>
-                                                                        {formatTime(record.checkIn)}
-                                                                    </span>
-                                                                    {late && (
-                                                                        <span className="text-[9px] font-black text-rose-700 bg-rose-50 border border-rose-200 px-1 py-0.5 rounded uppercase">
-                                                                            Late
+                                                                <div className="flex flex-col gap-1.5">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <span className={`w-2 h-2 rounded-full shrink-0 ${late ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                                                        <span className={`text-xs font-bold tabular-nums ${late ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                                                                            {formatTime(record.checkIn)}
                                                                         </span>
+                                                                    </div>
+                                                                    {late && (
+                                                                        <div className="flex items-center gap-1 text-[9px] font-extrabold text-rose-700 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/80 dark:border-rose-500/20 px-1.5 py-0.5 rounded w-fit">
+                                                                            <Clock size={9} className="text-rose-500 dark:text-rose-400" />
+                                                                            <span>
+                                                                                LATE {getLateness(new Date(record.checkIn)) ? <span className="text-rose-400 dark:text-rose-500/80 mx-0.5">•</span> : ''}
+                                                                                {getLateness(new Date(record.checkIn))}
+                                                                            </span>
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             </td>
@@ -1873,7 +1903,7 @@ const EmptyState = ({ msg }) => (
 // ── Payslip Receipt Modal Component ──────────────────────────────────────────
 const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
     if (!payslip) return null;
-    const { employee, baseSalary, presentDays, lateCount, lateDeduction, leaveDays, unpaidLeaveDays = 0, leaveDeduction, loanDeduction = 0, deduction, netSalary } = payslip;
+    const { employee, baseSalary, presentDays, lateCount, lateDeduction, leaveDays, unpaidLeaveDays = 0, leaveDeduction, loanDeduction = 0, absenceDeduction = 0, deduction, netSalary } = payslip;
     const dailyRate = Math.round(baseSalary / 30);
 
     return (
@@ -1978,6 +2008,19 @@ const PayslipModal = ({ payslip, onClose, formatCurrency }) => {
                                     </div>
                                     <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
                                         -{formatCurrency(loanDeduction)}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Absence Deduction */}
+                            {absenceDeduction > 0 && (
+                                <div className="flex justify-between items-center pt-1.5 border-t border-rose-100/40 dark:border-rose-500/20">
+                                    <div>
+                                        <p className="font-bold text-slate-700 dark:text-slate-200">Absence Penalty</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500">Deduction for unapproved absences</p>
+                                    </div>
+                                    <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                                        -{formatCurrency(absenceDeduction)}
                                     </span>
                                 </div>
                             )}
@@ -2449,7 +2492,7 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
 
                                         <div className="flex justify-between items-center">
                                             <span className="text-red-600 font-semibold flex items-center gap-1">
-                                                <AlertTriangle size={12} /> Absence
+                                                <AlertTriangle size={12} /> Absence {p.absenceCount > 0 ? `(${p.absenceCount}x)` : ''}
                                             </span>
                                             <span className="font-bold text-red-600 tabular-nums">
                                                 {p.absenceDeduction > 0 ? `-${formatCurrency(p.absenceDeduction)}` : '—'}
@@ -2561,6 +2604,9 @@ const PayrollDashboard = ({ payrollData, payrollSummary, formatCurrency, filters
                                             <td className="px-3 py-3 text-center">
                                                 {p.absenceDeduction > 0 ? (
                                                     <div className="flex flex-col items-center">
+                                                        <span className="px-2 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold text-[10px] rounded-md border border-red-100 dark:border-red-500/20">
+                                                            {p.absenceCount} {p.absenceCount === 1 ? 'absence' : 'absences'}
+                                                        </span>
                                                         <span className="text-xs font-semibold text-red-600 dark:text-red-400 mt-0.5 tabular-nums">-{formatCurrency(p.absenceDeduction)}</span>
                                                     </div>
                                                 ) : (
