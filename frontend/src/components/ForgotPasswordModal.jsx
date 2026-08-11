@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, KeyRound, Lock, ArrowRight, CheckCircle2, X, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import apiClient from '../api/axiosClient';
 
 const ForgotPasswordModal = ({ isOpen, onClose }) => {
@@ -43,7 +44,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         try {
             const res = await apiClient.post('/auth/forgot-password', { email });
             if (res.data && res.data.bypassOtp) {
-                alert(res.data.msg);
+                toast.success(res.data.msg, { duration: 5000 });
                 handleClose();
                 return;
             }
@@ -145,9 +146,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                             <form onSubmit={handleSendOtp} className="space-y-5">
                                 <div>
                                     <p className="text-sm font-medium text-slate-500 mb-6">
-                                        {import.meta.env.VITE_LOCAL_TESTING_MODE === 'true' 
-                                            ? "Write your email and HR will be notified and will send you a new temporary password." 
-                                            : "Enter your account email address. We'll send a 6-digit OTP to verify your identity."}
+                                        Write your email and HR will be notified and will send you a new temporary password.
                                     </p>
                                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Email Address</label>
                                     <div className="relative">
@@ -167,7 +166,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                                     disabled={loading}
                                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl py-3.5 text-sm font-bold uppercase tracking-wider transition-all disabled:opacity-70 flex justify-center items-center gap-2"
                                 >
-                                    {loading ? 'Sending...' : (import.meta.env.VITE_LOCAL_TESTING_MODE === 'true' ? 'SEND REQ' : 'Send OTP')} <ArrowRight size={16} />
+                                    {loading ? 'Sending...' : 'SEND REQ'} <ArrowRight size={16} />
                                 </button>
                             </form>
                         )}

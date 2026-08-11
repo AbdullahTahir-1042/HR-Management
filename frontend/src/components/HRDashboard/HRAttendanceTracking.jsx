@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Calendar, AlertCircle } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
-
+import apiClient from '../../api/axiosClient';
 
 const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
+    const [schedule, setSchedule] = useState(null);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const res = await apiClient.get('/office-schedule/today');
+                if (res.data) setSchedule(res.data);
+            } catch (err) {
+                console.error("Failed to fetch schedule", err);
+            }
+        };
+        fetchSchedule();
+    }, []);
+
     const sortedAttendance = [...filteredAttendance]
         .filter(record => record.employee?.role !== 'admin' && record.employee?.role !== 'hr')
         .sort((a, b) => {
@@ -24,10 +38,14 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
 
     
     const getLateness = (dateObj) => {
-        if (!dateObj) return null;
+        if (!dateObj || !schedule) return null;
         const shiftStart = new Date(dateObj);
-        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
-
+        
+        const [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
+        const grace = schedule.gracePeriod || 15;
+        
+        shiftStart.setHours(h, m + grace, 0, 0); 
+        
         if (dateObj > shiftStart) {
             const diffMs = dateObj - shiftStart;
             const diffMins = Math.floor(diffMs / 60000);
@@ -36,6 +54,36 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
             return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
         }
         return null;
+    };
+
+    const getWorkStatus = (checkInStr, checkOutStr) => {
+        if (!checkInStr || !checkOutStr || !schedule) return null;
+        const inTime = new Date(checkInStr);
+        const outTime = new Date(checkOutStr);
+        const diffMs = outTime - inTime;
+        if (diffMs <= 0) return null;
+        
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        const [startH, startM] = (schedule.startTime || '09:00').split(':').map(Number);
+        const [endH, endM] = (schedule.endTime || '18:00').split(':').map(Number);
+        const startTotal = startH * 60 + startM;
+        const endTotal = endH * 60 + endM;
+        const standardMins = endTotal > startTotal ? endTotal - startTotal : 9 * 60;
+        
+        if (diffMins > standardMins) {
+            const overMins = diffMins - standardMins;
+            const h = Math.floor(overMins / 60);
+            const m = overMins % 60;
+            return { type: 'overtime', text: `+${h}h ${m}m Overtime` };
+        } else if (diffMins < standardMins) {
+            const shortMins = standardMins - diffMins;
+            const h = Math.floor(shortMins / 60);
+            const m = shortMins % 60;
+            return { type: 'short', text: `-${h}h ${m}m Short` };
+        }
+        const exactH = Math.floor(standardMins / 60);
+        return { type: 'exact', text: `Exact ${exactH}h` };
     };
 
     const formatDuration = (record) => {
@@ -99,13 +147,15 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                             <th className="table-cell px-6 py-4 text-emerald-600">Check In</th>
                             <th className="table-cell px-6 py-4 text-amber-600">Check Out</th>
                             <th className="table-cell px-6 py-4">Time Worked</th>
-                            <th className="table-cell px-6 py-4">Status</th>
+                            <th className="table-cell px-6 py-4">Work Status</th>
+                            <th className="table-cell px-6 py-4">Late Status</th>
                         </tr>
                     </thead>
                     <tbody className="table-body">
                         {sortedAttendance.map(record => {
                             const recordLate = record.checkIn ? getLateness(new Date(record.checkIn)) : null;
                             const isLate = record.status === 'late' || !!recordLate;
+                            const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record.checkIn, record.checkOut) : null;
                             return (
                             <tr key={record._id} className={`table-row transition-colors ${isLate ? 'bg-rose-50/30 hover:bg-rose-50/50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20' : ''}`}>
                                 <td className="table-cell px-6 py-5">
@@ -132,11 +182,6 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                             <>
                                                 <div className={`w-2 h-2 rounded-full ${isLate ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
                                                 {new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                {recordLate && (
-                                                    <span className="text-amber-700 font-bold bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md text-[10px] ml-2 inline-block">
-                                                        {recordLate}
-                                                    </span>
-                                                )}
                                             </>
                                         )}
                                     </div>
@@ -155,6 +200,19 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                 </td>
                                 <td className="table-cell px-6 py-5">
                                     {formatDuration(record)}
+                                </td>
+                                <td className="table-cell px-6 py-5">
+                                    {workStatus ? (
+                                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border whitespace-nowrap ${
+                                            workStatus.type === 'overtime' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/20' :
+                                            workStatus.type === 'short' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-200/60 dark:border-amber-500/20' :
+                                            'bg-slate-50 dark:bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-200/60 dark:border-slate-500/20'
+                                        }`}>
+                                            {workStatus.text}
+                                        </span>
+                                    ) : (
+                                        <span className="text-slate-400">-</span>
+                                    )}
                                 </td>
                                 <td className="table-cell px-6 py-5">
                                     {renderStatus(record)}

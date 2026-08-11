@@ -2,20 +2,36 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, LogIn, LogOut, CheckCircle, ClipboardList, AlertTriangle } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
+import apiClient from '../../api/axiosClient';
 
 
 const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [schedule, setSchedule] = useState(null);
 
     useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const res = await apiClient.get('/office-schedule/today');
+                if (res.data) setSchedule(res.data);
+            } catch (err) {
+                console.error("Failed to fetch schedule", err);
+            }
+        };
+        fetchSchedule();
+
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
     const getLateness = (dateObj) => {
-        if (!dateObj) return null;
+        if (!dateObj || !schedule) return null;
         const shiftStart = new Date(dateObj);
-        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
+        
+        const [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
+        const grace = schedule.gracePeriod || 15;
+        
+        shiftStart.setHours(h, m + grace, 0, 0); 
         
         if (dateObj > shiftStart) {
             const diffMs = dateObj - shiftStart;
@@ -37,6 +53,36 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         const hours = Math.floor(diffMins / 60);
         const mins = diffMins % 60;
         return `${hours}h ${mins}m`;
+    };
+
+    const getWorkStatus = (checkInStr, checkOutStr) => {
+        if (!checkInStr || !checkOutStr || !schedule) return null;
+        const inTime = new Date(checkInStr);
+        const outTime = new Date(checkOutStr);
+        const diffMs = outTime - inTime;
+        if (diffMs <= 0) return null;
+        
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        const [startH, startM] = (schedule.startTime || '09:00').split(':').map(Number);
+        const [endH, endM] = (schedule.endTime || '18:00').split(':').map(Number);
+        const startTotal = startH * 60 + startM;
+        const endTotal = endH * 60 + endM;
+        const standardMins = endTotal > startTotal ? endTotal - startTotal : 9 * 60;
+        
+        if (diffMins > standardMins) {
+            const overMins = diffMins - standardMins;
+            const h = Math.floor(overMins / 60);
+            const m = overMins % 60;
+            return { type: 'overtime', text: `+${h}h ${m}m Overtime` };
+        } else if (diffMins < standardMins) {
+            const shortMins = standardMins - diffMins;
+            const h = Math.floor(shortMins / 60);
+            const m = shortMins % 60;
+            return { type: 'short', text: `-${h}h ${m}m Short` };
+        }
+        const exactH = Math.floor(standardMins / 60);
+        return { type: 'exact', text: `Exact ${exactH}h` };
     };
 
     let isLate = false;
@@ -155,12 +201,14 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                         <th className="px-4 py-3">Check In</th>
                                         <th className="px-4 py-3">Check Out</th>
                                         <th className="px-4 py-3 text-center">Work HRS</th>
+                                        <th className="px-4 py-3 text-center">Status</th>
                                         <th className="px-4 py-3 text-right">Late</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {history.map(record => {
                                         const recordLate = record.checkIn ? getLateness(new Date(record.checkIn)) : null;
+                                        const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record.checkIn, record.checkOut) : null;
                                         return (
                                              <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-4 py-3.5 text-slate-700 font-medium text-sm">
@@ -178,6 +226,17 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                                 </td>
                                                 <td className="px-4 py-3.5 text-slate-600 text-sm text-center font-medium">
                                                     {record.status === 'absent' || !record.checkIn ? '-' : getTotalTimeWorked(record.checkIn, record.checkOut)}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center">
+                                                    {workStatus ? (
+                                                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border whitespace-nowrap ${
+                                                            workStatus.type === 'overtime' ? 'bg-emerald-50 text-emerald-600 border-emerald-200/60' :
+                                                            workStatus.type === 'short' ? 'bg-amber-50 text-amber-600 border-amber-200/60' :
+                                                            'bg-slate-50 text-slate-500 border-slate-200/60'
+                                                        }`}>
+                                                            {workStatus.text}
+                                                        </span>
+                                                    ) : '-'}
                                                 </td>
                                                 <td className="px-4 py-3.5 text-sm text-right">
                                                     {recordLate ? (
