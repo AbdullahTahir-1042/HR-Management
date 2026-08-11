@@ -15,7 +15,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                 rel: '0',              // Don't show related videos
                 modestbranding: '1',   // Minimal YouTube branding
                 iv_load_policy: '3',   // Hide annotations
-                fs: '1',              // Allow fullscreen
+                fs: '0',              // Disable YT fullscreen (use our custom one)
                 controls: '1',         // Show player controls
                 playsinline: '1',      // Play inline on mobile
             });
