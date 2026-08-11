@@ -12,12 +12,12 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
         if (youtubeId) {
             const params = new URLSearchParams({
                 autoplay: '1',
-                rel: '0',              // Don't show related videos
-                modestbranding: '1',   // Minimal YouTube branding
-                iv_load_policy: '3',   // Hide annotations
-                fs: '0',              // Disable YT fullscreen (use our custom one)
-                controls: '1',         // Show player controls
-                playsinline: '1',      // Play inline on mobile
+                rel: '0',
+                modestbranding: '1',
+                iv_load_policy: '3',
+                fs: '0',
+                controls: '1',
+                playsinline: '1',
             });
             return `https://www.youtube.com/embed/${youtubeId}?${params.toString()}`;
         }
@@ -47,7 +47,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
         finalThumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
     }
 
-    // Handle native fullscreen toggle
+    // Handle native fullscreen toggle on the container (keeps CSS crop active)
     const toggleFullscreen = async () => {
         if (!playerContainerRef.current) return;
         try {
@@ -57,11 +57,10 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                 await document.exitFullscreen();
             }
         } catch (err) {
-            // Fullscreen not supported or blocked
+            // Fullscreen not supported
         }
     };
 
-    // Listen for fullscreen changes
     useEffect(() => {
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
@@ -70,7 +69,6 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
-    // Close player on Escape
     useEffect(() => {
         if (!isPlaying) return;
         const handleKeyDown = (e) => {
@@ -82,7 +80,6 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isPlaying]);
 
-    // Block right-click on the player area
     const handleContextMenu = (e) => {
         e.preventDefault();
         return false;
@@ -90,15 +87,16 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
 
     return (
         <>
-            <div 
+            {/* Thumbnail card */}
+            <div
                 onClick={() => setIsPlaying(true)}
                 className="group relative w-full overflow-hidden rounded-xl bg-slate-100 cursor-pointer shadow-sm hover:shadow-md transition-all duration-300"
                 style={{ paddingTop: '56.25%' }}
             >
                 {finalThumbnailUrl ? (
-                    <img 
-                        src={finalThumbnailUrl} 
-                        alt={title} 
+                    <img
+                        src={finalThumbnailUrl}
+                        alt={title}
                         className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         onError={(e) => {
                             if (e.target.src.includes('hqdefault.jpg')) {
@@ -112,10 +110,8 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                 ) : (
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 opacity-80" />
                 )}
-                
-                {/* Overlay */}
                 <div className="absolute inset-0 bg-slate-900/30 group-hover:bg-slate-900/40 transition-colors duration-300 flex items-center justify-center">
-                    <motion.div 
+                    <motion.div
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-lg"
@@ -125,9 +121,10 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                 </div>
             </div>
 
+            {/* Fullscreen modal player */}
             <AnimatePresence>
                 {isPlaying && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -143,7 +140,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                 <h2 className="text-white text-lg sm:text-xl font-medium tracking-wide truncate pr-4">{title}</h2>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                                <button 
+                                <button
                                     onClick={toggleFullscreen}
                                     className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-300 backdrop-blur-md group shadow-lg"
                                     title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
@@ -154,7 +151,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                         <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
                                     )}
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setIsPlaying(false)}
                                     className="p-2.5 bg-white/10 hover:bg-rose-500 text-white rounded-full transition-all duration-300 backdrop-blur-md z-50 group shrink-0 shadow-lg"
                                 >
@@ -163,8 +160,8 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                             </div>
                         </div>
 
-                        {/* Video container — CSS crop technique to hide YouTube branding */}
-                        <motion.div 
+                        {/* Video container — CSS crop to hide YouTube branding */}
+                        <motion.div
                             ref={playerContainerRef}
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -174,13 +171,11 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                             style={{ overflow: 'hidden' }}
                             onContextMenu={handleContextMenu}
                         >
-                            {/* 
-                                The iframe is intentionally oversized and repositioned:
-                                - Shifted up by 60px to push the title/channel bar above the visible area
-                                - Height increased by 106px (60 top + 46 bottom) to push the 
-                                  share/YouTube logo row below the visible area
-                                - The main controls (play, volume, progress, settings gear, CC) stay visible
-                                - overflow:hidden on the parent clips everything outside the container
+                            {/*
+                                CSS crop technique:
+                                - Top 60px cropped: hides video title + channel name
+                                - Bottom 46px cropped: hides Share, More Videos, YouTube logo
+                                - Essential controls (play, volume, progress, settings, CC) stay visible
                             */}
                             <iframe
                                 className="absolute border-0"
@@ -196,9 +191,8 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                     height: '100%',
                                 }}
                                 src={buildSecureVideoUrl()}
-                                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                                allow="autoplay; encrypted-media; picture-in-picture"
                                 title={title}
-                                allowFullScreen
                             ></iframe>
                         </motion.div>
 
