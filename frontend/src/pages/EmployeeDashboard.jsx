@@ -474,7 +474,7 @@ const EmployeeDashboard = () => {
                     if (error.code === 3) msg = 'Location request timed out.';
                     toast.error(msg);
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
             );
         } else if (confirmModal.type === 'checkOut') {
             try {
