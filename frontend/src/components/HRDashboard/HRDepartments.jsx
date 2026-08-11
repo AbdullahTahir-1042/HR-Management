@@ -363,7 +363,7 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
                         <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wide">
                             Add Members <span className="text-slate-400 normal-case font-normal">({selectedEmployeeIds.length} selected)</span>
                         </label>
-                        <div className="border border-slate-200 rounded-xl overflow-hidden max-h-44 overflow-y-auto">
+                        <div className="border border-slate-200 rounded-xl overflow-hidden">
                             {eligibleEmployees.length === 0 ? (
                                 <p className="text-xs text-slate-400 p-4">No unassigned employees found</p>
                             ) : eligibleEmployees.map(emp => (
@@ -600,7 +600,7 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
                         <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wide">
                             Manage Members <span className="text-slate-400 normal-case font-normal">({selectedEmployeeIds.length} selected)</span>
                         </label>
-                        <div className="border border-slate-200 rounded-xl overflow-hidden max-h-44 overflow-y-auto">
+                        <div className="border border-slate-200 rounded-xl overflow-hidden">
                             {eligibleEmployees.length === 0 ? (
                                 <p className="text-xs text-slate-400 p-4">No employees available</p>
                             ) : eligibleEmployees.map(emp => (

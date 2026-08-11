@@ -232,7 +232,10 @@ const HRTrainingManagement = () => {
                 </div>
             ) : filteredVideos.length === 0 ? (
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-12 text-center">
-                    <Video className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    {(() => {
+                        const EmptyIcon = filterOptions.find(f => f.id === filterType)?.icon || Video;
+                        return <EmptyIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />;
+                    })()}
                     <h3 className="text-lg font-medium text-slate-900 dark:text-white">No resources found</h3>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Get started by adding a new training resource.</p>
                 </div>
