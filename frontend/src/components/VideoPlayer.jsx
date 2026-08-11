@@ -174,7 +174,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                             {/*
                                 CSS crop technique:
                                 - Top 60px cropped: hides video title + channel name
-                                - Bottom 46px cropped: hides Share, More Videos, YouTube logo
+                                - Bottom 62px cropped: hides Share, More Videos, YouTube logo
                                 - Essential controls (play, volume, progress, settings, CC) stay visible
                             */}
                             <iframe
@@ -183,7 +183,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                     top: '-60px',
                                     left: '0',
                                     width: '100%',
-                                    height: 'calc(100% + 106px)',
+                                    height: 'calc(100% + 122px)',
                                 } : {
                                     top: '0',
                                     left: '0',
