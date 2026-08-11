@@ -9,7 +9,7 @@ import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 const getDashboardPath = (user) => {
     if (user.role === 'hr') return '/hr';
-    return `/employee/${user._id}`;
+    return `/employee/${user._id || user.id}`;
 };
 
 const Login = () => {
