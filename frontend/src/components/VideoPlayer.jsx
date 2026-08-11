@@ -7,24 +7,19 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const playerContainerRef = useRef(null);
 
-    // Build a secure embed URL using YouTube's privacy-enhanced mode
-    // These parameters hide branding, info, related videos, and annotations
+    // Build a secure embed URL with branding/info hidden
     const buildSecureVideoUrl = () => {
         if (youtubeId) {
             const params = new URLSearchParams({
                 autoplay: '1',
                 rel: '0',              // Don't show related videos
                 modestbranding: '1',   // Minimal YouTube branding
-                showinfo: '0',         // Hide video title/uploader
                 iv_load_policy: '3',   // Hide annotations
-                disablekb: '0',        // Keep keyboard controls
                 fs: '1',              // Allow fullscreen
-                cc_load_policy: '0',   // Don't force captions
                 controls: '1',         // Show player controls
                 playsinline: '1',      // Play inline on mobile
             });
-            // Use youtube-nocookie.com for privacy-enhanced mode (no tracking cookies)
-            return `https://www.youtube-nocookie.com/embed/${youtubeId}?${params.toString()}`;
+            return `https://www.youtube.com/embed/${youtubeId}?${params.toString()}`;
         }
         return `https://drive.google.com/file/d/${fileId}/preview`;
     };
@@ -184,7 +179,6 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                                 title={title}
                                 allowFullScreen
-                                referrerPolicy="no-referrer"
                             ></iframe>
 
                             {/* 
