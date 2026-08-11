@@ -224,58 +224,29 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(404).json({ msg: 'No account found with that email address.' });
         }
 
-        // ==========================================
-        // TOGGLE FOR RAILWAY DEPLOYMENT VS LOCAL TESTING
-        // Controlled by .env variable LOCAL_TESTING_MODE
-        const LOCAL_TESTING_MODE = process.env.LOCAL_TESTING_MODE === 'true'; 
-        // ==========================================
-        
-        if (LOCAL_TESTING_MODE) {
-            const hrUsers = await User.find({ role: 'hr' });
-            for (let hr of hrUsers) {
-                await Notification.create({
-                    recipient: hr._id,
-                    type: 'system',
-                    title: 'Password Reset Request',
-                    message: `Employee ${user.name} (${user.email}) has requested a password reset. Please set a temporary password for them in their profile settings.`,
-                    isRead: false
-                });
-            }
-
-            // Create HR Request for Password Reset
-            await HRRequest.create({
-                employee: user._id,
-                type: 'Password Reset',
-                description: `Password reset requested by ${user.name} (${user.email})`,
-                status: 'Pending'
-            });
-
-            return res.status(200).json({ 
-                bypassOtp: true, 
-                msg: 'A password reset request has been sent to HR directly. They will provide you with a temporary password soon.' 
+        const hrUsers = await User.find({ role: 'hr' });
+        for (let hr of hrUsers) {
+            await Notification.create({
+                recipient: hr._id,
+                type: 'system',
+                title: 'Password Reset Request',
+                message: `Employee ${user.name} (${user.email}) has requested a password reset. Please set a temporary password for them in their profile settings.`,
+                isRead: false
             });
         }
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const hashedOtp = await bcrypt.hash(otp, 10);
-
-        user.resetOtp = hashedOtp;
-        user.resetOtpExpire = Date.now() + 3 * 60 * 1000; // 3 minutes
-        await user.save();
-
-        const emailTemplate = getOtpEmailTemplate({ name: user.name, otp });
-        const emailResult = await sendEmail({
-            to: user.email,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html
+        // Create HR Request for Password Reset
+        await HRRequest.create({
+            employee: user._id,
+            type: 'Password Reset',
+            description: `Password reset requested by ${user.name} (${user.email})`,
+            status: 'Pending'
         });
 
-        if (!emailResult || !emailResult.success) {
-            return res.status(500).json({ msg: 'Failed to send OTP email. Please try again or contact HR.', error: emailResult?.error });
-        }
-
-        res.status(200).json({ msg: 'An OTP has been sent to your email.' });
+        return res.status(200).json({ 
+            bypassOtp: true, 
+            msg: 'A password reset request has been sent to HR directly. They will provide you with a temporary password soon.' 
+        });
     } catch (err) {
         console.error('Forgot Password Error:', err);
         res.status(500).json({ msg: 'Server error' });
