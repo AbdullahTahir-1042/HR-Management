@@ -24,8 +24,8 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
     const location = useLocation();
 
     const getIsActive = (path) => {
-        if (path === 'dashboard' && (location.pathname === `/employee/` || location.pathname === `/employee//`)) return true;
-        if (path !== 'dashboard' && location.pathname.includes(`/employee//` + path)) return true;
+        if (path === 'dashboard' && (location.pathname === `/employee/${user?._id || user?.id}` || location.pathname === `/employee/${user?._id || user?.id}/`)) return true;
+        if (path !== 'dashboard' && location.pathname.includes(`/employee/${user?._id || user?.id}/` + path)) return true;
         return false;
     };
 
@@ -35,7 +35,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
             {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
                 <Link
-                    to={`/employee/`}
+                    to={`/employee/${user?._id || user?.id}`}
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 cursor-pointer group text-left p-1 -ml-1 rounded-xl hover:bg-slate-50 transition-all focus:outline-none"
                     title="Go to Dashboard Overview"
@@ -71,7 +71,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
                     <Link
                         key={id}
-                        to={`/employee/${id === 'dashboard' ? '' : '/' + id}`}
+                        to={`/employee/${user?._id || user?.id}${id === 'dashboard' ? '' : '/' + id}`}
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive(id)
@@ -91,7 +91,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 {/* My Team — only visible to Team Leads */}
                 {user?.isTeamLead && (
                     <Link
-                        to={`/employee//myTeam`}
+                        to={`/employee/${user?._id || user?.id}/myTeam`}
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive('myTeam')
@@ -109,7 +109,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 {/* Team Leaves — only visible to Team Leads */}
                 {user?.isTeamLead && (
                     <Link
-                        to={`/employee//team-leaves`}
+                        to={`/employee/${user?._id || user?.id}/team-leaves`}
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive('team-leaves')
@@ -138,7 +138,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 </button>
 
                 <Link
-                    to={`/employee//profile`}
+                    to={`/employee/${user?._id || user?.id}/profile`}
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"
                 >
