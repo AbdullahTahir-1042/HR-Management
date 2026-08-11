@@ -7,9 +7,9 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, EyeOff, Eye, Loader2, ShieldCheck, Sun, Moon } from 'lucide-react';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
-const getDashboardPath = (role) => {
-    if (role === 'hr') return '/hr';
-    return '/employee';
+const getDashboardPath = (user) => {
+    if (user.role === 'hr') return '/hr';
+    return `/employee/${user._id}`;
 };
 
 const Login = () => {
@@ -22,7 +22,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) navigate(getDashboardPath(user.role), { replace: true });
+        if (user) navigate(getDashboardPath(user), { replace: true });
     }, [user, navigate]);
 
     const handleSubmit = async (e) => {
@@ -30,7 +30,7 @@ const Login = () => {
         setLoading(true);
         try {
             const loggedInUser = await login(formData.email, formData.password);
-            navigate(getDashboardPath(loggedInUser.role), { replace: true });
+            navigate(getDashboardPath(loggedInUser), { replace: true });
         } catch (err) {
             toast.error(err.response?.data?.msg || 'Login failed. Please check your credentials.');
         } finally {
