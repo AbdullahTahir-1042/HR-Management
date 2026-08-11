@@ -99,7 +99,7 @@ const DetailBlock = ({ icon: Icon, label, value, accentColor }) => {
 
 // ─── Member Card ─────────────────────────────────────────────────────────────
 
-const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick, onAwardClick }) => {
+const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick, onReportClick }) => {
     const [perf, setPerf] = useState(null);
     useEffect(() => {
         if (currentUserIsLead) {
@@ -148,10 +148,10 @@ const MemberCard = ({ member, isLead, index, currentUserIsLead, onReviewClick, o
                                 + Review
                             </button>
                             <button 
-                                onClick={() => onAwardClick(member)}
-                                className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded transition-colors"
+                                onClick={() => onReportClick(member)}
+                                className="text-[10px] flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded transition-colors"
                             >
-                                ★ Award
+                                <AlertTriangle size={10} /> Report
                             </button>
                         </div>
                     )}
@@ -173,11 +173,17 @@ const EMPTY_FORM = {
     improvement: '',
 };
 
-const ReportModal = ({ members, onClose, onSuccess }) => {
+const ReportModal = ({ members, onClose, onSuccess, initialMember }) => {
     const [form, setForm] = useState(EMPTY_FORM);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (initialMember) {
+            setForm(prev => ({ ...prev, agentId: initialMember._id || initialMember.id, agentName: initialMember.name }));
+        }
+    }, [initialMember]);
 
     const handleChange = (e) => {
         if (e.target.name === 'agentId') {
@@ -408,6 +414,7 @@ const MyTeamSection = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showReportModal, setShowReportModal] = useState(false);
+    const [reportMember, setReportMember] = useState(null);
     const [reportCount, setReportCount] = useState(0);
     const [history, setHistory] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
@@ -616,6 +623,7 @@ const MyTeamSection = () => {
                                 index={i}
                                 currentUserIsLead={isTeamLead}
                                 onReviewClick={setReviewMember}
+                            onReportClick={(m) => { setReportMember(m); setShowReportModal(true); }}
                                 onAwardClick={setAwardMember}
                             />
                         ))}
@@ -843,9 +851,10 @@ const MyTeamSection = () => {
             <AnimatePresence>
                 {showReportModal && (
                     <ReportModal
+                    initialMember={reportMember}
                         className="scrollbar-hide"
                         members={members.filter(m => m._id !== user?._id && m._id?.toString() !== user?.id?.toString())}
-                        onClose={() => setShowReportModal(false)}
+                        onClose={() => { setShowReportModal(false); setReportMember(null); }}
                         onSuccess={() => {
                             fetchHistory();
                         }}

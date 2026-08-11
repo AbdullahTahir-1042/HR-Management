@@ -22,6 +22,22 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
         return `${month}/${day}/${year}`;
     };
 
+    
+    const getLateness = (dateObj) => {
+        if (!dateObj) return null;
+        const shiftStart = new Date(dateObj);
+        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
+
+        if (dateObj > shiftStart) {
+            const diffMs = dateObj - shiftStart;
+            const diffMins = Math.floor(diffMs / 60000);
+            const hours = Math.floor(diffMins / 60);
+            const mins = diffMins % 60;
+            return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        }
+        return null;
+    };
+
     const formatDuration = (record) => {
         if (!record.checkIn) return '-';
         const checkIn = new Date(record.checkIn);
@@ -56,23 +72,13 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
         if (record.status === 'absent' || !record.checkIn) {
             return <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />Absent</span>;
         }
-        if (record.status === 'late') {
-            const expectedStr = record.expectedCheckIn || '09:00';
-            const [startHour, startMin] = expectedStr.split(':').map(Number);
-            const checkInTime = new Date(record.checkIn);
-            const expectedTime = new Date(record.checkIn);
-            expectedTime.setHours(startHour, startMin, 0, 0);
-            
-            const lateMs = checkInTime - expectedTime;
-            let lateText = 'Late';
-            if (lateMs > 0) {
-                const lateHrs = Math.floor(lateMs / (1000 * 60 * 60));
-                const lateMins = Math.floor((lateMs % (1000 * 60 * 60)) / (1000 * 60));
-                lateText = `Late (${lateHrs > 0 ? `${lateHrs}H ` : ''}${lateMins}M)`;
-            }
-
-            return <span className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />{lateText}</span>;
+        
+        const recordLate = getLateness(new Date(record.checkIn));
+        if (record.status === 'late' || recordLate) {
+            let lateText = recordLate ? `Late (${recordLate})` : 'Late';
+            return <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />{lateText}</span>;
         }
+        
         return <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider w-fit">Present</span>;
     };
 
@@ -98,7 +104,8 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                     </thead>
                     <tbody className="table-body">
                         {sortedAttendance.map(record => {
-                            const isLate = record.status === 'late';
+                            const recordLate = record.checkIn ? getLateness(new Date(record.checkIn)) : null;
+                            const isLate = record.status === 'late' || !!recordLate;
                             return (
                             <tr key={record._id} className={`table-row transition-colors ${isLate ? 'bg-rose-50/30 hover:bg-rose-50/50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20' : ''}`}>
                                 <td className="table-cell px-6 py-5">
@@ -118,13 +125,18 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                     </span>
                                 </td>
                                 <td className="table-cell px-6 py-5">
-                                    <div className={`flex items-center gap-2 font-medium ${isLate ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    <div className={`flex items-center gap-2 font-medium ${isLate ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                                         {record.status === 'absent' || !record.checkIn ? (
                                             <span className="text-slate-400">-</span>
                                         ) : (
                                             <>
-                                                <div className={`w-2 h-2 rounded-full ${isLate ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                                                <div className={`w-2 h-2 rounded-full ${isLate ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
                                                 {new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {recordLate && (
+                                                    <span className="text-amber-700 font-bold bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md text-[10px] ml-2 inline-block">
+                                                        {recordLate}
+                                                    </span>
+                                                )}
                                             </>
                                         )}
                                     </div>

@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const LeaveRequest = require('../models/LeaveRequest');
 const Notification = require('../models/Notification');
+const Holiday = require('../models/Holiday');
 
 // Run every day at 11:55 PM
 const startCronJobs = () => {
@@ -11,12 +12,30 @@ const startCronJobs = () => {
         try {
             console.log('\n⏰ Running Daily Attendance Check...');
             const todayDateObj = new Date();
+
+            // Skip Sundays (0)
+            if (todayDateObj.getDay() === 0) {
+                console.log('Skipping attendance check because today is Sunday.');
+                return;
+            }
+
             // Get today's date in YYYY-MM-DD for attendance
             const year = todayDateObj.getFullYear();
             const month = String(todayDateObj.getMonth() + 1).padStart(2, '0');
             const day = String(todayDateObj.getDate()).padStart(2, '0');
             const todayStr = `${year}-${month}-${day}`;
             
+            // Check if today is a Holiday
+            const holiday = await Holiday.findOne({
+                startDate: { $lte: todayStr },
+                endDate: { $gte: todayStr }
+            });
+
+            if (holiday) {
+                console.log(`Skipping attendance check because today is a Holiday: ${holiday.name}`);
+                return;
+            }
+
             // Fetch all active employees
             const activeEmployees = await User.find({ status: { $ne: 'Inactive' } });
 
