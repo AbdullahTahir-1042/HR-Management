@@ -182,18 +182,37 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                             ></iframe>
 
                             {/* 
-                                Protective overlay for the top portion of the YouTube player.
-                                This transparent div sits on top of the YouTube title bar area,
-                                blocking clicks on the video title link and YouTube logo
-                                while the main video area and bottom controls remain fully interactive.
+                                Protective overlays to block YouTube's clickable UI elements:
+                                - Top: Video title link + channel name link
+                                - Bottom-left: Share button + Watch Later
+                                - Bottom-right: "More videos" + channel thumb + YouTube logo
+                                Core controls (play/pause, progress bar, volume, fullscreen) 
+                                remain fully accessible in the center-bottom area.
                             */}
                             {youtubeId && (
-                                <div 
-                                    className="absolute top-0 left-0 w-full h-[52px] z-10 cursor-default"
-                                    style={{ background: 'transparent' }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onContextMenu={handleContextMenu}
-                                />
+                                <>
+                                    {/* Top overlay — blocks title & channel links */}
+                                    <div 
+                                        className="absolute top-0 left-0 w-full z-10 cursor-default"
+                                        style={{ height: '68px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onContextMenu={handleContextMenu}
+                                    />
+                                    {/* Bottom-left overlay — blocks Share & Watch Later */}
+                                    <div 
+                                        className="absolute bottom-0 left-0 z-10 cursor-default"
+                                        style={{ height: '46px', width: '120px', background: 'transparent' }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onContextMenu={handleContextMenu}
+                                    />
+                                    {/* Bottom-right overlay — blocks YouTube logo, More videos, channel thumb */}
+                                    <div 
+                                        className="absolute bottom-0 right-0 z-10 cursor-default"
+                                        style={{ height: '46px', width: '280px', background: 'transparent' }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onContextMenu={handleContextMenu}
+                                    />
+                                </>
                             )}
                         </motion.div>
 
