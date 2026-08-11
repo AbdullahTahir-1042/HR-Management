@@ -163,57 +163,43 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                             </div>
                         </div>
 
-                        {/* Video container with protective overlay */}
+                        {/* Video container — CSS crop technique to hide YouTube branding */}
                         <motion.div 
                             ref={playerContainerRef}
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="w-full max-w-6xl aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 relative ring-1 ring-white/5"
+                            className="w-full max-w-6xl aspect-video bg-black rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 relative ring-1 ring-white/5"
+                            style={{ overflow: 'hidden' }}
                             onContextMenu={handleContextMenu}
                         >
+                            {/* 
+                                The iframe is intentionally oversized and repositioned:
+                                - Shifted up by 70px to push the title/channel bar above the visible area
+                                - Height increased by 140px (70 top + 70 bottom) to push the 
+                                  share/YouTube logo row below the visible area
+                                - overflow:hidden on the parent clips everything outside the container
+                                This physically removes those elements from view — not just blocking clicks.
+                            */}
                             <iframe
-                                className="absolute top-0 left-0 w-full h-full border-0"
+                                className="absolute border-0"
+                                style={youtubeId ? {
+                                    top: '-70px',
+                                    left: '0',
+                                    width: '100%',
+                                    height: 'calc(100% + 140px)',
+                                } : {
+                                    top: '0',
+                                    left: '0',
+                                    width: '100%',
+                                    height: '100%',
+                                }}
                                 src={buildSecureVideoUrl()}
                                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                                 title={title}
                                 allowFullScreen
                             ></iframe>
-
-                            {/* 
-                                Protective overlays to block YouTube's clickable UI elements:
-                                - Top: Video title link + channel name link
-                                - Bottom-left: Share button + Watch Later
-                                - Bottom-right: "More videos" + channel thumb + YouTube logo
-                                Core controls (play/pause, progress bar, volume, fullscreen) 
-                                remain fully accessible in the center-bottom area.
-                            */}
-                            {youtubeId && (
-                                <>
-                                    {/* Top overlay — blocks title & channel links */}
-                                    <div 
-                                        className="absolute top-0 left-0 w-full z-10 cursor-default"
-                                        style={{ height: '68px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onContextMenu={handleContextMenu}
-                                    />
-                                    {/* Bottom-left overlay — blocks Share & Watch Later */}
-                                    <div 
-                                        className="absolute bottom-0 left-0 z-10 cursor-default"
-                                        style={{ height: '46px', width: '120px', background: 'transparent' }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onContextMenu={handleContextMenu}
-                                    />
-                                    {/* Bottom-right overlay — blocks YouTube logo, More videos, channel thumb */}
-                                    <div 
-                                        className="absolute bottom-0 right-0 z-10 cursor-default"
-                                        style={{ height: '46px', width: '280px', background: 'transparent' }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onContextMenu={handleContextMenu}
-                                    />
-                                </>
-                            )}
                         </motion.div>
 
                         {/* Security badge */}
