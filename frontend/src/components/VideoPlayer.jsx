@@ -185,7 +185,6 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                 title={title}
                                 allowFullScreen
                                 referrerPolicy="no-referrer"
-                                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                             ></iframe>
 
                             {/* 
