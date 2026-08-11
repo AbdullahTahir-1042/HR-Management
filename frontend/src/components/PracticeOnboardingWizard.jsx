@@ -23,7 +23,7 @@ const PracticeOnboardingWizard = () => {
         if (user?.role === 'hr') {
             navigate('/hr');
         } else {
-            navigate(`/employee/`);
+            navigate(`/employee/${user?._id || user?.id}`);
         }
     };
 

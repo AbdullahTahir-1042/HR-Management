@@ -440,9 +440,9 @@ const EmployeeDashboard = () => {
     const handleCheckOut = () => setConfirmModal({ isOpen: true, type: 'checkOut' });
 
     const handleConfirmAction = async () => {
-        if (confirmModal.type === 'checkIn') {
+        if (confirmModal.type === 'checkIn' || confirmModal.type === 'checkOut') {
             setIsLocationFetching(true);
-            
+
             if (!navigator.geolocation) {
                 setIsLocationFetching(false);
                 return toast.error('Geolocation is not supported by your browser.');
@@ -451,13 +451,15 @@ const EmployeeDashboard = () => {
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
                     try {
-                        await apiClient.post('/attendance/check-in', {
+                        const endpoint = confirmModal.type === 'checkIn' ? '/attendance/check-in' : '/attendance/check-out';
+                        await apiClient.post(endpoint, {
                             latitude: position.coords.latitude,
                             longitude: position.coords.longitude
                         });
                         fetchTodayAttendance();
                         fetchAttendanceHistory();
                         setConfirmModal({ isOpen: false, type: null });
+                        toast.success(`Successfully ${confirmModal.type === 'checkIn' ? 'checked in' : 'checked out'}!`);
                     } catch (err) {
                         toast.error(err.response?.data?.msg || 'Error recording attendance');
                     } finally {
@@ -467,7 +469,7 @@ const EmployeeDashboard = () => {
                 (error) => {
                     setIsLocationFetching(false);
                     let msg = 'Failed to retrieve location.';
-                    if (error.code === 1) msg = 'Location access denied. Please allow location access in your browser to check in at the TDC office.';
+                    if (error.code === 1) msg = 'Location access denied. Please allow location access in your browser to check in/out at the TDC office.';
                     if (error.code === 2) msg = 'Position unavailable.';
                     if (error.code === 3) msg = 'Location request timed out.';
                     toast.error(msg);
