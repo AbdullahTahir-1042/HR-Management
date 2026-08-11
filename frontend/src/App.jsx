@@ -73,7 +73,7 @@ function App() {
                 <Suspense fallback={<PageLoader />}>
                     <Routes>
                         <Route path="/login" element={<Login />} />
-                        <Route path="/employee/*" element={
+                        <Route path="/employee/:employeeId/*" element={
                             <ProtectedRoute role="employee">
                                 <EmployeeDashboard />
                             </ProtectedRoute>
