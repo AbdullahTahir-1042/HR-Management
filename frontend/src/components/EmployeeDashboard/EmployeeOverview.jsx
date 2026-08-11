@@ -160,7 +160,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                         ) : (
                             <button 
                                 onClick={() => navigate(`/employee/${user?._id || user?.id}/leaves`)} 
-                                className="bg-white dark:bg-slate-800/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white dark:bg-slate-800/30 transition-colors flex items-center gap-2"
+                                className="bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center gap-2"
                             >
                                 Request Leave <Calendar size={16} />
                             </button>
