@@ -59,6 +59,8 @@ const MessagesPage = () => {
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [messageText, setMessageText] = useState('');
     const [sending, setSending] = useState(false);
+    const sendingRef = useRef(false);
+    const clientKeyMap = useRef(new Map());
     const [searchTerm, setSearchTerm] = useState('');
     const [typingUsers, setTypingUsers] = useState([]);
     const [replyingTo, setReplyingTo] = useState(null);
@@ -158,7 +160,11 @@ const MessagesPage = () => {
                 `${import.meta.env.VITE_API_URL}/conversations/${conversationId}/messages?limit=${PAGE_SIZE}`,
                 authHeaders()
             );
-            setMessages(res.data.messages);
+            setMessages(prev => {
+                const serverMessages = res.data.messages || [];
+                const tempMessages = prev.filter(m => m._sending);
+                return [...serverMessages, ...tempMessages];
+            });
             setHasMore(res.data.hasMore);
             setTypingUsers(res.data.typingUsers || []);
             setActiveConversation(prev => (prev && prev._id === conversationId ? { ...prev, ...res.data.conversation } : prev));
@@ -206,7 +212,7 @@ const MessagesPage = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             fetchConversations();
-            if (activeConversationRef.current) {
+            if (activeConversationRef.current && !sendingRef.current) {
                 fetchThread(activeConversationRef.current._id, { silent: true });
             }
         }, POLL_INTERVAL_MS);
@@ -269,11 +275,13 @@ const MessagesPage = () => {
 
         try {
             setSending(true);
+            sendingRef.current = true;
             const res = await axios.post(
                 `${import.meta.env.VITE_API_URL}/conversations/${activeConversation._id}/messages`,
                 { text, replyTo: replyToId },
                 authHeaders()
             );
+            clientKeyMap.current.set(res.data._id, tempId);
             setMessages(prev => prev.map(m => (m._id === tempId ? res.data : m)));
             fetchConversations();
         } catch (err) {
@@ -282,6 +290,7 @@ const MessagesPage = () => {
             setMessageText(text);
         } finally {
             setSending(false);
+            sendingRef.current = false;
         }
     };
 
@@ -689,7 +698,7 @@ const MessagesPage = () => {
                                             const showSender = activeConversation.type === 'group' && !isMine && !isConsecutive;
                                             return (
                                                 <motion.div
-                                                    key={msg._id}
+                                                    key={clientKeyMap.current.get(msg._id) || msg._id}
                                                     layout="position"
                                                     initial={{ opacity: 0, y: 14, scale: 0.94 }}
                                                     animate={{ opacity: 1, y: 0, scale: 1 }}
