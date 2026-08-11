@@ -40,7 +40,7 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
                 </button>
                 {canGoBack && (
                     <button
-                        onClick={() => navigate('/employee')}
+                        onClick={() => navigate(-1)}
                         className="flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl transition-all font-semibold text-xs sm:text-sm group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shrink-0 shadow-xs"
                         aria-label="Go Back"
                         title="Go Back"

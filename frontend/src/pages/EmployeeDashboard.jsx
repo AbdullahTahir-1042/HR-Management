@@ -628,7 +628,7 @@ const EmployeeDashboard = () => {
                         } />
                         <Route path="myTeam" element={<MyTeamSection />} />
                         <Route path="team-leaves" element={<TeamLeaves />} />
-                        <Route path="*" element={<Navigate to="/employee" replace />} />
+                        <Route path="*" element={<Navigate to={`/employee/${(fullUser || authUser)?._id || ''}`} replace />} />
                     </Routes>
                 </div>
             </main>
