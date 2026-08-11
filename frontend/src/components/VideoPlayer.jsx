@@ -176,19 +176,19 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                         >
                             {/* 
                                 The iframe is intentionally oversized and repositioned:
-                                - Shifted up by 70px to push the title/channel bar above the visible area
-                                - Height increased by 140px (70 top + 70 bottom) to push the 
+                                - Shifted up by 60px to push the title/channel bar above the visible area
+                                - Height increased by 106px (60 top + 46 bottom) to push the 
                                   share/YouTube logo row below the visible area
+                                - The main controls (play, volume, progress, settings gear, CC) stay visible
                                 - overflow:hidden on the parent clips everything outside the container
-                                This physically removes those elements from view — not just blocking clicks.
                             */}
                             <iframe
                                 className="absolute border-0"
                                 style={youtubeId ? {
-                                    top: '-70px',
+                                    top: '-60px',
                                     left: '0',
                                     width: '100%',
-                                    height: 'calc(100% + 140px)',
+                                    height: 'calc(100% + 106px)',
                                 } : {
                                     top: '0',
                                     left: '0',
