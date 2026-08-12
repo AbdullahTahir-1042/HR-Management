@@ -418,9 +418,7 @@ router.put('/:id/hr-review', [auth, isHR], async (req, res) => {
         const today = new Date();
         today.setHours(0,0,0,0);
         
-        if (start < today && (action === 'approve' || action === 'approved')) {
-            return res.status(400).json({ msg: 'Cannot approve leave requests from the past.' });
-        }
+        // Allow retrospective leave approvals
 
         leave.hrRemark = remark || '';
         leave.hrReviewedAt = new Date();
@@ -561,9 +559,7 @@ router.put('/:id/team-lead-review', auth, async (req, res) => {
         const today = new Date();
         today.setHours(0,0,0,0);
         
-        if (start < today && (action === 'approve' || action === 'approved')) {
-            return res.status(400).json({ msg: 'Cannot approve leave requests from the past.' });
-        }
+        // Allow retrospective leave approvals
 
         // Prevent self-approval by Team Leads
         if (leave.employee._id.toString() === req.user.id) {

@@ -5,7 +5,7 @@ import { formatDate } from '../../utils/dateUtils';
 import apiClient from '../../api/axiosClient';
 
 
-const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut }) => {
+const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCheckOut }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [schedule, setSchedule] = useState(null);
 
@@ -24,17 +24,45 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         return () => clearInterval(timer);
     }, []);
 
-    const getLateness = (dateObj) => {
-        if (!dateObj || !schedule) return null;
-        const shiftStart = new Date(dateObj);
+    const getLateness = (recordOrDate) => {
+        if (!recordOrDate) return null;
         
-        const [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
-        const grace = schedule.gracePeriod || 15;
+        let targetDate;
+        let expectedTime = new Date();
         
-        shiftStart.setHours(h, m + grace, 0, 0); 
-        
-        if (dateObj > shiftStart) {
-            const diffMs = dateObj - shiftStart;
+        let h = 9, m = 0, grace = 15;
+
+        if (user?.shiftDetails?.startTime) {
+            [h, m] = user.shiftDetails.startTime.split(':').map(Number);
+            grace = user.shiftDetails.gracePeriod ?? 0;
+        } else if (user?.department?.shiftDetails?.startTime || user?.departmentId?.shiftDetails?.startTime) {
+            const deptShift = user.department?.shiftDetails || user.departmentId?.shiftDetails;
+            [h, m] = deptShift.startTime.split(':').map(Number);
+            grace = deptShift.gracePeriod ?? 0;
+        } else if (schedule) {
+            [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
+            grace = schedule.gracePeriod ?? 15;
+        } else if (recordOrDate.expectedCheckIn) {
+            [h, m] = recordOrDate.expectedCheckIn.split(':').map(Number);
+            grace = 15;
+        } else {
+            h = 9; m = 45; grace = 0;
+        }
+
+        if (recordOrDate.checkIn) {
+            targetDate = new Date(recordOrDate.checkIn);
+            expectedTime = new Date(recordOrDate.checkIn);
+        } else {
+            targetDate = recordOrDate;
+            expectedTime = new Date(targetDate);
+        }
+
+        const cutoffTime = new Date(expectedTime);
+        cutoffTime.setHours(h, m + grace, 0, 0);
+
+        if (targetDate > cutoffTime) {
+            expectedTime.setHours(h, m, 0, 0);
+            const diffMs = targetDate - expectedTime;
             const diffMins = Math.floor(diffMs / 60000);
             const hours = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
@@ -92,11 +120,8 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         lateStr = getLateness(currentTime);
         if (lateStr) isLate = true;
     } else {
-        const checkInTime = new Date(attendance.checkIn);
-        const checkInTimeOnly = new Date();
-        checkInTimeOnly.setHours(checkInTime.getHours(), checkInTime.getMinutes(), checkInTime.getSeconds(), 0);
-        lateStr = getLateness(checkInTimeOnly);
-        if (lateStr) isLate = true;
+        lateStr = getLateness(attendance);
+        isLate = !!lateStr;
     }
 
     const localFormatDate = (dateStr) => {
@@ -207,7 +232,8 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {history.map(record => {
-                                        const recordLate = record.checkIn ? getLateness(new Date(record.checkIn)) : null;
+                                        const recordLate = record.checkIn ? getLateness(record) : null;
+                                        const isRecordLate = !!recordLate;
                                         const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record.checkIn, record.checkOut) : null;
                                         return (
                                              <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">

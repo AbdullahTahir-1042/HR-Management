@@ -129,6 +129,7 @@ const HRHeader = ({
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <input
                             type="date"
+                            max={new Date().toISOString().slice(0, 10)}
                             value={attendanceDateFilter}
                             onChange={(e) => setAttendanceDateFilter(e.target.value)}
                             className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 text-slate-800 dark:text-slate-200 transition-all text-sm flex-1 sm:flex-none cursor-pointer"
