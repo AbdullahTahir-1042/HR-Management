@@ -411,51 +411,7 @@ const AddDeptModal = ({ allEmployees, existingDepartments = [], onClose, onSucce
                         </div>
                     </div>
 
-                    {/* Shift Details */}
-                    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                            <Clock size={16} /> Custom Shift Timings
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Time</label>
-                                <div className="relative mt-1 group">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input 
-                                        type="time" 
-                                        value={shiftDetails.startTime} 
-                                        onChange={e => setShiftDetails({...shiftDetails, startTime: e.target.value})} 
-                                        className="input-field pl-10" 
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Time</label>
-                                <div className="relative mt-1 group">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input 
-                                        type="time" 
-                                        value={shiftDetails.endTime} 
-                                        onChange={e => setShiftDetails({...shiftDetails, endTime: e.target.value})} 
-                                        className="input-field pl-10" 
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grace Period (Mins)</label>
-                                <div className="relative mt-1 group">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input 
-                                        type="number" 
-                                        min="0"
-                                        value={shiftDetails.gracePeriod} 
-                                        onChange={e => setShiftDetails({...shiftDetails, gracePeriod: Number(e.target.value)})} 
-                                        className="input-field pl-10" 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
 
                 {error && <p className="text-xs text-rose-600 mt-3">{error}</p>}
@@ -648,51 +604,7 @@ const EditDeptModal = ({ dept, allEmployees, onClose, onSuccess }) => {
                         </div>
                     </div>
 
-                    {/* Shift Details */}
-                    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                            <Clock size={16} /> Custom Shift Timings
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Time</label>
-                                <div className="relative mt-1 group">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input 
-                                        type="time" 
-                                        value={shiftDetails.startTime} 
-                                        onChange={e => setShiftDetails({...shiftDetails, startTime: e.target.value})} 
-                                        className="input-field pl-10" 
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Time</label>
-                                <div className="relative mt-1 group">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input 
-                                        type="time" 
-                                        value={shiftDetails.endTime} 
-                                        onChange={e => setShiftDetails({...shiftDetails, endTime: e.target.value})} 
-                                        className="input-field pl-10" 
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grace Period (Mins)</label>
-                                <div className="relative mt-1 group">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input 
-                                        type="number" 
-                                        min="0"
-                                        value={shiftDetails.gracePeriod} 
-                                        onChange={e => setShiftDetails({...shiftDetails, gracePeriod: Number(e.target.value)})} 
-                                        className="input-field pl-10" 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
 
                 {error && <p className="text-xs text-rose-600 mt-3">{error}</p>}

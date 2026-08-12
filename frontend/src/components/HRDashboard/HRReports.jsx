@@ -107,6 +107,19 @@ const HRReports = ({ employees, loans = [] }) => {
     const [leaveRecords, setLeaveRecords] = useState([]);
     const [payrollDeductions, setPayrollDeductions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [schedule, setSchedule] = useState(null);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const res = await apiClient.get('/office-schedule/today');
+                if (res.data) setSchedule(res.data);
+            } catch (err) {
+                console.error("Failed to fetch schedule", err);
+            }
+        };
+        fetchSchedule();
+    }, []);
 
     // Default date range: current month
     const defaultDateRange = useMemo(() => {
@@ -545,24 +558,41 @@ const HRReports = ({ employees, loans = [] }) => {
 
     // ── Formatter & Helper Functions ─────────────────────────
     const isLate = (record) => {
-        if (!record) return false;
-        if (record.status === 'late') return true;
-        if (record.checkIn) {
-            const checkInTime = new Date(record.checkIn);
-            const shiftStart = new Date(record.checkIn);
-            shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
-            if (checkInTime > shiftStart) return true;
-        }
-        return false;
+        return !!getLateness(record);
     };
 
-    const getLateness = (dateObj) => {
-        if (!dateObj) return null;
-        const shiftStart = new Date(dateObj);
-        shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
+    const getLateness = (record) => {
+        if (!record || !record.checkIn) return null;
 
-        if (dateObj > shiftStart) {
-            const diffMs = dateObj - shiftStart;
+        const checkInTime = new Date(record.checkIn);
+        let h = 9, m = 0, grace = 15;
+
+        // Try to get current shift details from populated employee data
+        const emp = record.employee;
+
+        if (emp?.shiftDetails?.startTime) {
+            [h, m] = emp.shiftDetails.startTime.split(':').map(Number);
+            grace = emp.shiftDetails.gracePeriod ?? 0;
+        } else if (emp?.departmentId?.shiftDetails?.startTime) {
+            [h, m] = emp.departmentId.shiftDetails.startTime.split(':').map(Number);
+            grace = emp.departmentId.shiftDetails.gracePeriod ?? 0;
+        } else if (schedule) {
+            [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
+            grace = schedule.gracePeriod ?? 15;
+        } else if (record.expectedCheckIn) {
+            [h, m] = record.expectedCheckIn.split(':').map(Number);
+            grace = 15; // default global grace
+        } else {
+            h = 9; m = 45; grace = 0;
+        }
+
+        const cutoffTime = new Date(record.checkIn);
+        cutoffTime.setHours(h, m + grace, 0, 0);
+
+        if (checkInTime > cutoffTime) {
+            const expectedTime = new Date(record.checkIn);
+            expectedTime.setHours(h, m, 0, 0);
+            const diffMs = checkInTime - expectedTime;
             const diffMins = Math.floor(diffMs / 60000);
             const hours = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
@@ -581,8 +611,7 @@ const HRReports = ({ employees, loans = [] }) => {
     const calcHours = (checkIn, checkOut, recordDate) => {
         if (!checkIn) return '—';
         if (!checkOut) {
-            const isToday = new Date(recordDate || checkIn).toDateString() === new Date().toDateString();
-            return isToday ? 'Active Now' : '—';
+            return '—';
         }
         const diff = new Date(checkOut) - new Date(checkIn);
         const h = Math.floor(diff / (1000 * 60 * 60));
@@ -1310,8 +1339,8 @@ const HRReports = ({ employees, loans = [] }) => {
                                                                         <div className="flex items-center gap-1 text-[9px] font-extrabold text-rose-700 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/80 dark:border-rose-500/20 px-1.5 py-0.5 rounded w-fit">
                                                                             <Clock size={9} className="text-rose-500 dark:text-rose-400" />
                                                                             <span>
-                                                                                LATE {getLateness(new Date(record.checkIn)) ? <span className="text-rose-400 dark:text-rose-500/80 mx-0.5">•</span> : ''}
-                                                                                {getLateness(new Date(record.checkIn))}
+                                                                                LATE {getLateness(record) ? <span className="text-rose-400 dark:text-rose-500/80 mx-0.5">•</span> : ''}
+                                                                                {getLateness(record)}
                                                                             </span>
                                                                         </div>
                                                                     )}
@@ -1321,9 +1350,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                                             {/* Check Out */}
                                                             <td className="px-3 py-3">
                                                                 {active ? (
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-full text-[10px] font-bold">
-                                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" /> Active Now
-                                                                    </span>
+                                                                    <span className="text-xs text-slate-400 font-medium">—</span>
                                                                 ) : missingCheckout ? (
                                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold uppercase tracking-wider">
                                                                         Missing Checkout

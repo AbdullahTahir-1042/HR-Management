@@ -604,6 +604,7 @@ const EmployeeDashboard = () => {
                         } />
                         <Route path="attendance" element={
                             <EmployeeAttendance
+                                user={fullUser || authUser}
                                 attendance={attendance}
                                 history={attendanceHistory.filter(a => attendanceDateFilter ? a.date === attendanceDateFilter : true)}
                                 dateFilter={attendanceDateFilter} setDateFilter={setAttendanceDateFilter}
@@ -660,7 +661,16 @@ const EmployeeDashboard = () => {
                             {confirmModal.type === 'checkIn' && (() => {
                                 const now = new Date();
                                 const shiftStart = new Date();
-                                shiftStart.setHours(9, 45, 0, 0); // 9:45 AM cutoff
+                                let h = 9, m = 45, grace = 0;
+                                if (fullUser?.shiftDetails?.startTime) {
+                                    [h, m] = fullUser.shiftDetails.startTime.split(':').map(Number);
+                                    grace = fullUser.shiftDetails.gracePeriod || 0;
+                                } else if (fullUser?.department?.shiftDetails?.startTime || fullUser?.departmentId?.shiftDetails?.startTime) {
+                                    const deptShift = fullUser.department?.shiftDetails || fullUser.departmentId?.shiftDetails;
+                                    [h, m] = deptShift.startTime.split(':').map(Number);
+                                    grace = deptShift.gracePeriod || 0;
+                                }
+                                shiftStart.setHours(h, m + grace, 0, 0);
                                 
                                 if (now > shiftStart) {
                                     const diffMs = now - shiftStart;

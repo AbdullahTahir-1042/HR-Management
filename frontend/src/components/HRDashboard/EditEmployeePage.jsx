@@ -654,54 +654,7 @@ const EditEmployeePage = ({ employee, onBack, onEmployeeUpdated }) => {
                             </div>
                         </div>
 
-                        {/* Shift Details */}
-                        <div className="md:col-span-2 space-y-4 mb-4">
-                            <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4 border-b border-indigo-100 pb-2 flex items-center gap-2">
-                                <Clock size={16} /> Custom Shift Timings
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Time</label>
-                                    <div className="relative mt-1 group">
-                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <input 
-                                            type="time" 
-                                            value={formData.shiftDetails?.startTime || '09:00'} 
-                                            onChange={e => setFormData({...formData, shiftDetails: {...(formData.shiftDetails || {}), startTime: e.target.value}})} 
-                                            className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`} 
-                                            disabled={disableProtectedFields}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">End Time</label>
-                                    <div className="relative mt-1 group">
-                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <input 
-                                            type="time" 
-                                            value={formData.shiftDetails?.endTime || '19:00'} 
-                                            onChange={e => setFormData({...formData, shiftDetails: {...(formData.shiftDetails || {}), endTime: e.target.value}})} 
-                                            className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`} 
-                                            disabled={disableProtectedFields}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Grace Period (Mins)</label>
-                                    <div className="relative mt-1 group">
-                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                        <input 
-                                            type="number" 
-                                            min="0"
-                                            value={formData.shiftDetails?.gracePeriod || 0} 
-                                            onChange={e => setFormData({...formData, shiftDetails: {...(formData.shiftDetails || {}), gracePeriod: Number(e.target.value)}})} 
-                                            className={`input-field pl-10 ${disableProtectedFields ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`} 
-                                            disabled={disableProtectedFields}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
 
                         {/* Contract Details */}
                         <div className="md:col-span-2 space-y-4">

@@ -6,6 +6,7 @@ import { formatDate } from '../utils/dateUtils';
 
 const LeaveConfirmationModal = ({ leave, action, onConfirm, onCancel }) => {
     const [remark, setRemark] = React.useState('');
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
     if (!leave) return null;
 
     const localFormatDate = (dateStr) => {
@@ -104,15 +105,31 @@ const LeaveConfirmationModal = ({ leave, action, onConfirm, onCancel }) => {
                         <div className="pt-2 flex gap-3">
                             <button 
                                 onClick={onCancel}
-                                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all"
+                                disabled={isSubmitting}
+                                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancel
                             </button>
                             <button 
-                                onClick={() => onConfirm(leave._id, action, remark)}
-                                className={`flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 ${isApprove ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100'}`}
+                                onClick={async () => {
+                                    setIsSubmitting(true);
+                                    try {
+                                        await onConfirm(leave._id, action, remark);
+                                    } finally {
+                                        setIsSubmitting(false);
+                                    }
+                                }}
+                                disabled={isSubmitting}
+                                className={`flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait ${isApprove ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100'}`}
                             >
-                                {isApprove ? 'Approve' : 'Reject'} Request
+                                {isSubmitting ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>{isApprove ? 'Approve' : 'Reject'} Request</>
+                                )}
                             </button>
                         </div>
                     </div>

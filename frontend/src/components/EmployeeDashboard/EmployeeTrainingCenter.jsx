@@ -104,8 +104,9 @@ const EmployeeTrainingCenter = () => {
                         <motion.div
                             key={video._id}
                             initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.1 }}
+                            transition={{ delay: Math.min(index * 0.05, 0.3) }}
                             className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow"
                         >
                             <div className="relative">

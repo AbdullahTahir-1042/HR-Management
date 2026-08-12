@@ -291,7 +291,11 @@ router.get('/my-history', auth, async (req, res) => {
 router.get('/all', [auth, isHR], async (req, res) => {
     try {
         const attendance = await Attendance.find()
-            .populate('employee', ['name', 'email'])
+            .populate({
+                path: 'employee',
+                select: 'name email department departmentId shiftDetails',
+                populate: { path: 'departmentId', select: 'name shiftDetails' }
+            })
             .sort({ date: -1 });
         res.json(attendance);
     } catch (err) {
@@ -337,7 +341,11 @@ router.get('/report', [auth, isHR], async (req, res) => {
         }
 
         const attendanceRecords = await Attendance.find(filter)
-            .populate('employee', ['name', 'email', 'department'])
+            .populate({
+                path: 'employee',
+                select: 'name email department departmentId shiftDetails',
+                populate: { path: 'departmentId', select: 'name shiftDetails' }
+            })
             .sort({ date: -1 });
 
         res.json(attendanceRecords);
