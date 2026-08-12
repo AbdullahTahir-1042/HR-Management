@@ -55,7 +55,7 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
 
         const shiftStart = new Date(dateObj);
         const [h, m] = expectedStart.split(':').map(Number);
-        shiftStart.setHours(h, m + grace, 0, 0); 
+        shiftStart.setHours(h, m + grace, 59, 999); 
         
         if (dateObj > shiftStart) {
             const diffMs = dateObj - shiftStart;

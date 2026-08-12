@@ -21,8 +21,8 @@ async function backfill() {
             if (record.checkIn) {
                 const checkInDate = new Date(record.checkIn);
                 const threshold = new Date(record.checkIn);
-                // 09:30 + 15 min grace = 09:45
-                threshold.setHours(9, 45, 0, 0);
+                // 09:30 + 15 min grace = end of 09:45 minute (09:45:59.999)
+                threshold.setHours(9, 45, 59, 999);
                 record.status = checkInDate > threshold ? 'late' : 'present';
             }
             
@@ -45,8 +45,8 @@ async function backfill() {
             if (record.checkIn) {
                 const checkInDate = new Date(record.checkIn);
                 const threshold = new Date(record.checkIn);
-                // 10:30 + 15 min grace = 10:45
-                threshold.setHours(10, 45, 0, 0);
+                // 10:30 + 15 min grace = end of 10:45 minute (10:45:59.999)
+                threshold.setHours(10, 45, 59, 999);
                 record.status = checkInDate > threshold ? 'late' : 'present';
             }
             
