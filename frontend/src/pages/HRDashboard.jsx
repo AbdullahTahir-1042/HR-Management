@@ -536,6 +536,8 @@ const HRDashboard = () => {
                     </Routes>
                 </div>
             </main>
+            
+            <VirtualHRAssistant user={user} />
         </div>
     );
 };
