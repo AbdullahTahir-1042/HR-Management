@@ -90,9 +90,9 @@ const MessagesPage = () => {
     );
 
     const getToken = () =>
-        localStorage.getItem('token') ||
-        localStorage.getItem('authToken') ||
-        localStorage.getItem('x-auth-token') ||
+        sessionStorage.getItem('token') ||
+        sessionStorage.getItem('authToken') ||
+        sessionStorage.getItem('x-auth-token') ||
         null;
 
     const authHeaders = () => ({ headers: { 'x-auth-token': getToken() } });

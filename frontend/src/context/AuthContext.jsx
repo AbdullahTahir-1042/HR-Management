@@ -5,7 +5,7 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [token, setToken] = useState(sessionStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,11 +14,11 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const res = await apiClient.get('/auth/user');
                     setUser(res.data);
-                    localStorage.setItem('user', JSON.stringify(res.data));
+                    sessionStorage.setItem('user', JSON.stringify(res.data));
                 } catch (err) {
                     console.error("Token verification failed", err);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                     setToken(null);
                     setUser(null);
                 }
@@ -36,8 +36,8 @@ export const AuthProvider = ({ children }) => {
             (response) => response,
             (error) => {
                 if (error.response && error.response.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                     setToken(null);
                     setUser(null);
                     if (window.location.pathname !== '/login') {
@@ -54,23 +54,23 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         const res = await apiClient.post('/auth/login', { email, password });
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
+        sessionStorage.setItem('token', res.data.token);
+        sessionStorage.setItem('user', JSON.stringify(res.data.user));
         setToken(res.data.token);
         setUser(res.data.user);
         return res.data;
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         setToken(null);
         setUser(null);
     };
 
     const updateUser = (userData) => {
         const newUser = { ...user, ...userData };
-        localStorage.setItem('user', JSON.stringify(newUser));
+        sessionStorage.setItem('user', JSON.stringify(newUser));
         setUser(newUser);
     };
 

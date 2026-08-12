@@ -25,6 +25,7 @@ import MessagesPage from '../components/MessagesPage';
 import FirstLoginModal from '../components/FirstLoginModal';
 import EmployeeTrainingCenter from '../components/EmployeeDashboard/EmployeeTrainingCenter'; // ✅ NEW
 import EmployeeReviews from '../components/EmployeeDashboard/EmployeeReviews';
+import VirtualHRAssistant from '../components/VirtualHRAssistant';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -215,6 +216,73 @@ const EmployeeDashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // ── Check-out reminder notifications ──────────────────────────────────────
+    const checkoutNotifiedRef = useRef(false);
+    const nineHoursNotifiedRef = useRef(false);
+
+    useEffect(() => {
+        if (!attendance || !attendance.checkInTime || attendance.checkOutTime) return;
+
+        // Helper to trigger browser desktop notification
+        const triggerDesktopNotification = (title, body) => {
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification(`📢 ${title}`, { body, icon: '/favicon.svg' });
+                } catch (e) {
+                    console.error("Desktop notification error:", e);
+                }
+            }
+        };
+
+        // Request browser notification permission
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const currentUser = fullUser || authUser;
+            
+            // 1. 10 mins before shift end time
+            if (currentUser?.shiftDetails?.endTime && !checkoutNotifiedRef.current) {
+                const [hours, minutes] = currentUser.shiftDetails.endTime.split(':').map(Number);
+                const shiftEnd = new Date();
+                shiftEnd.setHours(hours, minutes, 0, 0);
+                
+                const timeUntilShiftEnd = shiftEnd - now;
+                // If it's 10 minutes before (between 9m and 10m)
+                if (timeUntilShiftEnd > 9 * 60 * 1000 && timeUntilShiftEnd <= 10 * 60 * 1000) {
+                    triggerDesktopNotification(
+                        'Shift Ending Soon',
+                        'Your shift ends in 10 minutes. Don\'t forget to check out!'
+                    );
+                    checkoutNotifiedRef.current = true;
+                }
+            }
+
+            // 2. 10 mins before 9 hours of work is completed (8h 50m after checkin)
+            if (!nineHoursNotifiedRef.current) {
+                const checkIn = new Date(attendance.checkInTime);
+                const timeWorked = now - checkIn;
+                
+                const eightHoursFiftyMins = (8 * 60 + 50) * 60 * 1000;
+                const eightHoursFiftyOneMins = (8 * 60 + 51) * 60 * 1000;
+                
+                // If exactly at the 8h 50m mark (1 min window to trigger)
+                if (timeWorked >= eightHoursFiftyMins && timeWorked < eightHoursFiftyOneMins) {
+                    triggerDesktopNotification(
+                        '9-Hour Limit Approaching',
+                        'You have completed almost 9 hours of work today. Please wrap up and check out!'
+                    );
+                    nineHoursNotifiedRef.current = true;
+                }
+            }
+
+        }, 30000); // Check every 30 seconds
+
+        return () => clearInterval(interval);
+    }, [attendance, fullUser, authUser]);
+
     // ── Firebase notifications + SSE + BroadcastChannel ──────────────────────
     useEffect(() => {
         // 1. Request FCM token and sync to backend
@@ -283,9 +351,9 @@ const EmployeeDashboard = () => {
         try {
             const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
             const token =
-                localStorage.getItem('token') ||
-                localStorage.getItem('authToken') ||
-                localStorage.getItem('x-auth-token') ||
+                sessionStorage.getItem('token') ||
+                sessionStorage.getItem('authToken') ||
+                sessionStorage.getItem('x-auth-token') ||
                 '';
             eventSource = new EventSource(`${baseUrl}/announcements/stream?token=${token}`);
             eventSource.onmessage = (event) => {
@@ -474,7 +542,7 @@ const EmployeeDashboard = () => {
                     if (error.code === 3) msg = 'Location request timed out.';
                     toast.error(msg);
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
             );
         } else if (confirmModal.type === 'checkOut') {
             try {
@@ -720,6 +788,9 @@ const EmployeeDashboard = () => {
             </AnimatePresence>
 
             <FirstLoginModal isOpen={authUser?.isFirstLogin === true || fullUser?.isFirstLogin === true} />
+
+            {/* AI Assistant Widget */}
+            <VirtualHRAssistant user={fullUser || authUser} />
         </div>
     );
 };

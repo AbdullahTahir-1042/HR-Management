@@ -142,7 +142,7 @@ router.post('/check-in', auth, async (req, res) => {
 
             const [startHour, startMin] = expectedStartStr.split(':').map(Number);
             const expectedTime = new Date();
-            expectedTime.setHours(startHour, startMin + appliedGracePeriod, 0, 0);
+            expectedTime.setHours(startHour, startMin + appliedGracePeriod, 59, 999);
 
             if (new Date() > expectedTime) {
                 checkInStatus = 'late';

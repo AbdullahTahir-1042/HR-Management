@@ -71,6 +71,7 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
         return null;
     };
 
+
     const getTotalTimeWorked = (checkInStr, checkOutStr) => {
         if (!checkInStr || !checkOutStr) return '-';
         const inTime = new Date(checkInStr);
@@ -83,17 +84,30 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
         return `${hours}h ${mins}m`;
     };
 
-    const getWorkStatus = (checkInStr, checkOutStr) => {
-        if (!checkInStr || !checkOutStr || !schedule) return null;
-        const inTime = new Date(checkInStr);
-        const outTime = new Date(checkOutStr);
+    const getWorkStatus = (record) => {
+        if (!record || !record.checkIn || !record.checkOut) return null;
+        const inTime = new Date(record.checkIn);
+        const outTime = new Date(record.checkOut);
         const diffMs = outTime - inTime;
         if (diffMs <= 0) return null;
         
         const diffMins = Math.floor(diffMs / 60000);
         
-        const [startH, startM] = (schedule.startTime || '09:00').split(':').map(Number);
-        const [endH, endM] = (schedule.endTime || '18:00').split(':').map(Number);
+        let expectedStart = '09:00';
+        let expectedEnd = '18:00';
+        
+        if (record.expectedCheckIn && record.expectedCheckOut) {
+            expectedStart = record.expectedCheckIn;
+            expectedEnd = record.expectedCheckOut;
+        } else if (schedule) {
+            expectedStart = schedule.startTime || '09:00';
+            expectedEnd = schedule.endTime || '18:00';
+        } else {
+            return null;
+        }
+        
+        const [startH, startM] = expectedStart.split(':').map(Number);
+        const [endH, endM] = expectedEnd.split(':').map(Number);
         const startTotal = startH * 60 + startM;
         const endTotal = endH * 60 + endM;
         const standardMins = endTotal > startTotal ? endTotal - startTotal : 9 * 60;
@@ -234,7 +248,7 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
                                     {history.map(record => {
                                         const recordLate = record.checkIn ? getLateness(record) : null;
                                         const isRecordLate = !!recordLate;
-                                        const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record.checkIn, record.checkOut) : null;
+                                        const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record) : null;
                                         return (
                                              <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-4 py-3.5 text-slate-700 font-medium text-sm">

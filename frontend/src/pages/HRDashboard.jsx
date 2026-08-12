@@ -28,6 +28,7 @@ import HRLeaveTypeManagement from '../components/HRDashboard/HRLeaveTypeManageme
 import HRTrainingManagement from '../components/HRDashboard/HRTrainingManagement'; // ✅ NEW
 import OfficeScheduleManagement from '../components/HRDashboard/OfficeScheduleManagement'; // ✅ NEW
 import MessagesPage from '../components/MessagesPage';
+import VirtualHRAssistant from '../components/VirtualHRAssistant';
 
 const EmployeeDetailsRouteWrapper = ({ employees, leaves, leaveTypes, fetchAllEmployees, setEmployees }) => {
     const { id } = useParams();
