@@ -24,13 +24,25 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         return () => clearInterval(timer);
     }, []);
 
-    const getLateness = (dateObj) => {
-        if (!dateObj || !schedule) return null;
+    const getLateness = (dateObj, record = null) => {
+        if (!dateObj) return null;
+        
+        // Use the record's saved expectedCheckIn (historical accuracy) or fall back to live schedule
+        let expectedStart = '09:00';
+        let grace = 15;
+        
+        if (record && record.expectedCheckIn) {
+            expectedStart = record.expectedCheckIn;
+            grace = schedule?.gracePeriod || 15;
+        } else if (schedule) {
+            expectedStart = schedule.startTime || '09:00';
+            grace = schedule.gracePeriod || 15;
+        } else {
+            return null;
+        }
+
         const shiftStart = new Date(dateObj);
-        
-        const [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
-        const grace = schedule.gracePeriod || 15;
-        
+        const [h, m] = expectedStart.split(':').map(Number);
         shiftStart.setHours(h, m + grace, 0, 0); 
         
         if (dateObj > shiftStart) {
@@ -55,17 +67,30 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         return `${hours}h ${mins}m`;
     };
 
-    const getWorkStatus = (checkInStr, checkOutStr) => {
-        if (!checkInStr || !checkOutStr || !schedule) return null;
-        const inTime = new Date(checkInStr);
-        const outTime = new Date(checkOutStr);
+    const getWorkStatus = (record) => {
+        if (!record || !record.checkIn || !record.checkOut) return null;
+        const inTime = new Date(record.checkIn);
+        const outTime = new Date(record.checkOut);
         const diffMs = outTime - inTime;
         if (diffMs <= 0) return null;
         
         const diffMins = Math.floor(diffMs / 60000);
         
-        const [startH, startM] = (schedule.startTime || '09:00').split(':').map(Number);
-        const [endH, endM] = (schedule.endTime || '18:00').split(':').map(Number);
+        let expectedStart = '09:00';
+        let expectedEnd = '18:00';
+        
+        if (record.expectedCheckIn && record.expectedCheckOut) {
+            expectedStart = record.expectedCheckIn;
+            expectedEnd = record.expectedCheckOut;
+        } else if (schedule) {
+            expectedStart = schedule.startTime || '09:00';
+            expectedEnd = schedule.endTime || '18:00';
+        } else {
+            return null;
+        }
+        
+        const [startH, startM] = expectedStart.split(':').map(Number);
+        const [endH, endM] = expectedEnd.split(':').map(Number);
         const startTotal = startH * 60 + startM;
         const endTotal = endH * 60 + endM;
         const standardMins = endTotal > startTotal ? endTotal - startTotal : 9 * 60;
@@ -95,7 +120,7 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
         const checkInTime = new Date(attendance.checkIn);
         const checkInTimeOnly = new Date();
         checkInTimeOnly.setHours(checkInTime.getHours(), checkInTime.getMinutes(), checkInTime.getSeconds(), 0);
-        lateStr = getLateness(checkInTimeOnly);
+        lateStr = getLateness(checkInTimeOnly, attendance);
         if (lateStr) isLate = true;
     }
 
@@ -207,8 +232,8 @@ const EmployeeAttendance = ({ attendance, history, handleCheckIn, handleCheckOut
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {history.map(record => {
-                                        const recordLate = record.checkIn ? getLateness(new Date(record.checkIn)) : null;
-                                        const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record.checkIn, record.checkOut) : null;
+                                        const recordLate = record.checkIn ? getLateness(new Date(record.checkIn), record) : null;
+                                        const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record) : null;
                                         return (
                                              <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-4 py-3.5 text-slate-700 font-medium text-sm">
