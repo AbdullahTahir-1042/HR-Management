@@ -65,6 +65,7 @@ app.use('/api/loans', require('./routes/loans'));
 app.use('/api/payroll', require('./routes/payroll')); // ✅ NEW
 app.use('/api/awards', require('./routes/award')); // ✅ NEW
 app.use('/api/office-schedule', require('./routes/officeSchedule')); // ✅ NEW
+app.use('/api/ai', require('./routes/ai')); // ✅ AI Chatbot
 app.use('/api/test', require('./routes/test'));
 console.log('✓ Test Route Registered');
 
