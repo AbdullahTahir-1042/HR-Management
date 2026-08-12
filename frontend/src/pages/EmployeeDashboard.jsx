@@ -25,6 +25,7 @@ import MessagesPage from '../components/MessagesPage';
 import FirstLoginModal from '../components/FirstLoginModal';
 import EmployeeTrainingCenter from '../components/EmployeeDashboard/EmployeeTrainingCenter'; // ✅ NEW
 import EmployeeReviews from '../components/EmployeeDashboard/EmployeeReviews';
+import VirtualHRAssistant from '../components/VirtualHRAssistant';
 
 // ── Announcement Toast Notification ──────────────────────────────────────────
 const AnnouncementToast = ({ notification, onClose }) => (
@@ -777,6 +778,9 @@ const EmployeeDashboard = () => {
             </AnimatePresence>
 
             <FirstLoginModal isOpen={authUser?.isFirstLogin === true || fullUser?.isFirstLogin === true} />
+
+            {/* AI Assistant Widget */}
+            <VirtualHRAssistant user={fullUser || authUser} />
         </div>
     );
 };
