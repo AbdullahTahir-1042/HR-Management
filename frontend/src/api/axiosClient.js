@@ -10,10 +10,10 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
     (config) => {
         const token =
-            localStorage.getItem('token') ||
-            localStorage.getItem('authToken') ||
-            localStorage.getItem('x-auth-token') ||
-            localStorage.getItem('accessToken');
+            sessionStorage.getItem('token') ||
+            sessionStorage.getItem('authToken') ||
+            sessionStorage.getItem('x-auth-token') ||
+            sessionStorage.getItem('accessToken');
 
         if (token) {
             config.headers['x-auth-token'] = token;
@@ -28,9 +28,9 @@ const originalGet = apiClient.get.bind(apiClient);
 
 apiClient.get = function (url, config = {}) {
     const token =
-        localStorage.getItem('token') ||
-        localStorage.getItem('authToken') ||
-        localStorage.getItem('x-auth-token') ||
+        sessionStorage.getItem('token') ||
+        sessionStorage.getItem('authToken') ||
+        sessionStorage.getItem('x-auth-token') ||
         '';
 
     const paramsStr = config.params ? JSON.stringify(config.params) : '';

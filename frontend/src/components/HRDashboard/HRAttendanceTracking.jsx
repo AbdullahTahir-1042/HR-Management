@@ -37,13 +37,24 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
     };
 
     
-    const getLateness = (dateObj) => {
-        if (!dateObj || !schedule) return null;
+    const getLateness = (dateObj, record = null) => {
+        if (!dateObj) return null;
+        
+        let expectedStart = '09:00';
+        let grace = 15;
+        
+        if (record && record.expectedCheckIn) {
+            expectedStart = record.expectedCheckIn;
+            grace = schedule?.gracePeriod || 15;
+        } else if (schedule) {
+            expectedStart = schedule.startTime || '09:00';
+            grace = schedule.gracePeriod || 15;
+        } else {
+            return null;
+        }
+
         const shiftStart = new Date(dateObj);
-        
-        const [h, m] = (schedule.startTime || '09:00').split(':').map(Number);
-        const grace = schedule.gracePeriod || 15;
-        
+        const [h, m] = expectedStart.split(':').map(Number);
         shiftStart.setHours(h, m + grace, 0, 0); 
         
         if (dateObj > shiftStart) {
@@ -56,17 +67,30 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
         return null;
     };
 
-    const getWorkStatus = (checkInStr, checkOutStr) => {
-        if (!checkInStr || !checkOutStr || !schedule) return null;
-        const inTime = new Date(checkInStr);
-        const outTime = new Date(checkOutStr);
+    const getWorkStatus = (record) => {
+        if (!record || !record.checkIn || !record.checkOut) return null;
+        const inTime = new Date(record.checkIn);
+        const outTime = new Date(record.checkOut);
         const diffMs = outTime - inTime;
         if (diffMs <= 0) return null;
         
         const diffMins = Math.floor(diffMs / 60000);
         
-        const [startH, startM] = (schedule.startTime || '09:00').split(':').map(Number);
-        const [endH, endM] = (schedule.endTime || '18:00').split(':').map(Number);
+        let expectedStart = '09:00';
+        let expectedEnd = '18:00';
+        
+        if (record.expectedCheckIn && record.expectedCheckOut) {
+            expectedStart = record.expectedCheckIn;
+            expectedEnd = record.expectedCheckOut;
+        } else if (schedule) {
+            expectedStart = schedule.startTime || '09:00';
+            expectedEnd = schedule.endTime || '18:00';
+        } else {
+            return null;
+        }
+        
+        const [startH, startM] = expectedStart.split(':').map(Number);
+        const [endH, endM] = expectedEnd.split(':').map(Number);
         const startTotal = startH * 60 + startM;
         const endTotal = endH * 60 + endM;
         const standardMins = endTotal > startTotal ? endTotal - startTotal : 9 * 60;
@@ -121,7 +145,7 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
             return <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />Absent</span>;
         }
         
-        const recordLate = getLateness(new Date(record.checkIn));
+        const recordLate = getLateness(new Date(record.checkIn), record);
         if (record.status === 'late' || recordLate) {
             let lateText = recordLate ? `Late (${recordLate})` : 'Late';
             return <span className="text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1 w-fit"><AlertCircle size={12} />{lateText}</span>;
@@ -153,9 +177,9 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                     </thead>
                     <tbody className="table-body">
                         {sortedAttendance.map(record => {
-                            const recordLate = record.checkIn ? getLateness(new Date(record.checkIn)) : null;
+                            const recordLate = record.checkIn ? getLateness(new Date(record.checkIn), record) : null;
                             const isLate = record.status === 'late' || !!recordLate;
-                            const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record.checkIn, record.checkOut) : null;
+                            const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record) : null;
                             return (
                             <tr key={record._id} className={`table-row transition-colors ${isLate ? 'bg-rose-50/30 hover:bg-rose-50/50 dark:bg-rose-900/10 dark:hover:bg-rose-900/20' : ''}`}>
                                 <td className="table-cell px-6 py-5">
