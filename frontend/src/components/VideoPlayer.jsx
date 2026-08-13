@@ -98,7 +98,7 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                 if (!data) return;
 
                 // Time and state updates from YouTube API
-                if (data.event === 'infoDelivery' && data.info) {
+                if ((data.event === 'infoDelivery' || data.event === 'initialDelivery') && data.info) {
                     if (data.info.currentTime !== undefined && !isSeeking) {
                         currentTimeRef.current = data.info.currentTime;
                         setCurrentTime(data.info.currentTime);
@@ -357,6 +357,11 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                             src={buildVideoUrl()}
                                             allow="autoplay; encrypted-media; picture-in-picture"
                                             title={title}
+                                            onLoad={() => {
+                                                if (iframeRef.current && iframeRef.current.contentWindow) {
+                                                    iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1 }), '*');
+                                                }
+                                            }}
                                         ></iframe>
                                     </div>
                                 ) : (
@@ -366,6 +371,11 @@ const VideoPlayer = ({ fileId, youtubeId, title, thumbnail }) => {
                                         src={buildVideoUrl()}
                                         allow="autoplay; encrypted-media; picture-in-picture"
                                         title={title}
+                                        onLoad={() => {
+                                            if (iframeRef.current && iframeRef.current.contentWindow) {
+                                                iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1 }), '*');
+                                            }
+                                        }}
                                     ></iframe>
                                 )}
 
