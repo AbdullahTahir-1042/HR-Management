@@ -448,7 +448,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                         >
                             <div>
                                 <div className="flex items-start justify-between gap-3 mb-4">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 group-hover:border-indigo-300 transition-colors shrink-0">
                                             {emp.photo ? (
                                                 <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
@@ -456,7 +456,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                                 <span className="text-indigo-600 font-black text-base">{emp.name?.[0]?.toUpperCase()}</span>
                                             )}
                                         </div>
-                                        <div>
+                                        <div className="flex flex-col min-w-0">
                                             <h4 className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
                                                 {emp.name}
                                                 {emp.isTeamLead && (
