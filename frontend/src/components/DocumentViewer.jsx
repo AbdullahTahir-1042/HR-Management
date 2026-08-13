@@ -12,6 +12,11 @@ const DocumentViewer = ({ documentUrl, title, type = 'Document' }) => {
         if (match && match[1]) {
             embedUrl = `https://drive.google.com/file/d/${match[1]}/preview?rm=minimal`;
         }
+    } else if (documentUrl && documentUrl.includes('docs.google.com/document/d/')) {
+        const match = documentUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+            embedUrl = `https://docs.google.com/document/d/${match[1]}/preview?embedded=true`;
+        }
     }
 
     const toggleFullscreen = () => {
@@ -61,15 +66,6 @@ const DocumentViewer = ({ documentUrl, title, type = 'Document' }) => {
                         >
                             <div className="flex items-center gap-4 truncate pr-4">
                                 <h2 className="text-white text-lg sm:text-xl font-medium tracking-wide truncate">{title}</h2>
-                                <a 
-                                    href={documentUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white/90 text-sm font-medium rounded-lg transition-colors backdrop-blur-md"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                    Open in New Tab
-                                </a>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
                                 <button 
@@ -107,7 +103,13 @@ const DocumentViewer = ({ documentUrl, title, type = 'Document' }) => {
                             
                             <iframe
                                 src={embedUrl}
-                                className="w-full h-full border-0 rounded-2xl"
+                                className="absolute border-0"
+                                style={{
+                                    top: '-65px',
+                                    left: 0,
+                                    width: '100%',
+                                    height: 'calc(100% + 65px)',
+                                }}
                                 title={title}
                                 allow="autoplay; encrypted-media; fullscreen"
                             />
