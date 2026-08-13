@@ -8,6 +8,7 @@ const LeaveType = require('../models/LeaveType');
 const Holiday = require('../models/Holiday');
 const Announcement = require('../models/Announcements');
 const HRRequest = require('../models/HRRequest');
+const generateHRAssistantPrompt = require('../prompts/hrAssistantPrompt');
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 
 // Initialize Gemini
@@ -60,6 +61,19 @@ const tools = [
         parameters: { type: SchemaType.OBJECT, properties: {} }
       },
       {
+        name: "get_my_attendance_report",
+        description: "Get the attendance history for the currently logged-in user. Use this when the user asks about their own attendance, check-ins, or lates.",
+        parameters: { 
+          type: SchemaType.OBJECT, 
+          properties: {
+            days: {
+              type: SchemaType.INTEGER,
+              description: "The number of past days to retrieve (default is 7 if not specified)."
+            }
+          }
+        }
+      },
+      {
         name: "get_employee_directory",
         description: "Get the company staff directory, including names, emails, departments, and roles of all employees. Use this to find contact information or check who works in what department.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
@@ -97,10 +111,19 @@ router.post('/chat', auth, async (req, res) => {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        // Initialize model with tools
+        // Initialize model with role-restricted tools
+        const isUserHR = user.role === 'hr';
+        const allowedFunctionNames = isUserHR 
+            ? ["apply_leave", "get_company_attendance_today", "get_employee_directory", "get_pending_leave_requests", "get_pending_hr_requests", "get_company_holidays", "get_my_attendance_report"]
+            : ["apply_leave", "get_company_holidays", "get_my_attendance_report"];
+            
+        const userTools = [{
+            functionDeclarations: tools[0].functionDeclarations.filter(t => allowedFunctionNames.includes(t.name))
+        }];
+
         const model = genAI.getGenerativeModel({ 
             model: "gemini-flash-latest",
-            tools: tools
+            tools: userTools
         });
 
         // Fetch additional context
@@ -137,28 +160,44 @@ router.post('/chat', auth, async (req, res) => {
             leaveBalanceString += `- ${lt.name}: ${used} days used out of ${lt.quota} total quota\n`;
         }
 
+        const roleInstructions = isUserHR 
+            ? "As the user is an HR Admin, you can also READ live company data. If they ask who is present, fetch the attendance. If they ask about employees, fetch the directory. If they ask about pending leaves or HR requests, fetch the pending leave/HR requests. You can also fetch the full holiday calendar." 
+            : "As the user is an Employee, you ONLY have access to their personal info and public company holidays (you can fetch the full holiday calendar). You DO NOT have access to the company directory, general attendance records, or other employees' data. If they ask for this, politely decline and explain your access limits. If they ask for their OWN attendance history, use the get_my_attendance_report tool.";
+
+        // Generate dynamic PKT time strings
+        const now = new Date();
+        const pktFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Karachi',
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        });
+        const currentDatetimePkt = pktFormatter.format(now).replace('GMT+5', 'PKT');
+        
+        const pktDateFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Karachi',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+        const currentDatePkt = pktDateFormatter.format(now);
+
         // Build a dynamic system prompt with user context
-        const systemInstruction = `You are an intelligent Virtual HR Assistant for The Dev Corporate (TDC). 
-Your role is to help employees with HR policies, attendance queries, leave requests, and general HR guidance.
-Be polite, concise, and professional. Use emojis sparingly.
-
-You have the ability to APPLY FOR LEAVES directly using your tools. If the user asks to apply for a leave, ask them for the start date, end date, and reason if they haven't provided them, and then execute the function.
-You can also READ live company data. If the user asks who is present, fetch the attendance. If they ask about employees, fetch the directory. If they (especially HR) ask about pending leaves or HR requests, fetch the pending leave/HR requests. You can also fetch the full holiday calendar.
-
-Here is the context about the user you are talking to:
-- Name: ${user.name}
-- Email: ${user.email}
-- Department: ${user.department || 'Not specified'}
-- Role: ${user.isHR ? 'HR Admin' : user.isTeamLead ? 'Team Lead' : 'Employee'}
-- Today's Attendance Status: ${todayAttendance ? (todayAttendance.checkOutTime ? 'Checked Out' : 'Checked In') : 'Not Checked In'}
-
-Leave Balances (CRITICAL: Only read from this list for leave balances):
-${leaveBalanceString}
-Latest Company Context:
-- Upcoming Holidays: ${upcomingHolidays.map(h => h.name + ' on ' + new Date(h.date).toLocaleDateString()).join(', ') || 'None scheduled'}
-- Recent Announcements: ${latestAnnouncements.map(a => a.title).join(', ') || 'No recent announcements'}
-
-If they ask about their leaves or attendance, use the context above. If they ask about something you don't know, advise them to contact the HR department via the HR Requests portal.`;
+        const userRoleFormatted = isUserHR ? 'HR_ADMIN' : user.isTeamLead ? 'MANAGER' : 'EMPLOYEE';
+        
+        const systemInstruction = generateHRAssistantPrompt({
+            user,
+            userRoleFormatted,
+            currentDatetimePkt,
+            todayAttendance,
+            leaveBalanceString,
+            upcomingHolidays,
+            latestAnnouncements
+        });
 
         // Start chat session with history
         const chat = model.startChat({
@@ -177,6 +216,15 @@ If they ask about their leaves or attendance, use the context above. If they ask
         const functionCalls = result.response.functionCalls();
         if (functionCalls && functionCalls.length > 0) {
             const call = functionCalls[0];
+            
+            // Strict security check to prevent hallucinated calls to restricted tools
+            if (!allowedFunctionNames.includes(call.name)) {
+                return res.json({
+                    role: 'model',
+                    parts: `I'm sorry, but I don't have access to the \`${call.name}\` tool based on your current permissions.`,
+                    quotaRemaining: currentQuota
+                });
+            }
             
             if (call.name === 'apply_leave') {
                 const { leaveTypeName, startDate, endDate, reason } = call.args;
@@ -249,6 +297,30 @@ If they ask about their leaves or attendance, use the context above. If they ask
                     { role: 'user', parts: [{ text: message }] },
                     { role: 'model', parts: [{ text: 'Fetching attendance data...' }] },
                     { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_attendance_today returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                ];
+                currentQuota = updateAndGetQuota();
+                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+            } else if (call.name === 'get_my_attendance_report') {
+                const days = call.args.days || 7;
+                
+                const pastDate = new Date();
+                pastDate.setDate(pastDate.getDate() - days);
+                const pastDateStr = pastDate.toISOString().split('T')[0];
+                
+                const myAttendance = await Attendance.find({ 
+                    employee: req.user.id,
+                    date: { $gte: pastDateStr }
+                }).sort({ date: -1 });
+                
+                const responseText = myAttendance.length > 0
+                    ? myAttendance.map(a => `- Date: ${a.date} | Status: ${a.status} | In: ${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : 'N/A'} | Out: ${a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : 'N/A'}`).join('\n')
+                    : `No attendance records found for the past ${days} days.`;
+                
+                const newContents = [
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ text: 'Fetching your attendance history...' }] },
+                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_my_attendance_report returned the following data for the past ${days} days:\n${responseText}\n\nPlease summarize this for the user.` }] }
                 ];
                 currentQuota = updateAndGetQuota();
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
