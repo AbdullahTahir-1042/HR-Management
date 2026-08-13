@@ -144,7 +144,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                         <UserCheck size={22} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Probation & Interns</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">On Probation</p>
                         <p className="text-2xl font-black text-slate-800">{probationCount}</p>
                     </div>
                 </button>
@@ -448,7 +448,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                         >
                             <div>
                                 <div className="flex items-start justify-between gap-3 mb-4">
-                                    <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 group-hover:border-indigo-300 transition-colors shrink-0">
                                             {emp.photo ? (
                                                 <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
@@ -456,14 +456,14 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                                 <span className="text-indigo-600 font-black text-base">{emp.name?.[0]?.toUpperCase()}</span>
                                             )}
                                         </div>
-                                        <div className="min-w-0">
+                                        <div className="flex flex-col min-w-0">
                                             <h4 className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors flex items-center gap-1.5 truncate">
-                                                {emp.name}
+                                                <span className="truncate">{emp.name}</span>
                                                 {emp.isTeamLead && (
                                                     <Crown size={12} className="text-amber-500 shrink-0" />
                                                 )}
                                             </h4>
-                                            <p className="text-xs text-slate-400 font-medium truncate">{emp.email}</p>
+                                            <p className="text-xs text-slate-400 font-medium truncate max-w-[160px]" title={emp.email}>{emp.email}</p>
                                         </div>
                                     </div>
                                     <span className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : emp.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-amber-50 text-amber-600 border border-amber-200'

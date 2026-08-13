@@ -13,9 +13,9 @@ const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_API_KEY');
 
-// In-memory rate limit tracker (Free tier is ~20 RPM)
+// In-memory rate limit tracker (Increased for premium API access)
 let requestTimestamps = [];
-const FREE_TIER_LIMIT = 20;
+const FREE_TIER_LIMIT = 1000;
 
 function updateAndGetQuota() {
     const now = Date.now();
@@ -53,6 +53,31 @@ const tools = [
           },
           required: ["leaveTypeName", "startDate", "endDate", "reason"]
         }
+      },
+      {
+        name: "get_company_attendance_today",
+        description: "Get a list of all employees who are currently checked in, late, or present today. Use this when the user asks who is present or wants a real-time attendance report.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
+      },
+      {
+        name: "get_employee_directory",
+        description: "Get the company staff directory, including names, emails, departments, and roles of all employees. Use this to find contact information or check who works in what department.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
+      },
+      {
+        name: "get_pending_leave_requests",
+        description: "Get a list of all pending leave requests that need HR approval. Use this when an HR admin asks about pending leaves or leaves that need their attention.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
+      },
+      {
+        name: "get_pending_hr_requests",
+        description: "Get a list of all open or pending HR requests (like complaints, inquiries, feedback) submitted by employees.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
+      },
+      {
+        name: "get_company_holidays",
+        description: "Get the full list of all upcoming company holidays for the year.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
       }
     ]
   }
@@ -118,6 +143,7 @@ Your role is to help employees with HR policies, attendance queries, leave reque
 Be polite, concise, and professional. Use emojis sparingly.
 
 You have the ability to APPLY FOR LEAVES directly using your tools. If the user asks to apply for a leave, ask them for the start date, end date, and reason if they haven't provided them, and then execute the function.
+You can also READ live company data. If the user asks who is present, fetch the attendance. If they ask about employees, fetch the directory. If they (especially HR) ask about pending leaves or HR requests, fetch the pending leave/HR requests. You can also fetch the full holiday calendar.
 
 Here is the context about the user you are talking to:
 - Name: ${user.name}
@@ -209,6 +235,81 @@ If they ask about their leaves or attendance, use the context above. If they ask
                         });
                     }
                 }
+            } else if (call.name === 'get_company_attendance_today') {
+                const today = new Date().toISOString().split('T')[0];
+                const todaysAttendance = await Attendance.find({ date: today }).populate('employee', 'name department');
+                const presentEmployees = todaysAttendance.filter(a => a.status === 'present' || a.status === 'late');
+                
+                const responseText = presentEmployees.length > 0 
+                    ? presentEmployees.map(a => `- ${a.employee?.name || 'Unknown'} (${a.employee?.department || 'General'}) - Status: ${a.status} - In: ${new Date(a.checkIn).toLocaleTimeString()}`).join('\n')
+                    : 'No employees have checked in today yet.';
+                
+                const newContents = [
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ text: 'Fetching attendance data...' }] },
+                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_attendance_today returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                ];
+                currentQuota = updateAndGetQuota();
+                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+            } else if (call.name === 'get_employee_directory') {
+                const employees = await User.find({ status: { $ne: 'Inactive' } }).select('name email department role');
+                const responseText = employees.length > 0
+                    ? employees.map(e => `- ${e.name} (${e.department || 'General'}) - ${e.email}`).join('\n')
+                    : 'No active employees found.';
+                
+                const newContents = [
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ text: 'Fetching employee directory...' }] },
+                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_employee_directory returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                ];
+                currentQuota = updateAndGetQuota();
+                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+            } else if (call.name === 'get_pending_leave_requests') {
+                const pendingLeaves = await LeaveRequest.find({ status: 'pending_hr' }).populate('employee', 'name').populate('leaveType', 'name');
+                const responseText = pendingLeaves.length > 0
+                    ? pendingLeaves.map(l => `- ${l.employee?.name || 'Unknown'} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()} to ${new Date(l.endDate).toLocaleDateString()}. Reason: ${l.reason}`).join('\n')
+                    : 'There are currently no pending leave requests that need HR approval.';
+                
+                const newContents = [
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ text: 'Fetching pending leave requests...' }] },
+                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_pending_leave_requests returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                ];
+                currentQuota = updateAndGetQuota();
+                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+            } else if (call.name === 'get_pending_hr_requests') {
+                const pendingRequests = await HRRequest.find({ status: { $in: ['Open', 'In Progress'] } }).populate('employee', 'name');
+                const responseText = pendingRequests.length > 0
+                    ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.subject}" (Status: ${r.status})`).join('\n')
+                    : 'There are currently no open HR requests.';
+                
+                const newContents = [
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ text: 'Fetching HR requests...' }] },
+                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_pending_hr_requests returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                ];
+                currentQuota = updateAndGetQuota();
+                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+            } else if (call.name === 'get_company_holidays') {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const holidays = await Holiday.find({ date: { $gte: today } }).sort({ date: 1 });
+                const responseText = holidays.length > 0
+                    ? holidays.map(h => `- ${h.name} on ${new Date(h.date).toLocaleDateString()}`).join('\n')
+                    : 'There are no upcoming holidays found.';
+                
+                const newContents = [
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ text: 'Fetching holidays...' }] },
+                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_holidays returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                ];
+                currentQuota = updateAndGetQuota();
+                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             }
         }
 
