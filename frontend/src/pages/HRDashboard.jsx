@@ -298,30 +298,7 @@ const HRDashboard = () => {
         setIsEditingEmployee(true);
     };
 
-    const handleGoBack = () => {
-        if (navHistory.length > 0) {
-            const lastState = navHistory[navHistory.length - 1];
-            setNavHistory(prev => prev.slice(0, -1));
-            
-            setSelectedEmployee(lastState.selectedEmployee || null);
-            setIsAddingEmployee(!!lastState.isAddingEmployee);
-            setIsEditingEmployee(!!lastState.isEditingEmployee);
-            return;
-        }
-        if (isEditingEmployee) {
-            setIsEditingEmployee(false);
-            return;
-        }
-        if (selectedEmployee) {
-            setSelectedEmployee(null);
-            return;
-        }
-        if (isAddingEmployee) {
-            setIsAddingEmployee(false);
-            return;
-        }
-        
-    };
+
 
     
     const fetchAllLeaves = async () => {

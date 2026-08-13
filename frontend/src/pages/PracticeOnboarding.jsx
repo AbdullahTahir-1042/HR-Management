@@ -525,6 +525,12 @@ const PracticeOnboarding = () => {
     fileInputRef.current.click();
   };
 
+  // Mock API call to save practice data
+  const savePractice = async (step, isFinished) => {
+    console.log("Saving practice progress...", { step, isFinished, practiceInfo });
+    return true; // Simulate success
+  };
+
   // Trigger Navigation to Next Step with Validations
   const handleNext = async () => {
     if (currentStep === 1) {
