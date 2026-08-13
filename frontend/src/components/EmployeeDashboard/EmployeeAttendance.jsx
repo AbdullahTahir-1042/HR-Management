@@ -144,6 +144,11 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
         return `${day}/${month}/${year}`;
     };
 
+    const currentDay = new Date().getDay();
+    const isWorkingDay = schedule?.workingDays ? schedule.workingDays.includes(currentDay) : true;
+    const isHoliday = schedule?.isHoliday;
+    const holidayName = schedule?.holidayName || 'Holiday';
+
     return (
         <motion.div 
             key="attendance"
@@ -159,13 +164,33 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
                         <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <Clock size={16} className="text-indigo-600" /> Daily Attendance
                         </h3>
+                        <div className="mb-6">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                Today
+                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-semibold">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <div className="text-lg font-black text-slate-800">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+                        </div>
                         
-                        {attendance && attendance.status === 'absent' ? (
+                        {attendance?.status === 'absent' ? (
                             <div className="text-center py-5 bg-rose-50/80 rounded-xl border border-rose-200/80 shadow-xs">
                                 <AlertTriangle size={36} className="text-rose-500 mx-auto mb-2" />
                                 <p className="font-black text-slate-800 text-sm mb-1">Marked Absent</p>
                                 <p className="text-rose-600 text-[11px] font-bold mb-2">You missed your check-in today.</p>
                                 <p className="text-slate-500 text-[10px] px-2">{attendance.reason || 'No check-in'}</p>
+                            </div>
+                        ) : isHoliday ? (
+                            <div className="text-center py-5 bg-purple-50/80 rounded-xl border border-purple-200/80 shadow-xs">
+                                <ClipboardList size={36} className="text-purple-500 mx-auto mb-2" />
+                                <p className="font-black text-slate-800 text-sm mb-1">Company Holiday</p>
+                                <p className="text-purple-600 text-[11px] font-bold mb-2">{holidayName}</p>
+                                <p className="text-slate-500 text-[10px] px-2">Enjoy your day off!</p>
+                            </div>
+                        ) : !isWorkingDay ? (
+                            <div className="text-center py-5 bg-slate-50/80 rounded-xl border border-slate-200 shadow-xs">
+                                <Clock size={36} className="text-slate-400 mx-auto mb-2" />
+                                <p className="font-black text-slate-700 text-sm mb-1">Non-Working Day</p>
+                                <p className="text-slate-500 text-[10px] px-2">Check-in is disabled today.</p>
                             </div>
                         ) : !attendance ? (
                             <div className="space-y-4">

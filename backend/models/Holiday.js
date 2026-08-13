@@ -20,7 +20,7 @@ const HolidaySchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['public', 'optional', 'restricted'],
+        enum: ['public', 'optional', 'restricted', 'non-working day'],
         default: 'public'
     }
 }, { timestamps: true });

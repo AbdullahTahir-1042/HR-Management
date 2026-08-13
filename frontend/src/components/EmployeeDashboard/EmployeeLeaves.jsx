@@ -1,14 +1,59 @@
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Lock, AlertCircle } from 'lucide-react';
+import { Calendar, Send, ClipboardList, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight, Lock, AlertCircle, ChevronDown } from 'lucide-react';
 import LeaveDetailModal from '../LeaveDetailModal';
 
 const getLeaveTypeId = (leaveType) => {
     if (!leaveType) return '';
     if (typeof leaveType === 'object') return String(leaveType._id || leaveType.id || '');
     return String(leaveType);
+};
+
+const LeaveTypeSelect = ({ value, onChange, options, placeholder }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (ref.current && !ref.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div className="relative w-full mt-1.5" ref={ref}>
+            <div
+                className={`w-full p-3 bg-slate-50 border ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-200'} rounded-xl cursor-pointer flex justify-between items-center transition-all text-sm font-medium text-slate-700`}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span className={selectedOption ? 'text-slate-700' : 'text-slate-400'}>{selectedOption ? selectedOption.label : placeholder}</span>
+                <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+            {isOpen && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden py-1 max-h-60 overflow-y-auto">
+                    {options.map((opt) => (
+                        <div
+                            key={opt.value}
+                            className={`px-4 py-3 cursor-pointer text-sm font-medium transition-colors hover:bg-indigo-50 hover:text-indigo-600 ${value === opt.value ? 'bg-indigo-50/50 text-indigo-600' : 'text-slate-600'}`}
+                            onClick={() => {
+                                onChange(opt.value);
+                                setIsOpen(false);
+                            }}
+                        >
+                            {opt.label}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leaves, statusFilter, setStatusFilter, leaveBalances = [], leaveTypes = [], onRefresh }) => {
@@ -298,24 +343,20 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Leave Type</label>
-                                        <select
-                                            className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700"
+                                        <LeaveTypeSelect
                                             value={leaveForm.leaveTypeId || ''}
-                                            onChange={e => setLeaveForm({ ...leaveForm, leaveTypeId: e.target.value })}
-                                            required
-                                        >
-                                            <option value="">Select Type</option>
-                                            {leaveTypes.map(t => {
+                                            onChange={(val) => setLeaveForm({ ...leaveForm, leaveTypeId: val })}
+                                            options={leaveTypes.map(t => {
                                                 const typeId = String(t._id || t.id || '');
                                                 const balance = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeId);
                                                 const remaining = balance !== undefined ? balance.remaining : t.quota;
-                                                return (
-                                                    <option key={typeId} value={typeId}>
-                                                        {t.name} ({remaining} {remaining === 1 ? 'day left' : 'days left'})
-                                                    </option>
-                                                );
+                                                return {
+                                                    value: typeId,
+                                                    label: `${t.name} (${remaining} ${remaining === 1 ? 'day left' : 'days left'})`
+                                                };
                                             })}
-                                        </select>
+                                            placeholder="Select Type"
+                                        />
                                         
                                         {/* Policy Hint Display */}
                                         {(() => {
@@ -457,23 +498,23 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                     const isApproved = bookedStatus === 'approved';
                                                     const isRejected = bookedStatus === 'rejected' || bookedStatus === 'hr_rejected';
 
-                                                    let btnStyle = "bg-white text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200/80 cursor-pointer";
+                                                    let btnStyle = "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 hover:text-indigo-600 border border-slate-200/80 dark:border-slate-700 cursor-pointer";
 
                                                     if (isPast) {
-                                                        btnStyle = "bg-slate-100 text-slate-300 border border-slate-100 cursor-default opacity-50";
+                                                        btnStyle = "bg-slate-100 dark:bg-slate-800/50 text-slate-300 dark:text-slate-600 border border-slate-100 dark:border-slate-800/50 cursor-default opacity-50";
                                                     } else if (isConflict) {
-                                                        btnStyle = "bg-rose-500 text-white font-black ring-2 ring-rose-300 animate-pulse cursor-pointer";
+                                                        btnStyle = "bg-rose-500 text-white font-black ring-2 ring-rose-300 dark:ring-rose-500/50 animate-pulse cursor-pointer";
                                                     } else if (isStart || isEnd) {
-                                                        btnStyle = "bg-indigo-600 text-white font-black shadow-md ring-2 ring-indigo-400 cursor-pointer";
+                                                        btnStyle = "bg-indigo-600 text-white font-black shadow-md ring-2 ring-indigo-400 dark:ring-indigo-500/50 cursor-pointer";
                                                     } else if (isInSelectedRange) {
-                                                        btnStyle = "bg-indigo-100 text-indigo-900 font-bold border-t border-b border-indigo-200 cursor-pointer";
+                                                        btnStyle = "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-900 dark:text-indigo-300 font-bold border-t border-b border-indigo-200 dark:border-indigo-800/50 cursor-pointer";
                                                     } else if (isBooked && isApproved) {
-                                                        btnStyle = "bg-emerald-100/90 text-emerald-900 border border-emerald-300 font-extrabold opacity-95 cursor-default";
+                                                        btnStyle = "bg-emerald-100/90 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60 font-extrabold opacity-95 cursor-default";
                                                     } else if (isBooked && isRejected) {
-                                                        btnStyle = "bg-rose-100/90 text-rose-900 border border-rose-300 font-extrabold opacity-95 cursor-default";
+                                                        btnStyle = "bg-rose-100/90 dark:bg-rose-900/40 text-rose-900 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60 font-extrabold opacity-95 cursor-default";
                                                     } else if (isBooked) {
                                                         // Pending (pending_hr, pending_team_lead)
-                                                        btnStyle = "bg-amber-100/90 text-amber-900 border border-amber-300 font-extrabold opacity-95 cursor-default";
+                                                        btnStyle = "bg-amber-100/90 dark:bg-amber-900/40 text-amber-900 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60 font-extrabold opacity-95 cursor-default";
                                                     }
 
                                                     return (

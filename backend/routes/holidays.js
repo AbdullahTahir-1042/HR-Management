@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Holiday = require('../models/Holiday');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { auth, isHR } = require('../middleware/auth');
 
 // GET all holidays
@@ -34,6 +36,20 @@ router.post('/', [auth, isHR], async (req, res) => {
 
         const holiday = new Holiday({ name, startDate, endDate, description, type });
         await holiday.save();
+
+        // Notify all active employees
+        const activeUsers = await User.find({ status: { $ne: 'Inactive' } });
+        const notifications = activeUsers.map(user => ({
+            recipient: user._id,
+            title: 'New Holiday Added',
+            message: `A new ${type} holiday "${name}" has been scheduled from ${startDate} to ${endDate}.`,
+            type: 'system'
+        }));
+        
+        if (notifications.length > 0) {
+            await Notification.insertMany(notifications);
+        }
+
         res.status(201).json(holiday);
     } catch (err) {
         console.error(err.message);
