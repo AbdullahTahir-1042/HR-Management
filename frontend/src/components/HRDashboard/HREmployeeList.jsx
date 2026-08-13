@@ -144,7 +144,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                         <UserCheck size={22} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Probation & Interns</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">On Probation</p>
                         <p className="text-2xl font-black text-slate-800">{probationCount}</p>
                     </div>
                 </button>
