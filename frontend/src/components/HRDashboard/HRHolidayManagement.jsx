@@ -54,7 +54,7 @@ const HolidayModal = ({ holiday, onClose, onSaved }) => {
         }
     };
 
-    const TYPE_OPTIONS = ['public', 'optional', 'restricted'];
+    const TYPE_OPTIONS = ['public', 'optional', 'restricted', 'non-working day'];
     const totalDays = calculateDays(form.startDate, form.endDate);
 
     return (
@@ -230,6 +230,7 @@ const TYPE_STYLES = {
     public:     'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
     optional:   'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-200 dark:border-amber-500/20',
     restricted: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
+    'non-working day': 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────

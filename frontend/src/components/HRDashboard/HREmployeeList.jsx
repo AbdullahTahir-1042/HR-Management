@@ -448,7 +448,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                         >
                             <div>
                                 <div className="flex items-start justify-between gap-3 mb-4">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100 group-hover:border-indigo-300 transition-colors shrink-0">
                                             {emp.photo ? (
                                                 <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
@@ -456,8 +456,8 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                                 <span className="text-indigo-600 font-black text-base">{emp.name?.[0]?.toUpperCase()}</span>
                                             )}
                                         </div>
-                                        <div>
-                                            <h4 className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                                        <div className="min-w-0">
+                                            <h4 className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors flex items-center gap-1.5 truncate">
                                                 {emp.name}
                                                 {emp.isTeamLead && (
                                                     <Crown size={12} className="text-amber-500 shrink-0" />
@@ -466,7 +466,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                             <p className="text-xs text-slate-400 font-medium truncate">{emp.email}</p>
                                         </div>
                                     </div>
-                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : emp.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                                    <span className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : emp.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
                                         }`}>
                                         {emp.status || 'full time'}
                                     </span>

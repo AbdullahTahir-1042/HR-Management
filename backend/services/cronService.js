@@ -4,6 +4,7 @@ const Attendance = require('../models/Attendance');
 const LeaveRequest = require('../models/LeaveRequest');
 const Notification = require('../models/Notification');
 const Holiday = require('../models/Holiday');
+const OfficeSchedule = require('../models/OfficeSchedule');
 
 // Run every day at 11:55 PM
 const startCronJobs = () => {
@@ -13,9 +14,14 @@ const startCronJobs = () => {
             console.log('\n⏰ Running Daily Attendance Check...');
             const todayDateObj = new Date();
 
-            // Skip Sundays (0)
-            if (todayDateObj.getDay() === 0) {
-                console.log('Skipping attendance check because today is Sunday.');
+            // Fetch the default office schedule to determine working days
+            const defaultSchedule = await OfficeSchedule.findOne({ isDefault: true });
+            const workingDays = defaultSchedule ? defaultSchedule.workingDays : [1, 2, 3, 4, 5]; // Default Mon-Fri
+
+            // Skip Non-Working Days
+            const currentDayOfWeek = todayDateObj.getDay();
+            if (!workingDays.includes(currentDayOfWeek)) {
+                console.log(`Skipping attendance check because today (Day ${currentDayOfWeek}) is a non-working day.`);
                 return;
             }
 

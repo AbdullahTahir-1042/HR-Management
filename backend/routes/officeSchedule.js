@@ -20,8 +20,10 @@ router.get('/', [auth, isHR], async (req, res) => {
     }
 });
 
+const Holiday = require('../models/Holiday');
+
 // @route   GET api/office-schedule/today
-// @desc    Get today's active schedule for employee dashboard
+// @desc    Get today's active schedule and holiday status for employee dashboard
 // @access  Private
 router.get('/today', auth, async (req, res) => {
     try {
@@ -29,13 +31,33 @@ router.get('/today', auth, async (req, res) => {
         
         // 1. Check for a date-specific override
         const overrideSchedule = await OfficeSchedule.findOne({ date: today, isDefault: false });
-        if (overrideSchedule) {
-            return res.json(overrideSchedule);
-        }
         
         // 2. Otherwise return the default schedule
-        const defaultSchedule = await OfficeSchedule.findOne({ isDefault: true });
-        res.json(defaultSchedule);
+        let schedule = overrideSchedule;
+        if (!schedule) {
+            schedule = await OfficeSchedule.findOne({ isDefault: true });
+        }
+
+        // 3. Check for Holidays
+        const activeHoliday = await Holiday.findOne({
+            startDate: { $lte: today },
+            endDate: { $gte: today }
+        });
+
+        if (schedule) {
+            res.json({
+                ...schedule.toObject(),
+                isHoliday: !!activeHoliday,
+                holidayName: activeHoliday ? activeHoliday.name : null,
+                holidayType: activeHoliday ? activeHoliday.type : null
+            });
+        } else {
+            res.json({
+                isHoliday: !!activeHoliday,
+                holidayName: activeHoliday ? activeHoliday.name : null,
+                holidayType: activeHoliday ? activeHoliday.type : null
+            });
+        }
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
