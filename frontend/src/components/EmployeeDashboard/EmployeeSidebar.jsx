@@ -33,7 +33,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
 
     const { isDark, toggleTheme } = useTheme();
     return (
-        <aside className={`w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-transform duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <aside className={`w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed inset-y-0 left-0 z-50 h-screen transition-all duration-300 lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             {/* Logo / Home Button */}
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
                 <Link
@@ -46,10 +46,10 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                         <User size={24} />
                     </div>
                     <div>
-                        <span className="font-bold text-lg text-slate-800 group-hover:text-indigo-600 tracking-tight block leading-tight transition-colors duration-200 truncate max-w-[150px]">
+                        <span className="font-bold text-lg text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 tracking-tight block leading-tight transition-colors duration-200 truncate max-w-[150px]">
                             {user?.name || 'Employee Portal'}
                         </span>
-                        <span className="text-xs text-slate-500 font-medium truncate max-w-[150px] block capitalize">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[150px] block capitalize">
                             {user?.department || 'Staff'}
                         </span>
                         {user?.isTeamLead && (
@@ -77,8 +77,8 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                         onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                             ${getIsActive(id)
-                                ? 'bg-indigo-50 text-indigo-600 font-bold'
-                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white'}`}
                     >
                         <Icon size={20} />
                         <span className="text-sm">{label}</span>
@@ -125,11 +125,11 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
             </nav>
 
             {/* Profile + Logout */}
-            <div className="p-4 border-t border-slate-100">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                 {/* Dark / Light Toggle */}
                 <button
                     onClick={toggleTheme}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl transition-all duration-200 text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 group cursor-pointer"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl transition-all duration-200 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-white group cursor-pointer"
                     title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                     <div className="relative w-5 h-5">
@@ -140,15 +140,15 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 </button>
 
                 <Link
-                    to={`/employee//profile`}
+                    to={`/employee/${userId}/profile`}
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"
+                    className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:bg-indigo-50/30 dark:hover:bg-indigo-500/10 transition-all cursor-pointer group"
                 >
                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                         {user?.name?.[0]?.toUpperCase()}
                     </div>
                     <div className="overflow-hidden">
-                        <p className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                        <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                             {user?.name}
                         </p>
                         <p className="text-[10px] text-slate-400 truncate">View Profile</p>

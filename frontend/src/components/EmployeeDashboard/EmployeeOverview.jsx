@@ -139,7 +139,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     <div className="mt-4 flex gap-3">
                         {!todayAttendance ? (
                             isCheckInDisabled ? (
-                                <div className="bg-white dark:bg-slate-800/20 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 cursor-not-allowed">
+                                <div className="bg-white/20 dark:bg-slate-800/20 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 cursor-not-allowed border border-white/30">
                                     <Clock size={16} /> {disableReason}
                                 </div>
                             ) : (

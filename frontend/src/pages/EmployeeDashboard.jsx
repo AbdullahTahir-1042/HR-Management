@@ -624,7 +624,7 @@ const EmployeeDashboard = () => {
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans relative">
+        <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 font-sans relative transition-colors">
 
             {/* ── Announcement Toast ── */}
             <AnimatePresence>
@@ -790,7 +790,7 @@ const EmployeeDashboard = () => {
             <FirstLoginModal isOpen={authUser?.isFirstLogin === true || fullUser?.isFirstLogin === true} />
 
             {/* AI Assistant Widget */}
-            <VirtualHRAssistant user={fullUser || authUser} />
+            {/* <VirtualHRAssistant user={fullUser || authUser} /> */}
         </div>
     );
 };

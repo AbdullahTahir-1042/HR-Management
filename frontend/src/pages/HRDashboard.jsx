@@ -514,7 +514,7 @@ const HRDashboard = () => {
                 </div>
             </main>
             
-            <VirtualHRAssistant user={user} />
+            {/* <VirtualHRAssistant user={user} /> */}
         </div>
     );
 };
