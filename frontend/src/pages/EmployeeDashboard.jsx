@@ -20,6 +20,7 @@ import EmployeeHolidays from '../components/EmployeeDashboard/EmployeeHolidays';
 import EmployeeHRRequests from '../components/EmployeeDashboard/EmployeeHRRequests';
 import EmployeeAnnouncement from '../components/EmployeeDashboard/EmployeeAnnouncement';
 import UpdateProfilePage from '../components/UpdateProfilePage';
+import EditProfilePage from '../components/EditProfilePage';
 import MyTeamSection from '../components/EmployeeDashboard/MyTeamSection';
 import MessagesPage from '../components/MessagesPage';
 import FirstLoginModal from '../components/FirstLoginModal';
@@ -696,6 +697,9 @@ const EmployeeDashboard = () => {
                         <Route path="performance" element={<EmployeeReviews />} />
                         <Route path="profile" element={
                             <UpdateProfilePage user={fullUser || authUser} onBack={() => navigate('/employee')} onUpdate={(updatedUser) => setFullUser(updatedUser)} />
+                        } />
+                        <Route path="profile/edit-profile" element={
+                            <EditProfilePage user={fullUser || authUser} onUpdate={(updatedUser) => setFullUser(updatedUser)} />
                         } />
                         <Route path="myTeam" element={<MyTeamSection />} />
                         <Route path="team-leaves" element={<TeamLeaves />} />

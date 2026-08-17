@@ -19,6 +19,7 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
         'hr-requests': { icon: <MessageSquare size={24} className="text-indigo-600" />, label: 'HR Requests' },
         announcements: { icon: <Bell size={24} className="text-indigo-600" />, label: 'Announcements' },
         profile: { icon: <User size={24} className="text-indigo-600" />, label: 'My Profile' },
+        'edit-profile': { icon: <User size={24} className="text-indigo-600" />, label: 'Edit Profile' },
         messages: { icon: <MessageSquare size={24} className="text-indigo-600" />, label: 'Messages' },
         myTeam: { icon: <Users size={24} className="text-indigo-600" />, label: 'My Team' },
         'team-leaves': { icon: <Calendar size={24} className="text-indigo-600" />, label: 'Team Leaves' },
@@ -38,6 +39,16 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
                 >
                     <Menu size={20} />
                 </button>
+                {canGoBack && (
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl transition-all font-semibold text-xs sm:text-sm group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shrink-0 shadow-xs"
+                        aria-label="Go Back"
+                        title="Go Back"
+                    >
+                        <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+                    </button>
+                )}
                 <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 min-w-0 transition-colors">
                     {current.icon}
                     <span className="truncate">{current.label}</span>
