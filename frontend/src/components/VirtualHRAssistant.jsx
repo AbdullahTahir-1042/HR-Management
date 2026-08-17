@@ -169,11 +169,6 @@ const VirtualHRAssistant = ({ user }) => {
                 }`}
             >
                 {isOpen ? <X size={24} /> : <Sparkles size={24} />}
-                {!isOpen && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white rounded-full flex items-center justify-center">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    </span>
-                )}
             </motion.button>
         </div>
     );
