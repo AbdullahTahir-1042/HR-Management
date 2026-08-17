@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect, useRef, useContext, useMemo, useLayoutEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -88,6 +89,52 @@ const MessagesPage = () => {
     const [notifPermission, setNotifPermission] = useState(
         typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
     );
+    const [isMuted, setIsMuted] = useState(() => localStorage.getItem('chat_muted') === 'true');
+
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const chatId = params.get('chat');
+        if (chatId && conversations.length > 0) {
+            // Find conversation by its ID, OR by a one-on-one participant ID
+            const target = conversations.find(c => 
+                c._id === chatId || 
+                (!c.isGroup && c.participants.some(p => String(p._id) === String(chatId)))
+            );
+            
+            if (target) {
+                if (!activeConversation || String(activeConversation._id) !== String(target._id)) {
+                    setActiveConversation(target);
+                }
+                // Always clean up the URL parameter once handled
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location.search, conversations, activeConversation, navigate, location.pathname]);
+
+    const handleToggleMute = async () => {
+        if (!isMuted) {
+            if (window.confirmModal) {
+                if (await window.confirmModal("Would you like to mute chat notifications?")) {
+                    setIsMuted(true);
+                    localStorage.setItem('chat_muted', 'true');
+                    toast.success("Notifications muted.", { icon: '🔕' });
+                }
+            } else {
+                if (window.confirm("Would you like to mute chat notifications?")) {
+                    setIsMuted(true);
+                    localStorage.setItem('chat_muted', 'true');
+                    toast.success("Notifications muted.", { icon: '🔕' });
+                }
+            }
+        } else {
+            setIsMuted(false);
+            localStorage.setItem('chat_muted', 'false');
+            toast.success("Notifications unmuted.", { icon: '🔔' });
+        }
+    };
 
     const getToken = () =>
         sessionStorage.getItem('token') ||
@@ -128,7 +175,7 @@ const MessagesPage = () => {
     };
 
     const notifyOnNewMessages = (prevList, nextList) => {
-        if (notifPermission !== 'granted') return;
+        if (notifPermission !== 'granted' || isMuted) return;
         const prevById = new Map(prevList.map(c => [c._id, c]));
         for (const conv of nextList) {
             if (activeConversationRef.current?._id === conv._id) continue;
@@ -490,8 +537,8 @@ const MessagesPage = () => {
 
 
     return (
-        <div className="space-y-5">
-            <div className="flex justify-between items-end">
+        <div className="flex flex-col h-[calc(100vh-180px)] gap-4">
+            <div className="flex justify-between items-end shrink-0">
                 <div>
                     <p className="text-sm text-slate-400 font-medium mt-0.5">
                         {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
@@ -499,7 +546,7 @@ const MessagesPage = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {notifPermission === 'default' && (
+                    {notifPermission === 'default' && !isMuted && (
                         <button
                             onClick={() => Notification.requestPermission().then(setNotifPermission)}
                             className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
@@ -508,17 +555,25 @@ const MessagesPage = () => {
                             Enable Notifications
                         </button>
                     )}
-                    {notifPermission === 'granted' && (
-                        <div className="flex items-center gap-1.5 px-3 py-2 text-emerald-600 bg-emerald-50 rounded-xl text-sm font-semibold border border-emerald-100">
+                    {notifPermission === 'granted' && !isMuted && (
+                        <button
+                            onClick={handleToggleMute}
+                            className="flex items-center gap-1.5 px-3 py-2 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-sm font-semibold border border-emerald-100 hover:border-emerald-200 transition-colors cursor-pointer"
+                            title="Click to Mute Notifications"
+                        >
                             <BellRing size={16} />
                             Notifications On
-                        </div>
+                        </button>
                     )}
-                    {notifPermission === 'denied' && (
-                        <div className="flex items-center gap-1.5 px-3 py-2 text-rose-500 bg-rose-50 rounded-xl text-sm font-semibold border border-rose-100" title="Notifications are blocked in your browser settings">
+                    {(notifPermission === 'denied' || isMuted) && (
+                        <button
+                            onClick={notifPermission === 'denied' ? () => toast("To receive notifications, please click the lock icon in your browser's address bar and change 'Notifications' to 'Allow'.", { icon: '🔒', duration: 6000 }) : handleToggleMute}
+                            className="flex items-center gap-1.5 px-3 py-2 text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl text-sm font-semibold border border-rose-100 hover:border-rose-200 transition-colors cursor-pointer"
+                            title={notifPermission === 'denied' ? "Browser notifications blocked" : "Click to Unmute Notifications"}
+                        >
                             <BellOff size={16} />
                             Notifications Blocked
-                        </div>
+                        </button>
                     )}
                     <motion.button
                         onClick={() => setShowNewChat(true)}
@@ -532,7 +587,7 @@ const MessagesPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex h-[calc(100vh-180px)] min-h-[600px]">
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex min-h-0">
                 {/* Conversation list */}
                 <div className={`w-full sm:w-80 shrink-0 border-r border-slate-100 dark:border-slate-600 flex flex-col bg-slate-50/40 dark:bg-slate-900/40 ${activeConversation ? 'hidden sm:flex' : 'flex'}`}>
                     <div className="p-3.5 border-b border-slate-100 dark:border-slate-600">

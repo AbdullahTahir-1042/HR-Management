@@ -2,51 +2,11 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Building2, Download, Loader2, PenTool } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
-import html2pdf from 'html2pdf.js';
+import { jsPDF } from 'jspdf';
 
 const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
     const documentRef = useRef();
     const [isDownloading, setIsDownloading] = useState(false);
-
-    if (!isOpen) return null;
-
-    const handleDownload = async () => {
-        if (!documentRef.current) return;
-        setIsDownloading(true);
-
-        try {
-            // Temporarily force light mode by removing dark class from HTML root
-            const htmlRoot = document.documentElement;
-            const isDark = htmlRoot.classList.contains('dark');
-            if (isDark) htmlRoot.classList.remove('dark');
-
-            // Wait for DOM to update
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            const opt = {
-                margin: 10,
-                filename: `Employment_Contract_${employeeName?.replace(/\s+/g, '_') || 'Employee'}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true, 
-                    letterRendering: true,
-                    scrollY: 0,
-                    windowHeight: documentRef.current.scrollHeight + 100
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            
-            await html2pdf().set(opt).from(documentRef.current).save();
-            
-            // Restore dark mode
-            if (isDark) htmlRoot.classList.add('dark');
-        } catch (error) {
-            console.error('PDF Generation failed:', error);
-        } finally {
-            setIsDownloading(false);
-        }
-    };
 
     const getContractType = () => {
         return contractDetails?.contractType || 'Full-Time';
@@ -54,6 +14,138 @@ const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
 
     const getStartDate = () => {
         return contractDetails?.startDate ? formatDate(contractDetails.startDate) : formatDate(new Date());
+    };
+
+    if (!isOpen) return null;
+
+    const handleDownload = () => {
+        setIsDownloading(true);
+        
+        // Run asynchronously so UI can show spinner
+        setTimeout(() => {
+            try {
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Set font
+                doc.setFont("times", "normal");
+                
+                // Header
+                doc.setFontSize(24);
+                doc.setFont("times", "bold");
+                doc.text("EMPLOYMENT AGREEMENT", 20, 30);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text("STRICTLY CONFIDENTIAL", 20, 38);
+                
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 0);
+                doc.text("TECH INNOVA", 150, 30);
+                
+                doc.setFontSize(9);
+                doc.setFont("times", "italic");
+                doc.text("Official HR Documentation", 150, 35);
+                
+                // Line
+                doc.setLineWidth(0.5);
+                doc.line(20, 42, 190, 42);
+                
+                // Details Box
+                doc.setFillColor(245, 245, 245);
+                doc.rect(20, 50, 170, 20, 'F');
+                
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(120, 120, 120);
+                doc.text("START DATE", 25, 58);
+                doc.text("END DATE", 80, 58);
+                doc.text("CONTRACT TYPE", 140, 58);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                doc.text(getStartDate(), 25, 65);
+                doc.text(contractDetails?.endDate ? formatDate(contractDetails.endDate) : 'Not Specified / At-Will', 80, 65);
+                doc.text(getContractType(), 140, 65);
+                
+                // Body text
+                doc.setFont("times", "normal");
+                doc.setFontSize(11);
+                
+                let yPos = 85;
+                const lineSpacing = 6;
+                
+                const paragraphs = [
+                    `This Employment Agreement (the "Agreement") is entered into as of ${getStartDate()}, by and between Tech Innova Ltd. (the "Company") and ${employeeName || 'the Employee'} (the "Employee").`,
+                    ``,
+                    `1. Position and Duties: The Employee will be employed as a ${getContractType()} staff member. The Employee agrees to perform all duties and responsibilities assigned to them by the Company diligently and to the best of their abilities.`,
+                    ``,
+                    `2. Term of Employment: Employment shall commence on ${getStartDate()} and will continue until ${contractDetails?.endDate ? formatDate(contractDetails.endDate) : 'terminated by either party in accordance with standard company policies'}.`,
+                    ``,
+                    `3. Compensation and Benefits: The Employee will receive standard compensation as agreed upon in the offer letter, along with access to all company benefits applicable to ${getContractType()} employees, subject to the terms of those benefit plans.`,
+                    ``,
+                    `4. Confidentiality: The Employee agrees that during and after their employment, they will not disclose any confidential information or trade secrets of the Company to any third party without explicit written consent.`,
+                    ``,
+                    `Summary of Terms: ${contractDetails?.summary || 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.'}`
+                ];
+                
+                paragraphs.forEach(p => {
+                    if (p === '') {
+                        yPos += 4;
+                    } else {
+                        const lines = doc.splitTextToSize(p, 170);
+                        doc.text(lines, 20, yPos);
+                        yPos += (lines.length * lineSpacing);
+                    }
+                });
+                
+                // Signatures
+                yPos += 30;
+                doc.setFont("times", "italic");
+                doc.setTextColor(100, 100, 100);
+                doc.text("IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.", 20, yPos);
+                
+                yPos += 30;
+                doc.setTextColor(0, 0, 0);
+                
+                // Company Sig
+                doc.setFont("times", "italic");
+                doc.setFontSize(16);
+                doc.text("Tech Innova HR", 30, yPos - 5);
+                
+                doc.setLineWidth(0.3);
+                doc.line(20, yPos, 80, yPos);
+                
+                doc.setFont("times", "bold");
+                doc.setFontSize(10);
+                doc.text("Company Representative", 30, yPos + 6);
+                doc.setFont("times", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Date: ${getStartDate()}`, 35, yPos + 12);
+                
+                // Employee Sig
+                doc.setTextColor(0, 0, 0);
+                doc.line(130, yPos, 190, yPos);
+                doc.setFont("times", "bold");
+                doc.setFontSize(10);
+                doc.text(employeeName || 'Employee Name', 140, yPos + 6);
+                doc.setFont("times", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(100, 100, 100);
+                doc.text("Date: _________________", 140, yPos + 12);
+                
+                // Save directly
+                doc.save(`Employment_Contract_${(employeeName || 'Employee').replace(/\s+/g, '_')}.pdf`);
+                setIsDownloading(false);
+            } catch (err) {
+                console.error("PDF generation failed", err);
+                setIsDownloading(false);
+            }
+        }, 100);
     };
 
     return (
@@ -150,7 +242,7 @@ const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
                             </div>
 
                             {/* Document Body */}
-                            <div className="space-y-6 text-sm leading-relaxed text-justify text-slate-800 dark:text-slate-300">
+                            <div className="space-y-6 text-sm leading-relaxed text-left text-slate-800 dark:text-slate-300">
                                 <p>
                                     This Employment Agreement (the "Agreement") is entered into as of <strong>{getStartDate()}</strong>, by and between <strong>Tech Innova Ltd.</strong> (the "Company") and <strong>{employeeName || 'the Employee'}</strong> (the "Employee").
                                 </p>

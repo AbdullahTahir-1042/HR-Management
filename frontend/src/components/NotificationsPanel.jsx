@@ -64,7 +64,12 @@ const NotificationsPanel = ({ onNavigate }) => {
 
     const handleItemClick = (notif) => {
         if (!notif.isRead) handleMarkAsRead(notif._id);
-        setSelectedNotification(notif);
+        
+        if (notif.type === 'chat') {
+            handleActionNavigate(notif);
+        } else {
+            setSelectedNotification(notif);
+        }
         setIsOpen(false);
     };
 
@@ -79,7 +84,8 @@ const NotificationsPanel = ({ onNavigate }) => {
             } else if (notif.type === 'MistakeReport') {
                 onNavigate('mistake-reports');
             } else if (notif.type === 'chat') {
-                onNavigate('messages');
+                const chatId = notif.relatedId || notif.metadata?.conversationId || notif.metadata?.senderId || notif.metadata?.chatId;
+                onNavigate('messages', chatId);
             }
         }
         setSelectedNotification(null);
@@ -217,12 +223,12 @@ const NotificationsPanel = ({ onNavigate }) => {
                                 >
                                     Close
                                 </button>
-                                {['LoanRequest', 'HRRequest', 'LeaveRequest', 'leave', 'MistakeReport'].includes(selectedNotification.type) && (
+                                {['LoanRequest', 'HRRequest', 'LeaveRequest', 'leave', 'MistakeReport', 'chat'].includes(selectedNotification.type) && (
                                     <button 
                                         onClick={() => handleActionNavigate(selectedNotification)}
                                         className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-md flex items-center gap-2"
                                     >
-                                        Take Action
+                                        {selectedNotification.type === 'chat' ? 'Open Chat' : 'Take Action'}
                                     </button>
                                 )}
                             </div>

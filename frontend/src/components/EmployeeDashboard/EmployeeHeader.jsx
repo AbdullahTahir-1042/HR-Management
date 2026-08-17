@@ -28,6 +28,27 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
 
     const current = config[activeTab] || config.dashboard;
 
+    const handleNotificationNavigate = (tab, subParam) => {
+        const pathParts = location.pathname.split('/').filter(Boolean);
+        let basePath = '/employee';
+        
+        if (pathParts[0] === 'employee' && pathParts[1]) {
+            basePath = `/employee/${pathParts[1]}`;
+        } else if (pathParts[0] === 'hr') {
+            basePath = '/hr';
+        }
+        
+        if (tab === 'messages') {
+            navigate(`${basePath}/messages${subParam ? `?chat=${subParam}` : ''}`);
+        } else if (tab === 'hr-requests') {
+            navigate(`${basePath}/hr-requests`);
+        } else if (tab === 'leaves') {
+            navigate(`${basePath}/leaves`);
+        } else {
+            navigate(`${basePath}/${tab}`);
+        }
+    };
+
     return (
         <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 py-4 sticky top-0 z-40 flex items-center justify-between gap-4 transition-colors">
             <div className="flex items-center gap-3">
@@ -56,7 +77,7 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
             </div>
             
             <div className="flex items-center ml-2">
-                <NotificationsPanel onNavigate={onNotificationNavigate} />
+                <NotificationsPanel onNavigate={handleNotificationNavigate} />
             </div>
         </header>
     );
