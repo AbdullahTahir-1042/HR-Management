@@ -272,6 +272,21 @@ router.post('/chat', auth, async (req, res) => {
 
     } catch (error) {
         console.error('AI Chat Error:', error);
+        
+        // Push error message to DB so history doesn't get desynced
+        try {
+            const session = await ChatSession.findOne({ user: req.user.id });
+            if (session && session.messages.length > 0) {
+                const lastMsg = session.messages[session.messages.length - 1];
+                if (lastMsg.role === 'user') {
+                    session.messages.push({ role: 'model', parts: [{ text: "*(Error: Lost connection to AI brain right now. Please try again later!)*" }] });
+                    await session.save();
+                }
+            }
+        } catch (dbErr) {
+            console.error('DB error inside catch:', dbErr);
+        }
+
         if (!res.headersSent) {
             res.status(500).json({ error: 'Server Error' });
         } else {
