@@ -6,8 +6,8 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    let activeTab = location.pathname.split('/').pop();
-    if (activeTab === 'employee' || activeTab === '') activeTab = 'dashboard';
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    let activeTab = pathParts.length > 2 ? pathParts[2] : 'dashboard';
 
     const canGoBack = activeTab !== 'dashboard';
 
