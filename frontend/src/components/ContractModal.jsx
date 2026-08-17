@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Building2, Download, Loader2, PenTool } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
-import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
+import html2pdf from 'html2pdf.js';
 
 const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
     const documentRef = useRef();
@@ -15,46 +15,32 @@ const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
         setIsDownloading(true);
 
         try {
-            // Create a perfect clone of the document
-            const clone = documentRef.current.cloneNode(true);
-            
-            // Remove all dark mode classes from the clone so it forces light mode
-            const stripDarkClasses = (el) => {
-                const classesToRemove = [];
-                el.classList.forEach(cls => {
-                    if (cls.startsWith('dark:')) classesToRemove.push(cls);
-                });
-                classesToRemove.forEach(cls => el.classList.remove(cls));
-            };
-            
-            stripDarkClasses(clone);
-            clone.querySelectorAll('*').forEach(stripDarkClasses);
+            // Temporarily force light mode by removing dark class from HTML root
+            const htmlRoot = document.documentElement;
+            const isDark = htmlRoot.classList.contains('dark');
+            if (isDark) htmlRoot.classList.remove('dark');
 
-            // Append clone to a hidden container that still renders
-            const container = document.createElement('div');
-            container.style.position = 'fixed';
-            container.style.left = '0';
-            container.style.top = '0';
-            container.style.width = '100vw';
-            container.style.height = '100vh';
-            container.style.zIndex = '-9999';
-            container.style.opacity = '0'; // Invisible to user, but html2canvas can still process it usually if not display:none
-            container.style.pointerEvents = 'none';
-            container.appendChild(clone);
-            document.body.appendChild(container);
+            // Wait for DOM to update
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             const opt = {
                 margin: 10,
                 filename: `Employment_Contract_${employeeName?.replace(/\s+/g, '_') || 'Employee'}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true, 
+                    letterRendering: true,
+                    scrollY: 0,
+                    windowHeight: documentRef.current.scrollHeight + 100
+                },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            await html2pdf().set(opt).from(clone).save();
+            await html2pdf().set(opt).from(documentRef.current).save();
             
-            // Clean up
-            document.body.removeChild(container);
+            // Restore dark mode
+            if (isDark) htmlRoot.classList.add('dark');
         } catch (error) {
             console.error('PDF Generation failed:', error);
         } finally {
@@ -144,6 +130,22 @@ const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
                                         <span className="text-xl font-bold tracking-tighter text-slate-900 dark:text-white">TECH INNOVA</span>
                                     </div>
                                     <p className="text-xs italic text-slate-600 dark:text-slate-400">Official HR Documentation</p>
+                                </div>
+                            </div>
+
+                            {/* Contract Key Details Box */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-5 mb-8 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg">
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Start Date</p>
+                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">{getStartDate()}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">End Date</p>
+                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">{contractDetails?.endDate ? formatDate(contractDetails.endDate) : 'Not Specified / At-Will'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Contract Type</p>
+                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">{getContractType()}</p>
                                 </div>
                             </div>
 

@@ -444,7 +444,8 @@ const EmployeeDetailsPage = ({ employee: propEmployee, leaves = [], leaveTypes =
                                 <ProfileDetailItem label="Department" value={employee.department || 'Unassigned'} icon={Building2} />
                                 <ProfileDetailItem label="Designation" value={employee.role === 'hr' ? 'HR Specialist' : 'Software Engineer'} icon={Briefcase} />
                                 <ProfileDetailItem label="Employment Status" value={employee.status || 'Active'} icon={UserCheck} uppercase />
-                                <ProfileDetailItem label="Joining Status" value={employee.joiningStatus || 'Fresh Join'} icon={Calendar} />
+                                <ProfileDetailItem label="Joining Date" value={employee.createdAt ? new Date(employee.createdAt).toLocaleDateString('en-PK', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'} icon={Calendar} />
+                                <ProfileDetailItem label="Joining Status" value={employee.joiningStatus || 'Fresh Join'} icon={User} />
                                 <ProfileDetailItem label="Promotion Rank" value={employee.promotionRank || 'Junior'} icon={RankIcon} />
                             </div>
                         </div>

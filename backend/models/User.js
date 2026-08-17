@@ -96,7 +96,7 @@ const UserSchema = new mongoose.Schema({
     },
     contractDetails: {
         contractType: { type: String, default: 'Full-Time' },
-        startDate: { type: Date, default: null },
+        startDate: { type: Date, default: Date.now },
         endDate: { type: Date, default: null },
         summary: { type: String, default: 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.' }
     },
