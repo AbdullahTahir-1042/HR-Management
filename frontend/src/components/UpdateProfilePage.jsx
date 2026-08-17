@@ -35,7 +35,8 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
         const fetchUserData = async () => {
             try {
                 const res = await apiClient.get('/auth/user');
-                setFormData(prev => ({ ...prev, ...res.data }));
+                const { password, ...safeUserData } = res.data;
+                setFormData(prev => ({ ...prev, ...safeUserData }));
             } catch (err) {
                 console.error("Error fetching user data", err);
             }
@@ -71,6 +72,13 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        const digitCount = (formData.phone || '').replace(/[^0-9]/g, '').length;
+        if (digitCount < 11) {
+            toast.error('Phone number must be at least 11 digits long.');
+            return;
+        }
+
         setLoading(true);
         try {
             // Use the generic user update route
@@ -193,7 +201,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Update Password (Optional)</label>
                                 <div className="relative group">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                                    <input type={showPassword ? "text" : "password"} placeholder="Leave empty to keep current" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-indigo-500 transition-all text-sm text-slate-800 dark:text-slate-200" />
+                                    <input type={showPassword ? "text" : "password"} placeholder="Enter new password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-indigo-500 transition-all text-sm text-slate-800 dark:text-slate-200" />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
