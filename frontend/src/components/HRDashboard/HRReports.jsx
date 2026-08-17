@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     BarChart2, Users, Clock, AlertCircle, Filter, Calendar, 
-    DollarSign, ClipboardList, Download, CheckCircle, XCircle, 
+    DollarSign, ClipboardList, Upload, CheckCircle, XCircle, 
     AlertTriangle, Building2, UserCheck, Search, Briefcase, FileText,
     Banknote, Wallet, ChevronRight, TrendingUp, ChevronDown, Check
 } from 'lucide-react';
@@ -980,7 +980,7 @@ const HRReports = ({ employees, loans = [] }) => {
                             disabled={loading}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-xl text-xs transition-all shadow-md shadow-indigo-100 flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
                         >
-                            <Download size={14} /> Export PDF
+                            <Upload size={14} /> Export PDF
                         </button>
                     </div>
                 </div>
@@ -1190,7 +1190,7 @@ const HRReports = ({ employees, loans = [] }) => {
                                             onClick={exportAttendanceCSV}
                                             className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                                         >
-                                            <Download size={14} className="text-indigo-600" /> Export CSV
+                                            <Upload size={14} className="text-indigo-600" /> Export CSV
                                         </button>
                                     </div>
                                 </div>

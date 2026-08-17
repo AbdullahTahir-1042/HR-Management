@@ -246,7 +246,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl py-3.5 text-sm font-bold uppercase tracking-wider transition-all disabled:opacity-70"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl py-3.5 text-sm font-bold uppercase tracking-wider transition-all disabled:opacity-70"
                                 >
                                     {loading ? 'Resetting...' : 'Reset Password'}
                                 </button>
