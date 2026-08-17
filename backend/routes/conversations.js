@@ -11,7 +11,7 @@ const { messaging } = require('../config/firebaseAdmin');
 
 const TYPING_TTL_MS = 6000;
 const MAX_MESSAGE_LENGTH = 4000;
-const DEFAULT_PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 15;
 
 const isParticipant = (conversation, userId) =>
     conversation.participants.some(p => String(p._id || p) === String(userId));

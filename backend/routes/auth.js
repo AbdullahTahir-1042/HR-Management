@@ -329,7 +329,7 @@ router.get('/colleagues', auth, async (req, res) => {
 // @desc    Update user details (Self or HR)
 // @access  Private
 router.put('/users/:id', auth, async (req, res) => {
-    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, isTeamLead, promotionRank, joiningStatus, notificationPreferences, shiftDetails } = req.body;
+    let { name, email, role, status, salary, photo, department, reportingTo, phone, password, currentPassword, isTeamLead, promotionRank, joiningStatus, notificationPreferences, shiftDetails } = req.body;
     if (email) email = email.toLowerCase();
 
     try {
@@ -349,6 +349,16 @@ router.put('/users/:id', auth, async (req, res) => {
         if (photo !== undefined) user.photo = photo;
         if (phone !== undefined) user.phone = phone;
         if (password) {
+            // When employee changes their own password, verify current password first
+            if (isSelf) {
+                if (!currentPassword) {
+                    return res.status(400).json({ msg: 'Current password is required to set a new password.' });
+                }
+                const isMatch = await bcrypt.compare(currentPassword, user.password);
+                if (!isMatch) {
+                    return res.status(400).json({ msg: 'Current password is incorrect.' });
+                }
+            }
             user.password = password.trim();
             if (isHRUser && !isSelf) {
                 user.isFirstLogin = true; // Force employee to change temporary password

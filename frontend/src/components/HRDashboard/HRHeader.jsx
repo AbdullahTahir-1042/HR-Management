@@ -56,7 +56,8 @@ const HRHeader = ({
         'hr-requests': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'HR Requests' },
         'announcements': { icon: <Bell size={24} className="text-indigo-600" />, title: 'Announcements' },
         'mistake-reports': { icon: <AlertTriangle size={24} className="text-indigo-600" />, title: 'Mistake Reports' },
-        'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' }
+        'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' },
+        'edit-profile': { icon: <User size={24} className="text-indigo-600" />, title: 'Edit Profile' }
     };
 
     let currentMeta = tabMeta[activeTab] || { icon: null, title: '' };
