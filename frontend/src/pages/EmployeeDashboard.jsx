@@ -790,7 +790,7 @@ const EmployeeDashboard = () => {
             <FirstLoginModal isOpen={authUser?.isFirstLogin === true || fullUser?.isFirstLogin === true} />
 
             {/* AI Assistant Widget */}
-            {/* <VirtualHRAssistant user={fullUser || authUser} /> */}
+            <VirtualHRAssistant user={fullUser || authUser} />
         </div>
     );
 };
