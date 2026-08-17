@@ -266,7 +266,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                         className="table-row"
                                         onClick={() => setSelectedLeave(leave)}
                                     >
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 py-4">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-slate-800">{emp.name || leave.employee?.name || 'Employee'}</span>
                                                 <span className="text-xs text-slate-400">{emp.email || leave.employee?.email || ''}</span>
@@ -288,7 +288,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                                 </div>
                                             </div>
                                         </td>
-                                    <td className="px-8 py-6 text-slate-600 text-sm">
+                                    <td className="px-4 py-4 text-slate-600 text-sm">
                                         <DurationCell
                                             leave={leave}
                                             isHovered={hoveredLeaveId === leave._id}
@@ -296,17 +296,17 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                             onHoverEnd={() => setHoveredLeaveId(null)}
                                         />
                                     </td>
-                                    <td className="px-8 py-6 text-center">
+                                    <td className="px-4 py-4 text-center">
                                         <span className="inline-flex items-center justify-center bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-3 py-1 rounded-xl text-xs font-black shadow-2xs">
                                             {calculateDays(leave.startDate, leave.endDate)} {calculateDays(leave.startDate, leave.endDate) === 1 ? 'Day' : 'Days'}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6">
+                                    <td className="px-4 py-4">
                                         <span className="text-slate-600 text-sm bg-slate-50 px-3 py-1 rounded-lg border border-slate-100 group-hover:border-indigo-200 transition-colors">
                                             {truncateReason(leave.reason)}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6">
+                                    <td className="px-4 py-4">
                                         <span className={`
                                             px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
                                             ${(leave.status === 'pending' || leave.status === 'pending_hr') ? 'bg-amber-100 text-amber-700' : ''}
@@ -320,7 +320,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                              leave.status}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
+                                    <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex gap-2 justify-end items-center">
                                             {(leave.status === 'pending' || leave.status === 'pending_hr') ? (
                                                 <>
