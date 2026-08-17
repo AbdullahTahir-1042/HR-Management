@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Trash2, CalendarCheck, Megaphone, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import apiClient from '../api/axiosClient';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, formatTime } from '../utils/dateUtils';
 
 
 const ICONS = {
@@ -162,6 +162,11 @@ const NotificationsPanel = ({ onNavigate }) => {
                                                 <p className={`text-xs ${!notif.isRead ? 'text-slate-600 dark:text-slate-300 font-medium' : 'text-slate-500 dark:text-slate-500'} line-clamp-2 leading-relaxed`}>
                                                     {notif.message}
                                                 </p>
+                                                <div className="mt-1.5 text-right">
+                                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                        {formatTime(notif.createdAt)}
+                                                    </span>
+                                                </div>
                                             </div>
                                             {!notif.isRead && (
                                                 <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0"></div>

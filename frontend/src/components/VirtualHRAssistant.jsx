@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../api/axiosClient';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const VirtualHRAssistant = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -10,58 +12,111 @@ const VirtualHRAssistant = ({ user }) => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [quota, setQuota] = useState(20); // Track API quota
     const messagesEndRef = useRef(null);
+
+    const suggestedActions = ["🏖️ Apply for Leave", "🗓️ Check my attendance", "🎉 Upcoming Holidays"];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const res = await apiClient.get('/ai/chat/history');
+                if (res.data && res.data.history && res.data.history.length > 0) {
+                    setMessages(res.data.history);
+                }
+            } catch (err) {
+                console.error("Could not fetch chat history", err);
+            }
+        };
+        fetchHistory();
+    }, []);
+
+    useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
 
-    const handleSend = async (e) => {
-        e?.preventDefault();
-        if (!input.trim() || isLoading) return;
+    const handleSend = async (e, directMessage = null) => {
+        if (e) e.preventDefault();
+        
+        const messageToSend = directMessage || input.trim();
+        if (!messageToSend || isLoading) return;
 
-        const userMessage = input.trim();
         setInput('');
         
-        // Add user message to UI
-        const newMessages = [...messages, { role: 'user', parts: userMessage }];
-        setMessages(newMessages);
+        // Add user message to UI immediately
+        setMessages(prev => [...prev, { role: 'user', parts: messageToSend }]);
         setIsLoading(true);
 
         try {
-            // Gemini expects 'user' and 'model' roles, and MUST start with 'user'.
-            let history = newMessages.slice(0, -1).map(msg => ({
-                role: msg.role,
-                parts: msg.parts
-            }));
-
-            // Remove the initial AI greeting from history if it exists at the start
-            if (history.length > 0 && history[0].role === 'model') {
-                history.shift();
-            }
-
-            const res = await apiClient.post('/ai/chat', {
-                message: userMessage,
-                history: history
+            const token = sessionStorage.getItem('token') || sessionStorage.getItem('x-auth-token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            
+            const res = await fetch(`${apiUrl}/ai/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token
+                },
+                body: JSON.stringify({ message: messageToSend })
             });
 
-            if (res.data.quotaRemaining !== undefined) {
-                setQuota(res.data.quotaRemaining);
+            if (!res.ok) {
+                throw new Error("API Error");
             }
 
-            setMessages(prev => [...prev, { role: 'model', parts: res.data.parts }]);
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            
+            let isFirstChunk = true;
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                
+                const chunkString = decoder.decode(value, { stream: true });
+                const lines = chunkString.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.replace('data: ', '').trim();
+                        if (dataStr === '[DONE]') break;
+                        if (dataStr) {
+                            try {
+                                const parsed = JSON.parse(dataStr);
+                                if (parsed.text) {
+                                    if (isFirstChunk) {
+                                        setIsLoading(false);
+                                        setMessages(prev => [...prev, { role: 'model', parts: parsed.text }]);
+                                        isFirstChunk = false;
+                                    } else {
+                                        setMessages(prev => {
+                                            const newMsgs = [...prev];
+                                            const lastIdx = newMsgs.length - 1;
+                                            newMsgs[lastIdx] = {
+                                                ...newMsgs[lastIdx],
+                                                parts: newMsgs[lastIdx].parts + parsed.text
+                                            };
+                                            return newMsgs;
+                                        });
+                                    }
+                                }
+                            } catch (e) {
+                                console.error("Parse error", e);
+                            }
+                        }
+                    }
+                }
+            }
+
         } catch (error) {
             console.error('AI Chat Error:', error);
             setMessages(prev => [...prev, { 
                 role: 'model', 
-                parts: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again later or contact HR directly!" 
+                parts: "I'm having trouble connecting to my brain right now. Please try again later!" 
             }]);
-        } finally {
             setIsLoading(false);
         }
     };
@@ -75,11 +130,11 @@ const VirtualHRAssistant = ({ user }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
-                        style={{ height: '500px', maxHeight: '80vh' }}
+                        className="absolute bottom-16 right-0 w-80 sm:w-[450px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
+                        style={{ height: '600px', maxHeight: '85vh' }}
                     >
                         {/* Header */}
-                        <div className="p-4 bg-indigo-600 flex items-center justify-between rounded-t-2xl shadow-sm z-10 relative">
+                        <div className="p-4 bg-indigo-600 flex items-center justify-between shadow-sm z-10 relative">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                                     <Sparkles size={18} className="text-white" />
@@ -108,18 +163,20 @@ const VirtualHRAssistant = ({ user }) => {
                                         {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                                     </div>
                                     <div 
-                                        className={`p-3 rounded-2xl text-sm ${
+                                        className={`p-3 rounded-2xl text-sm prose prose-sm dark:prose-invert ${
                                             msg.role === 'user' 
                                                 ? 'bg-indigo-600 text-white rounded-tr-sm' 
                                                 : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-tl-sm shadow-sm'
                                         }`}
-                                        dangerouslySetInnerHTML={{ 
-                                            __html: msg.parts
-                                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                                .replace(/\n/g, '<br/>') 
-                                        }}
-                                    />
+                                    >
+                                        {msg.role === 'user' ? (
+                                            msg.parts
+                                        ) : (
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {msg.parts}
+                                            </ReactMarkdown>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                             {isLoading && (
@@ -137,24 +194,38 @@ const VirtualHRAssistant = ({ user }) => {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input Area */}
-                        <form onSubmit={handleSend} className="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Ask about leaves, policies..."
-                                className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all dark:text-white"
-                                disabled={isLoading}
-                            />
-                            <button
-                                type="submit"
-                                disabled={!input.trim() || isLoading}
-                                className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <Send size={18} />
-                            </button>
-                        </form>
+                        {/* Suggested Actions & Input */}
+                        <div className="bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex flex-col">
+                            <div className="flex gap-2 overflow-x-auto p-3 no-scrollbar border-b border-slate-50 dark:border-slate-700/50">
+                                {suggestedActions.map((action, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleSend(null, action.replace(/^[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim())}
+                                        disabled={isLoading}
+                                        className="whitespace-nowrap px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 rounded-full transition-colors"
+                                    >
+                                        {action}
+                                    </button>
+                                ))}
+                            </div>
+                            <form onSubmit={handleSend} className="p-3 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Ask about leaves, policies..."
+                                    className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all dark:text-white"
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || isLoading}
+                                    className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <Send size={18} />
+                                </button>
+                            </form>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -169,11 +240,6 @@ const VirtualHRAssistant = ({ user }) => {
                 }`}
             >
                 {isOpen ? <X size={24} /> : <Sparkles size={24} />}
-                {!isOpen && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white rounded-full flex items-center justify-center">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    </span>
-                )}
             </motion.button>
         </div>
     );

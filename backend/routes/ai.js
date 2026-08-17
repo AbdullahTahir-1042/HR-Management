@@ -8,24 +8,29 @@ const LeaveType = require('../models/LeaveType');
 const Holiday = require('../models/Holiday');
 const Announcement = require('../models/Announcements');
 const HRRequest = require('../models/HRRequest');
+const ChatSession = require('../models/ChatSession');
 const generateHRAssistantPrompt = require('../prompts/hrAssistantPrompt');
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 
-// Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MISSING_API_KEY');
 
-// In-memory rate limit tracker (Increased for premium API access)
-let requestTimestamps = [];
-const FREE_TIER_LIMIT = 1000;
+// In-memory per-user rate limit tracker
+const userRateLimits = new Map();
+const FREE_TIER_LIMIT = 100;
 
-function updateAndGetQuota() {
+function updateAndGetQuota(userId) {
     const now = Date.now();
-    requestTimestamps.push(now);
-    requestTimestamps = requestTimestamps.filter(t => now - t < 60000);
-    return Math.max(0, FREE_TIER_LIMIT - requestTimestamps.length);
+    let timestamps = userRateLimits.get(userId) || [];
+    timestamps.push(now);
+    timestamps = timestamps.filter(t => now - t < 60000);
+    userRateLimits.set(userId, timestamps);
+    return Math.max(0, FREE_TIER_LIMIT - timestamps.length);
 }
 
-// Define tools for the AI
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const tools = [
   {
     functionDeclarations: [
@@ -35,57 +40,40 @@ const tools = [
         parameters: {
           type: SchemaType.OBJECT,
           properties: {
-            leaveTypeName: {
-              type: SchemaType.STRING,
-              description: "The type of leave (e.g. 'Sick Leave', 'Annual Leave', 'Casual Leave'). Try to match existing company leave types."
-            },
-            startDate: {
-              type: SchemaType.STRING,
-              description: "The start date of the leave in YYYY-MM-DD format."
-            },
-            endDate: {
-              type: SchemaType.STRING,
-              description: "The end date of the leave in YYYY-MM-DD format."
-            },
-            reason: {
-              type: SchemaType.STRING,
-              description: "A short reason for the leave."
-            }
+            leaveTypeName: { type: SchemaType.STRING, description: "The type of leave (e.g. 'Sick Leave')." },
+            startDate: { type: SchemaType.STRING, description: "Start date in YYYY-MM-DD" },
+            endDate: { type: SchemaType.STRING, description: "End date in YYYY-MM-DD" },
+            reason: { type: SchemaType.STRING, description: "A short reason." }
           },
           required: ["leaveTypeName", "startDate", "endDate", "reason"]
         }
       },
       {
         name: "get_company_attendance_today",
-        description: "Get a list of all employees who are currently checked in, late, or present today. Use this when the user asks who is present or wants a real-time attendance report.",
+        description: "Get a list of all employees who are currently checked in, late, or present today.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
       },
       {
         name: "get_my_attendance_report",
-        description: "Get the attendance history for the currently logged-in user. Use this when the user asks about their own attendance, check-ins, or lates.",
+        description: "Get the attendance history for the currently logged-in user.",
         parameters: { 
           type: SchemaType.OBJECT, 
-          properties: {
-            days: {
-              type: SchemaType.INTEGER,
-              description: "The number of past days to retrieve (default is 7 if not specified)."
-            }
-          }
+          properties: { days: { type: SchemaType.INTEGER, description: "Past days to retrieve (default 7)." } }
         }
       },
       {
         name: "get_employee_directory",
-        description: "Get the company staff directory, including names, emails, departments, and roles of all employees. Use this to find contact information or check who works in what department.",
+        description: "Get the company staff directory, including names, emails, departments, and roles.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
       },
       {
         name: "get_pending_leave_requests",
-        description: "Get a list of all pending leave requests that need HR approval. Use this when an HR admin asks about pending leaves or leaves that need their attention.",
+        description: "Get a list of all pending leave requests that need HR approval.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
       },
       {
         name: "get_pending_hr_requests",
-        description: "Get a list of all open or pending HR requests (like complaints, inquiries, feedback) submitted by employees.",
+        description: "Get a list of all open or pending HR requests.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
       },
       {
@@ -97,21 +85,50 @@ const tools = [
   }
 ];
 
+// Load History Endpoint
+router.get('/chat/history', auth, async (req, res) => {
+    try {
+        const session = await ChatSession.findOne({ user: req.user.id });
+        if (!session) {
+            return res.json({ history: [] });
+        }
+        // Filter out function calls for the frontend UI, only show user/model text
+        const uiHistory = session.messages.filter(msg => 
+            msg.parts && msg.parts[0] && typeof msg.parts[0].text === 'string'
+        ).map(msg => ({
+            role: msg.role,
+            parts: msg.parts[0].text
+        }));
+        res.json({ history: uiHistory });
+    } catch (err) {
+        console.error('History fetch error:', err);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
+// Chat SSE Endpoint
 router.post('/chat', auth, async (req, res) => {
     try {
-        const { message, history = [] } = req.body;
-
-        if (!message) {
-            return res.status(400).json({ msg: 'Message is required' });
+        const { message } = req.body;
+        if (!message || typeof message !== 'string') {
+            return res.status(400).json({ msg: 'Message is required and must be a string' });
+        }
+        if (message.length > 2000) {
+            return res.status(400).json({ msg: 'Message exceeds the maximum limit of 2000 characters' });
         }
 
-        // Fetch basic context about the user
+        let currentQuota = updateAndGetQuota(req.user.id);
+        if (currentQuota <= 0) {
+            return res.status(429).json({ msg: "Too many requests. Please wait a minute." });
+        }
+
+        // Setup SSE Headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // Context Fetching
         const user = await User.findById(req.user.id).select('-password');
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
-        }
-
-        // Initialize model with role-restricted tools
         const isUserHR = user.role === 'hr';
         const allowedFunctionNames = isUserHR 
             ? ["apply_leave", "get_company_attendance_today", "get_employee_directory", "get_pending_leave_requests", "get_pending_hr_requests", "get_company_holidays", "get_my_attendance_report"]
@@ -121,300 +138,162 @@ router.post('/chat', auth, async (req, res) => {
             functionDeclarations: tools[0].functionDeclarations.filter(t => allowedFunctionNames.includes(t.name))
         }];
 
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-flash-latest",
-            tools: userTools
-        });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", tools: userTools });
 
-        // Fetch additional context
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
-        // 1. Today's attendance
-        const todayAttendance = await Attendance.findOne({
-            employee: req.user.id,
-            date: today
-        });
+        const todayAttendance = await Attendance.findOne({ employee: req.user.id, date: today });
+        const upcomingHolidays = await Holiday.find({ date: { $gte: today } }).sort({ date: 1 }).limit(2);
+        const latestAnnouncements = await Announcement.find().sort({ date: -1 }).limit(2);
 
-        // 2. Upcoming holidays (next 2)
-        const upcomingHolidays = await Holiday.find({ date: { $gte: today } })
-            .sort({ date: 1 })
-            .limit(2);
-            
-        // 3. Latest announcements
-        const latestAnnouncements = await Announcement.find()
-            .sort({ date: -1 })
-            .limit(2);
-
-        // 4. Real Leave Balances
         const leaveTypes = await LeaveType.find();
-        let leaveBalanceString = "";
-        for (const lt of leaveTypes) {
-            // Calculate total approved days used by this employee for this leave type
-            const usedLeaves = await LeaveRequest.aggregate([
-                { $match: { employee: user._id, leaveType: lt._id, status: 'approved' } },
-                { $project: { days: { $add: [{ $divide: [{ $subtract: ["$endDate", "$startDate"] }, 1000 * 60 * 60 * 24] }, 1] } } },
-                { $group: { _id: null, totalDays: { $sum: "$days" } } }
-            ]);
-            const used = usedLeaves.length > 0 ? usedLeaves[0].totalDays : 0;
-            leaveBalanceString += `- ${lt.name}: ${used} days used out of ${lt.quota} total quota\n`;
-        }
+        const usedLeaves = await LeaveRequest.aggregate([
+            { $match: { employee: user._id, status: 'approved' } },
+            { $project: { leaveType: 1, days: { $add: [{ $divide: [{ $subtract: ["$endDate", "$startDate"] }, 1000 * 60 * 60 * 24] }, 1] } } },
+            { $group: { _id: "$leaveType", totalDays: { $sum: "$days" } } }
+        ]);
+        const usedLeavesMap = usedLeaves.reduce((acc, curr) => { acc[curr._id.toString()] = curr.totalDays; return acc; }, {});
+        let leaveBalanceString = leaveTypes.map(lt => `- ${lt.name}: ${usedLeavesMap[lt._id.toString()] || 0} days used out of ${lt.quota} total quota`).join('\n');
 
-        const roleInstructions = isUserHR 
-            ? "As the user is an HR Admin, you can also READ live company data. If they ask who is present, fetch the attendance. If they ask about employees, fetch the directory. If they ask about pending leaves or HR requests, fetch the pending leave/HR requests. You can also fetch the full holiday calendar." 
-            : "As the user is an Employee, you ONLY have access to their personal info and public company holidays (you can fetch the full holiday calendar). You DO NOT have access to the company directory, general attendance records, or other employees' data. If they ask for this, politely decline and explain your access limits. If they ask for their OWN attendance history, use the get_my_attendance_report tool.";
-
-        // Generate dynamic PKT time strings
-        const now = new Date();
-        const pktFormatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'Asia/Karachi',
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZoneName: 'short'
-        });
-        const currentDatetimePkt = pktFormatter.format(now).replace('GMT+5', 'PKT');
-        
-        const pktDateFormatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'Asia/Karachi',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-        const currentDatePkt = pktDateFormatter.format(now);
-
-        // Build a dynamic system prompt with user context
+        const pktFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Karachi', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+        const currentDatetimePkt = pktFormatter.format(now = new Date()).replace('GMT+5', 'PKT');
         const userRoleFormatted = isUserHR ? 'HR_ADMIN' : user.isTeamLead ? 'MANAGER' : 'EMPLOYEE';
         
         const systemInstruction = generateHRAssistantPrompt({
-            user,
-            userRoleFormatted,
-            currentDatetimePkt,
-            todayAttendance,
-            leaveBalanceString,
-            upcomingHolidays,
-            latestAnnouncements
+            user, userRoleFormatted, currentDatetimePkt, todayAttendance, leaveBalanceString, upcomingHolidays, latestAnnouncements
         });
 
-        // Start chat session with history
+        // Chat Session DB
+        let chatSession = await ChatSession.findOne({ user: req.user.id });
+        if (!chatSession) chatSession = new ChatSession({ user: req.user.id, messages: [] });
+
+        // Build native history array for Gemini SDK
+        const nativeHistory = chatSession.messages.map(msg => ({
+            role: msg.role,
+            parts: msg.parts
+        }));
+
         const chat = model.startChat({
-            history: history.map(msg => ({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.parts }]
-            })),
+            history: nativeHistory,
             systemInstruction: { parts: [{ text: systemInstruction }] }
         });
 
-        // Send initial message
-        let currentQuota = updateAndGetQuota();
-        let result = await chat.sendMessage(message);
+        // Push User Message
+        chatSession.messages.push({ role: 'user', parts: [{ text: message }] });
+        await chatSession.save();
+
+        let streamResult = await chat.sendMessageStream(message);
         
-        // Check if the AI wants to call a function
-        const functionCalls = result.response.functionCalls();
-        if (functionCalls && functionCalls.length > 0) {
-            const call = functionCalls[0];
-            
-            // Strict security check to prevent hallucinated calls to restricted tools
-            if (!allowedFunctionNames.includes(call.name)) {
-                return res.json({
-                    role: 'model',
-                    parts: `I'm sorry, but I don't have access to the \`${call.name}\` tool based on your current permissions.`,
-                    quotaRemaining: currentQuota
-                });
+        let fullResponse = "";
+        let functionCallToExecute = null;
+
+        for await (const chunk of streamResult.stream) {
+            const calls = chunk.functionCalls();
+            if (calls && calls.length > 0) {
+                functionCallToExecute = calls[0];
+                break; // Stop streaming text, a tool needs to run
             }
+            const chunkText = chunk.text();
+            fullResponse += chunkText;
+            res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+        }
+
+        if (functionCallToExecute) {
+            const call = functionCallToExecute;
+            chatSession.messages.push({ role: 'model', parts: [{ functionCall: call }] });
+            await chatSession.save();
             
-            if (call.name === 'apply_leave') {
+            let responseText = "Success";
+            let responseObj = { data: "Success" };
+
+            if (!allowedFunctionNames.includes(call.name)) {
+                responseObj = { error: "Permission Denied" };
+            } else if (call.name === 'apply_leave') {
                 const { leaveTypeName, startDate, endDate, reason } = call.args;
-                
-                // Try to find the matching leave type in DB
-                const leaveTypeMatch = await LeaveType.findOne({ 
-                    name: { $regex: new RegExp(leaveTypeName, "i") } 
-                });
-
+                const leaveTypeMatch = await LeaveType.findOne({ name: { $regex: new RegExp(escapeRegex(leaveTypeName), "i") } });
                 if (!leaveTypeMatch) {
-                    // Send failure back to AI using a brand new request
-                    const newContents = [
-                        ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                        { role: 'user', parts: [{ text: message }] },
-                        { role: 'model', parts: [{ text: 'Processing...' }] },
-                        { role: 'user', parts: [{ text: `SYSTEM LOG: The function apply_leave failed because leave type '${leaveTypeName}' was not found. Please tell the user.` }] }
-                    ];
-                    currentQuota = updateAndGetQuota();
-                    result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                    responseObj = { error: `Leave type not found` };
                 } else {
-                    // Create the leave request
-                    const newLeave = new LeaveRequest({
-                        employee: req.user.id,
-                        startDate: new Date(startDate),
-                        endDate: new Date(endDate),
-                        reason: reason,
-                        leaveType: leaveTypeMatch._id,
-                        status: 'pending_hr'
-                    });
-                    
+                    const newLeave = new LeaveRequest({ employee: req.user.id, startDate, endDate, reason, leaveType: leaveTypeMatch._id, status: 'pending_hr' });
                     await newLeave.save();
-                    
-                    // Broadcast event so frontend auto-refreshes leave balances/lists (using exact same logic as your other controllers)
-                    if (global.io) {
-                         global.io.emit('leaveRequestCreated', newLeave);
-                    }
-
-                    // Send success back to AI using a brand new request to bypass SDK history role issues
-                    const newContents = [
-                        ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                        { role: 'user', parts: [{ text: message }] },
-                        { role: 'model', parts: [{ text: 'Applying leave...' }] },
-                        { role: 'user', parts: [{ text: `SYSTEM LOG: The leave request was successfully saved in the database with ID ${newLeave._id}. Please inform the user that their leave was submitted successfully.` }] }
-                    ];
-                    
-                    try {
-                        currentQuota = updateAndGetQuota();
-                        result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
-                    } catch (aiError) {
-                        console.error('Rate limit hit on second call:', aiError);
-                        // Fallback response if rate limit blocks the second call
-                        return res.json({
-                            role: 'model',
-                            parts: `Your **${leaveTypeMatch.name}** request from **${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}** for *"${reason}"* has been submitted successfully! 🎉\n\n*(Note: I am currently experiencing API rate limits, so I generated this automated fallback message, but rest assured your leave is safely in the database!)*`,
-                            quotaRemaining: 0
-                        });
-                    }
+                    if (global.io) global.io.emit('leaveRequestCreated', newLeave);
+                    responseObj = { success: true, leaveId: newLeave._id, status: 'pending_hr' };
                 }
             } else if (call.name === 'get_company_attendance_today') {
-                const today = new Date().toISOString().split('T')[0];
-                const todaysAttendance = await Attendance.find({ date: today }).populate('employee', 'name department');
+                const todayStr = new Date().toISOString().split('T')[0];
+                const todaysAttendance = await Attendance.find({ date: todayStr }).populate('employee', 'name department');
                 const presentEmployees = todaysAttendance.filter(a => a.status === 'present' || a.status === 'late');
-                
-                const responseText = presentEmployees.length > 0 
-                    ? presentEmployees.map(a => `- ${a.employee?.name || 'Unknown'} (${a.employee?.department || 'General'}) - Status: ${a.status} - In: ${new Date(a.checkIn).toLocaleTimeString()}`).join('\n')
-                    : 'No employees have checked in today yet.';
-                
-                const newContents = [
-                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                    { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching attendance data...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_attendance_today returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
-                ];
-                currentQuota = updateAndGetQuota();
-                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                responseText = presentEmployees.length > 0 ? presentEmployees.map(a => `- ${a.employee?.name || 'Unknown'} (${a.employee?.department || 'General'}) - Status: ${a.status} - In: ${new Date(a.checkIn).toLocaleTimeString()}`).join('\n') : 'No employees checked in.';
+                responseObj = { data: responseText };
             } else if (call.name === 'get_my_attendance_report') {
                 const days = call.args.days || 7;
-                
-                const pastDate = new Date();
-                pastDate.setDate(pastDate.getDate() - days);
-                const pastDateStr = pastDate.toISOString().split('T')[0];
-                
-                const myAttendance = await Attendance.find({ 
-                    employee: req.user.id,
-                    date: { $gte: pastDateStr }
-                }).sort({ date: -1 });
-                
-                const responseText = myAttendance.length > 0
-                    ? myAttendance.map(a => `- Date: ${a.date} | Status: ${a.status} | In: ${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : 'N/A'} | Out: ${a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : 'N/A'}`).join('\n')
-                    : `No attendance records found for the past ${days} days.`;
-                
-                const newContents = [
-                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                    { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching your attendance history...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_my_attendance_report returned the following data for the past ${days} days:\n${responseText}\n\nPlease summarize this for the user.` }] }
-                ];
-                currentQuota = updateAndGetQuota();
-                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                const pastDateStr = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                const myAttendance = await Attendance.find({ employee: req.user.id, date: { $gte: pastDateStr } }).sort({ date: -1 });
+                responseText = myAttendance.length > 0 ? myAttendance.map(a => `- Date: ${a.date} | Status: ${a.status} | In: ${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : 'N/A'}`).join('\n') : 'No records.';
+                responseObj = { data: responseText };
             } else if (call.name === 'get_employee_directory') {
-                const employees = await User.find({ status: { $ne: 'Inactive' } }).select('name email department role');
-                const responseText = employees.length > 0
-                    ? employees.map(e => `- ${e.name} (${e.department || 'General'}) - ${e.email}`).join('\n')
-                    : 'No active employees found.';
-                
-                const newContents = [
-                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                    { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching employee directory...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_employee_directory returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
-                ];
-                currentQuota = updateAndGetQuota();
-                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                const employees = await User.find({ status: { $ne: 'Inactive' } }).select('name email department role promotionRank status contractDetails joiningStatus salary');
+                responseText = employees.length > 0 ? employees.map(e => `- ${e.name} (${e.department || 'General'}) | Email: ${e.email} | Rank: ${e.promotionRank} | Status: ${e.status} | Joined: ${e.contractDetails?.startDate ? new Date(e.contractDetails.startDate).toISOString().split('T')[0] : 'Not specified'}`).join('\n') : 'No employees.';
+                responseObj = { data: responseText };
             } else if (call.name === 'get_pending_leave_requests') {
                 const pendingLeaves = await LeaveRequest.find({ status: 'pending_hr' }).populate('employee', 'name').populate('leaveType', 'name');
-                const responseText = pendingLeaves.length > 0
-                    ? pendingLeaves.map(l => `- ${l.employee?.name || 'Unknown'} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()} to ${new Date(l.endDate).toLocaleDateString()}. Reason: ${l.reason}`).join('\n')
-                    : 'There are currently no pending leave requests that need HR approval.';
-                
-                const newContents = [
-                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                    { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching pending leave requests...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_pending_leave_requests returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
-                ];
-                currentQuota = updateAndGetQuota();
-                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                responseText = pendingLeaves.length > 0 ? pendingLeaves.map(l => `- ${l.employee?.name || 'Unknown'} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()}`).join('\n') : 'No pending requests.';
+                responseObj = { data: responseText };
             } else if (call.name === 'get_pending_hr_requests') {
                 const pendingRequests = await HRRequest.find({ status: { $in: ['Open', 'In Progress'] } }).populate('employee', 'name');
-                const responseText = pendingRequests.length > 0
-                    ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.subject}" (Status: ${r.status})`).join('\n')
-                    : 'There are currently no open HR requests.';
-                
-                const newContents = [
-                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                    { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching HR requests...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_pending_hr_requests returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
-                ];
-                currentQuota = updateAndGetQuota();
-                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                responseText = pendingRequests.length > 0 ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.subject}"`).join('\n') : 'No open HR requests.';
+                responseObj = { data: responseText };
             } else if (call.name === 'get_company_holidays') {
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const holidays = await Holiday.find({ date: { $gte: today } }).sort({ date: 1 });
-                const responseText = holidays.length > 0
-                    ? holidays.map(h => `- ${h.name} on ${new Date(h.date).toLocaleDateString()}`).join('\n')
-                    : 'There are no upcoming holidays found.';
-                
-                const newContents = [
-                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                    { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching holidays...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_holidays returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
-                ];
-                currentQuota = updateAndGetQuota();
-                result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
+                const todayZero = new Date(); todayZero.setHours(0,0,0,0);
+                const holidays = await Holiday.find({ date: { $gte: todayZero } }).sort({ date: 1 });
+                responseText = holidays.length > 0 ? holidays.map(h => `- ${h.name} on ${new Date(h.date).toLocaleDateString()}`).join('\n') : 'No upcoming holidays.';
+                responseObj = { data: responseText };
+            }
+
+            const funcRespPart = { functionResponse: { name: call.name, response: responseObj } };
+            chatSession.messages.push({ role: 'function', parts: [funcRespPart] });
+            await chatSession.save();
+
+            // Send tool response to model and stream the result
+            const followupStream = await chat.sendMessageStream([funcRespPart]);
+            for await (const chunk of followupStream.stream) {
+                const chunkText = chunk.text();
+                fullResponse += chunkText;
+                res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
             }
         }
 
-        const responseText = result.response.text();
+        // Save final model response
+        chatSession.messages.push({ role: 'model', parts: [{ text: fullResponse }] });
+        await chatSession.save();
 
-        res.json({
-            role: 'model',
-            parts: responseText,
-            quotaRemaining: currentQuota
-        });
+        res.write(`data: [DONE]\n\n`);
+        res.end();
 
     } catch (error) {
         console.error('AI Chat Error:', error);
         
-        // Handle Google API Rate Limits (429) explicitly so the user knows what's happening
-        if (error.status === 429 || error.message.includes('429') || error.message.includes('Quota exceeded')) {
-            return res.json({
-                role: 'model',
-                parts: "I'm currently experiencing a high volume of requests and have temporarily hit my Google API rate limit! Please give me about a minute to catch my breath and try again. 😅",
-                quotaRemaining: 0
-            });
-        }
-        
-        // Handle Invalid API Key (401)
-        if (error.status === 401 || error.message.includes('401') || error.message.includes('API_KEY_INVALID')) {
-            return res.json({
-                role: 'model',
-                parts: "⚠️ **API Key Error:** Google's servers rejected the API key! \n\nThis usually means:\n1. Your new key has a typo in the `.env` file (like an extra space).\n2. The key hasn't fully activated yet (it can take 1-2 minutes for new keys to work).\n3. You haven't fully saved the `.env` file.\n\nPlease double check your `.env` file, ensure there are no spaces around the key, and try again in a minute!",
-                quotaRemaining: 0
-            });
+        // Push error message to DB so history doesn't get desynced
+        try {
+            const session = await ChatSession.findOne({ user: req.user.id });
+            if (session && session.messages.length > 0) {
+                const lastMsg = session.messages[session.messages.length - 1];
+                if (lastMsg.role === 'user') {
+                    session.messages.push({ role: 'model', parts: [{ text: "*(Error: Lost connection to AI brain right now. Please try again later!)*" }] });
+                    await session.save();
+                }
+            }
+        } catch (dbErr) {
+            console.error('DB error inside catch:', dbErr);
         }
 
-        res.status(500).json({ msg: 'Failed to process AI request', error: error.message });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Server Error' });
+        } else {
+            res.write(`data: ${JSON.stringify({ text: "\n\n*(Error: Lost connection to AI brain)*" })}\n\n`);
+            res.write(`data: [DONE]\n\n`);
+            res.end();
+        }
     }
 });
 
