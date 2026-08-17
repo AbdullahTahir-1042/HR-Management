@@ -209,7 +209,7 @@ router.post('/chat', auth, async (req, res) => {
         });
 
         // Send initial message
-        let currentQuota = updateAndGetQuota();
+        let currentQuota = updateAndGetQuota(req.user.id);
         let result = await chat.sendMessage(message);
         
         // Check if the AI wants to call a function
@@ -237,12 +237,12 @@ router.post('/chat', auth, async (req, res) => {
                 if (!leaveTypeMatch) {
                     // Send failure back to AI using a brand new request
                     const newContents = [
-                        ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                        { role: 'user', parts: [{ text: message }] },
-                        { role: 'model', parts: [{ text: 'Processing...' }] },
-                        { role: 'user', parts: [{ text: `SYSTEM LOG: The function apply_leave failed because leave type '${leaveTypeName}' was not found. Please tell the user.` }] }
-                    ];
-                    currentQuota = updateAndGetQuota();
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
+                ];
+                    currentQuota = updateAndGetQuota(req.user.id);
                     result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
                 } else {
                     // Create the leave request
@@ -264,14 +264,14 @@ router.post('/chat', auth, async (req, res) => {
 
                     // Send success back to AI using a brand new request to bypass SDK history role issues
                     const newContents = [
-                        ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
-                        { role: 'user', parts: [{ text: message }] },
-                        { role: 'model', parts: [{ text: 'Applying leave...' }] },
-                        { role: 'user', parts: [{ text: `SYSTEM LOG: The leave request was successfully saved in the database with ID ${newLeave._id}. Please inform the user that their leave was submitted successfully.` }] }
-                    ];
+                    ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
+                    { role: 'user', parts: [{ text: message }] },
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
+                ];
                     
                     try {
-                        currentQuota = updateAndGetQuota();
+                        currentQuota = updateAndGetQuota(req.user.id);
                         result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
                     } catch (aiError) {
                         console.error('Rate limit hit on second call:', aiError);
@@ -295,10 +295,10 @@ router.post('/chat', auth, async (req, res) => {
                 const newContents = [
                     ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
                     { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching attendance data...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_attendance_today returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
                 ];
-                currentQuota = updateAndGetQuota();
+                currentQuota = updateAndGetQuota(req.user.id);
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             } else if (call.name === 'get_my_attendance_report') {
                 const days = call.args.days || 7;
@@ -319,10 +319,10 @@ router.post('/chat', auth, async (req, res) => {
                 const newContents = [
                     ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
                     { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching your attendance history...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_my_attendance_report returned the following data for the past ${days} days:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
                 ];
-                currentQuota = updateAndGetQuota();
+                currentQuota = updateAndGetQuota(req.user.id);
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             } else if (call.name === 'get_employee_directory') {
                 const employees = await User.find({ status: { $ne: 'Inactive' } }).select('name email department role');
@@ -333,10 +333,10 @@ router.post('/chat', auth, async (req, res) => {
                 const newContents = [
                     ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
                     { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching employee directory...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_employee_directory returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
                 ];
-                currentQuota = updateAndGetQuota();
+                currentQuota = updateAndGetQuota(req.user.id);
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             } else if (call.name === 'get_pending_leave_requests') {
                 const pendingLeaves = await LeaveRequest.find({ status: 'pending_hr' }).populate('employee', 'name').populate('leaveType', 'name');
@@ -347,10 +347,10 @@ router.post('/chat', auth, async (req, res) => {
                 const newContents = [
                     ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
                     { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching pending leave requests...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_pending_leave_requests returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
                 ];
-                currentQuota = updateAndGetQuota();
+                currentQuota = updateAndGetQuota(req.user.id);
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             } else if (call.name === 'get_pending_hr_requests') {
                 const pendingRequests = await HRRequest.find({ status: { $in: ['Open', 'In Progress'] } }).populate('employee', 'name');
@@ -361,10 +361,10 @@ router.post('/chat', auth, async (req, res) => {
                 const newContents = [
                     ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
                     { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching HR requests...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_pending_hr_requests returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
                 ];
-                currentQuota = updateAndGetQuota();
+                currentQuota = updateAndGetQuota(req.user.id);
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             } else if (call.name === 'get_company_holidays') {
                 const today = new Date();
@@ -377,10 +377,10 @@ router.post('/chat', auth, async (req, res) => {
                 const newContents = [
                     ...history.map(msg => ({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.parts }] })),
                     { role: 'user', parts: [{ text: message }] },
-                    { role: 'model', parts: [{ text: 'Fetching holidays...' }] },
-                    { role: 'user', parts: [{ text: `SYSTEM LOG: The function get_company_holidays returned the following data:\n${responseText}\n\nPlease summarize this for the user.` }] }
+                    { role: 'model', parts: [{ functionCall: call }] },
+                    { role: 'function', parts: [{ functionResponse: { name: call.name, response: { data: typeof responseText !== 'undefined' ? responseText : "Success" } } }] }
                 ];
-                currentQuota = updateAndGetQuota();
+                currentQuota = updateAndGetQuota(req.user.id);
                 result = await model.generateContent({ contents: newContents, systemInstruction: { parts: [{ text: systemInstruction }] } });
             }
         }

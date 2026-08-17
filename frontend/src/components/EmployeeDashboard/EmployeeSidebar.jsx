@@ -140,7 +140,7 @@ const EmployeeSidebar = ({ user, logout, isOpen, setIsOpen, unreadMessages = 0 }
                 </button>
 
                 <Link
-                    to={`/employee//profile`}
+                    to={`/employee/${userId}/profile`}
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 mb-2 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group"
                 >
