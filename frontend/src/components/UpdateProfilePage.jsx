@@ -204,7 +204,7 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                         {/* Restricted Fields for non-HR */}
                         <div className="pt-6 border-t border-slate-100">
                             <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-4">Employment Details</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-60">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Department</label>
                                     <input disabled value={formData.department} className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed" />
@@ -212,6 +212,10 @@ const UpdateProfilePage = ({ user, onBack, onUpdate }) => {
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Monthly Salary</label>
                                     <input disabled value={formData.salary} className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Joining Date</label>
+                                    <input disabled value={formData.createdAt ? new Date(formData.createdAt).toLocaleDateString('en-PK', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'} className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed" />
                                 </div>
                             </div>
                             <div className="mt-4">
