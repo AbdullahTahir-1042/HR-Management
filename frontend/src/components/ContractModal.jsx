@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Building2, Download, Loader2, PenTool } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
 
 const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
     const documentRef = useRef();
@@ -11,38 +12,174 @@ const ContractModal = ({ isOpen, onClose, contractDetails, employeeName }) => {
     if (!isOpen) return null;
 
     const handleDownload = async () => {
-        if (!documentRef.current) return;
         setIsDownloading(true);
-
         try {
-            // Temporarily force light mode by removing dark class from HTML root
-            const htmlRoot = document.documentElement;
-            const isDark = htmlRoot.classList.contains('dark');
-            if (isDark) htmlRoot.classList.remove('dark');
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 20;
+            const contentWidth = pageWidth - 2 * margin;
+            let y = margin;
 
-            // Wait for DOM to update
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // --- HEADER ---
+            doc.setFont('times', 'bold');
+            doc.setFontSize(22);
+            doc.setTextColor(15, 23, 42);
+            doc.text('EMPLOYMENT AGREEMENT', margin, y + 6);
 
-            const opt = {
-                margin: 10,
-                filename: `Employment_Contract_${employeeName?.replace(/\s+/g, '_') || 'Employee'}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true, 
-                    letterRendering: true,
-                    scrollY: 0,
-                    windowHeight: documentRef.current.scrollHeight + 100
-                },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            doc.text('STRICTLY CONFIDENTIAL', margin, y + 13);
+
+            doc.setFont('times', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(15, 23, 42);
+            doc.text('TECH INNOVA', pageWidth - margin, y + 6, { align: 'right' });
+            doc.setFont('times', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text('Official HR Documentation', pageWidth - margin, y + 12, { align: 'right' });
+
+            y += 18;
+            doc.setDrawColor(15, 23, 42);
+            doc.setLineWidth(0.6);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 10;
+
+            // --- KEY DETAILS BOX ---
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(margin, y, contentWidth, 18, 2, 2, 'FD');
+
+            const startDate = contractDetails?.startDate ? formatDate(contractDetails.startDate) : formatDate(new Date());
+            const endDate = contractDetails?.endDate ? formatDate(contractDetails.endDate) : 'Not Specified / At-Will';
+            const contractType = contractDetails?.contractType || 'Full-Time';
+
+            const col1 = margin + 5;
+            const col2 = margin + contentWidth / 3 + 5;
+            const col3 = margin + (contentWidth * 2) / 3 + 5;
+
+            doc.setFont('times', 'bold');
+            doc.setFontSize(7);
+            doc.setTextColor(148, 163, 184);
+            doc.text('START DATE', col1, y + 6);
+            doc.text('END DATE', col2, y + 6);
+            doc.text('CONTRACT TYPE', col3, y + 6);
+
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(startDate, col1, y + 12);
+            doc.text(endDate, col2, y + 12);
+            doc.text(contractType, col3, y + 12);
+
+            y += 26;
+
+            // --- BODY TEXT ---
+            doc.setFont('times', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(30, 41, 59);
+
+            const addParagraph = (text, bold) => {
+                if (bold) doc.setFont('times', 'bold');
+                else doc.setFont('times', 'normal');
+                const lines = doc.splitTextToSize(text, contentWidth);
+                if (y + lines.length * 5.5 > pageHeight - margin) {
+                    doc.addPage();
+                    y = margin;
+                }
+                doc.text(lines, margin, y);
+                y += lines.length * 5.5 + 3;
             };
-            
-            await html2pdf().set(opt).from(documentRef.current).save();
-            
-            // Restore dark mode
-            if (isDark) htmlRoot.classList.add('dark');
+
+            addParagraph(`This Employment Agreement (the "Agreement") is entered into as of ${startDate}, by and between Tech Innova Ltd. (the "Company") and ${employeeName || 'the Employee'} (the "Employee").`);
+
+            addParagraph(`1. Position and Duties: The Employee will be employed as a ${contractType} staff member. The Employee agrees to perform all duties and responsibilities assigned to them by the Company diligently and to the best of their abilities.`);
+
+            addParagraph(`2. Term of Employment: Employment shall commence on ${startDate} and will continue until ${contractDetails?.endDate ? formatDate(contractDetails.endDate) : 'terminated by either party in accordance with standard company policies'}.`);
+
+            addParagraph(`3. Compensation and Benefits: The Employee will receive standard compensation as agreed upon in the offer letter, along with access to all company benefits applicable to ${contractType} employees, subject to the terms of those benefit plans.`);
+
+            addParagraph(`4. Confidentiality: The Employee agrees that during and after their employment, they will not disclose any confidential information or trade secrets of the Company to any third party without explicit written consent.`);
+
+            // --- SUMMARY BOX ---
+            y += 2;
+            const summaryText = contractDetails?.summary || 'This is a standard employment contract establishing the terms, conditions, and expectations of employment between the company and the employee. It encompasses compensation, benefits, working hours, confidentiality agreements, and termination clauses.';
+            const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 16);
+            const summaryBoxH = 12 + summaryLines.length * 5;
+
+            if (y + summaryBoxH > pageHeight - margin) {
+                doc.addPage();
+                y = margin;
+            }
+
+            doc.setFillColor(248, 250, 252);
+            doc.rect(margin, y, contentWidth, summaryBoxH, 'F');
+            doc.setDrawColor(15, 23, 42);
+            doc.setLineWidth(1);
+            doc.line(margin, y, margin, y + summaryBoxH);
+
+            doc.setFont('times', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(15, 23, 42);
+            doc.text('Summary of Terms:', margin + 8, y + 7);
+
+            doc.setFont('times', 'italic');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(summaryLines, margin + 8, y + 14);
+
+            y += summaryBoxH + 15;
+
+            // --- SIGNATURES ---
+            if (y + 45 > pageHeight - margin) {
+                doc.addPage();
+                y = margin + 10;
+            }
+
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.3);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 8;
+
+            doc.setFont('times', 'italic');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            const witnessLines = doc.splitTextToSize('IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.', contentWidth);
+            doc.text(witnessLines, margin, y);
+            y += witnessLines.length * 5 + 15;
+
+            // Company signature
+            doc.setDrawColor(15, 23, 42);
+            doc.setLineWidth(0.4);
+            doc.line(margin, y, margin + 65, y);
+            doc.setFont('times', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(15, 23, 42);
+            doc.text('Company Representative', margin, y + 6);
+            doc.setFont('times', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Date: ${startDate}`, margin, y + 11);
+
+            // Employee signature
+            const sigRight = pageWidth - margin;
+            doc.setDrawColor(15, 23, 42);
+            doc.line(sigRight - 65, y, sigRight, y);
+            doc.setFont('times', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(15, 23, 42);
+            doc.text(employeeName || 'Employee Name', sigRight - 65, y + 6);
+            doc.setFont('times', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text('Date: _________________', sigRight - 65, y + 11);
+
+            doc.save(`Employment_Contract_${employeeName?.replace(/\s+/g, '_') || 'Employee'}.pdf`);
+            toast.success('Contract downloaded!');
         } catch (error) {
             console.error('PDF Generation failed:', error);
+            toast.error('Failed to generate PDF. Please try again.');
         } finally {
             setIsDownloading(false);
         }
