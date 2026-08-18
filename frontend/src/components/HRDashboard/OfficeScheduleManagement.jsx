@@ -223,12 +223,7 @@ const OfficeScheduleManagement = () => {
     // --- Render ---
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Schedule Management</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Configure default working hours, date overrides, and entity-specific schedules.</p>
-                </div>
-            </div>
+
 
             {/* Tabs */}
             <div className="flex space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-max">

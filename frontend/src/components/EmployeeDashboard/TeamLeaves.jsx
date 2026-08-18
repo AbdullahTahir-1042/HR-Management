@@ -60,12 +60,7 @@ const TeamLeaves = () => {
 
     return (
         <div className="p-8 space-y-6">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight">Team Leaves</h1>
-                    <p className="text-slate-500 mt-2 font-medium">Review and manage leave requests for your team</p>
-                </div>
-            </div>
+
 
             <div className="flex gap-4 mb-6 border-b border-slate-200 pb-2">
                 <button

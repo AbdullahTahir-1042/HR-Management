@@ -16,7 +16,9 @@ import {
     User,
     Menu,
     AlertTriangle,
-    ArrowLeft
+    ArrowLeft,
+    MessageCircle,
+    MonitorPlay
 } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
@@ -56,6 +58,9 @@ const HRHeader = ({
         'hr-requests': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'HR Requests' },
         'announcements': { icon: <Bell size={24} className="text-indigo-600" />, title: 'Announcements' },
         'mistake-reports': { icon: <AlertTriangle size={24} className="text-indigo-600" />, title: 'Mistake Reports' },
+        'office-schedule': { icon: <Clock size={24} className="text-indigo-600" />, title: 'Office Schedule' },
+        'messages': { icon: <MessageCircle size={24} className="text-indigo-600" />, title: 'Messages' },
+        'training': { icon: <MonitorPlay size={24} className="text-indigo-600" />, title: 'Training Management' },
         'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' },
         'edit-profile': { icon: <User size={24} className="text-indigo-600" />, title: 'Edit Profile' }
     };
