@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect, useRef, useContext, useMemo, useLayoutEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -15,7 +16,7 @@ import { formatDate } from '../utils/dateUtils';
 const POLL_INTERVAL_MS = 3000;
 const TYPING_PING_THROTTLE_MS = 2000;
 const ONLINE_THRESHOLD_MS = 20000;
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 50;
 
 const StatusTicks = ({ message }) => {
     let status = 'sent';
@@ -88,6 +89,52 @@ const MessagesPage = () => {
     const [notifPermission, setNotifPermission] = useState(
         typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
     );
+    const [isMuted, setIsMuted] = useState(() => localStorage.getItem('chat_muted') === 'true');
+
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const chatId = params.get('chat');
+        if (chatId && conversations.length > 0) {
+            // Find conversation by its ID, OR by a one-on-one participant ID
+            const target = conversations.find(c => 
+                c._id === chatId || 
+                (!c.isGroup && c.participants.some(p => String(p._id) === String(chatId)))
+            );
+            
+            if (target) {
+                if (!activeConversation || String(activeConversation._id) !== String(target._id)) {
+                    setActiveConversation(target);
+                }
+                // Always clean up the URL parameter once handled
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location.search, conversations, activeConversation, navigate, location.pathname]);
+
+    const handleToggleMute = async () => {
+        if (!isMuted) {
+            if (window.confirmModal) {
+                if (await window.confirmModal("Would you like to mute chat notifications?")) {
+                    setIsMuted(true);
+                    localStorage.setItem('chat_muted', 'true');
+                    toast.success("Notifications muted.", { icon: '🔕' });
+                }
+            } else {
+                if (window.confirm("Would you like to mute chat notifications?")) {
+                    setIsMuted(true);
+                    localStorage.setItem('chat_muted', 'true');
+                    toast.success("Notifications muted.", { icon: '🔕' });
+                }
+            }
+        } else {
+            setIsMuted(false);
+            localStorage.setItem('chat_muted', 'false');
+            toast.success("Notifications unmuted.", { icon: '🔔' });
+        }
+    };
 
     const getToken = () =>
         sessionStorage.getItem('token') ||
@@ -128,7 +175,7 @@ const MessagesPage = () => {
     };
 
     const notifyOnNewMessages = (prevList, nextList) => {
-        if (notifPermission !== 'granted') return;
+        if (notifPermission !== 'granted' || isMuted) return;
         const prevById = new Map(prevList.map(c => [c._id, c]));
         for (const conv of nextList) {
             if (activeConversationRef.current?._id === conv._id) continue;
@@ -490,8 +537,8 @@ const MessagesPage = () => {
 
 
     return (
-        <div className="space-y-5">
-            <div className="flex justify-between items-end">
+        <div className="flex flex-col h-[calc(100vh-180px)] gap-4">
+            <div className="flex justify-between items-end shrink-0">
                 <div>
                     <p className="text-sm text-slate-400 font-medium mt-0.5">
                         {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
@@ -499,48 +546,35 @@ const MessagesPage = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {(() => {
-                        const prefs = authUser?.notificationPreferences || {};
-                        const appEnabled = prefs.all !== false && prefs.messages !== false;
-                        
-                        if (!appEnabled) {
-                            return (
-                                <div className="flex items-center gap-1.5 px-3 py-2 text-slate-500 bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200" title="Notifications are paused in your profile settings">
-                                    <BellOff size={16} />
-                                    Notifications Paused
-                                </div>
-                            );
-                        }
-                        
-                        if (notifPermission === 'default') {
-                            return (
-                                <button
-                                    onClick={() => Notification.requestPermission().then(setNotifPermission)}
-                                    className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
-                                >
-                                    <Bell size={16} />
-                                    Enable Notifications
-                                </button>
-                            );
-                        }
-                        if (notifPermission === 'granted') {
-                            return (
-                                <div className="flex items-center gap-1.5 px-3 py-2 text-emerald-600 bg-emerald-50 rounded-xl text-sm font-semibold border border-emerald-100">
-                                    <BellRing size={16} />
-                                    Notifications On
-                                </div>
-                            );
-                        }
-                        if (notifPermission === 'denied') {
-                            return (
-                                <div className="flex items-center gap-1.5 px-3 py-2 text-rose-500 bg-rose-50 rounded-xl text-sm font-semibold border border-rose-100" title="Notifications are blocked in your browser settings">
-                                    <BellOff size={16} />
-                                    Notifications Blocked
-                                </div>
-                            );
-                        }
-                        return null;
-                    })()}
+                    {notifPermission === 'default' && !isMuted && (
+                        <button
+                            onClick={() => Notification.requestPermission().then(setNotifPermission)}
+                            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+                        >
+                            <Bell size={16} />
+                            Enable Notifications
+                        </button>
+                    )}
+                    {notifPermission === 'granted' && !isMuted && (
+                        <button
+                            onClick={handleToggleMute}
+                            className="flex items-center gap-1.5 px-3 py-2 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-sm font-semibold border border-emerald-100 hover:border-emerald-200 transition-colors cursor-pointer"
+                            title="Click to Mute Notifications"
+                        >
+                            <BellRing size={16} />
+                            Notifications On
+                        </button>
+                    )}
+                    {(notifPermission === 'denied' || isMuted) && (
+                        <button
+                            onClick={notifPermission === 'denied' ? () => toast("To receive notifications, please click the lock icon in your browser's address bar and change 'Notifications' to 'Allow'.", { icon: '🔒', duration: 6000 }) : handleToggleMute}
+                            className="flex items-center gap-1.5 px-3 py-2 text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl text-sm font-semibold border border-rose-100 hover:border-rose-200 transition-colors cursor-pointer"
+                            title={notifPermission === 'denied' ? "Browser notifications blocked" : "Click to Unmute Notifications"}
+                        >
+                            <BellOff size={16} />
+                            Notifications Blocked
+                        </button>
+                    )}
                     <motion.button
                         onClick={() => setShowNewChat(true)}
                         whileHover={{ scale: 1.05 }}
@@ -553,7 +587,7 @@ const MessagesPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex h-[calc(100vh-180px)] min-h-[600px]">
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex min-h-0">
                 {/* Conversation list */}
                 <div className={`w-full sm:w-80 shrink-0 border-r border-slate-100 dark:border-slate-600 flex flex-col bg-slate-50/40 dark:bg-slate-900/40 ${activeConversation ? 'hidden sm:flex' : 'flex'}`}>
                     <div className="p-3.5 border-b border-slate-100 dark:border-slate-600">
@@ -814,7 +848,7 @@ const MessagesPage = () => {
                                 )}
                             </AnimatePresence>
 
-                            <form onSubmit={handleSend} className="p-4 pr-24 lg:pr-24 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
+                            <form onSubmit={handleSend} className="p-4 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
                                 <input
                                     value={messageText}
                                     onChange={handleInputChange}
@@ -851,7 +885,7 @@ const MessagesPage = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden"
+                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-md max-h-[80vh] flex flex-col"
                         >
                             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                                 <h3 className="text-base font-bold text-slate-800">New Conversation</h3>
@@ -899,34 +933,6 @@ const MessagesPage = () => {
                                     />
                                 </div>
                             </div>
-
-                            {newChatMode === 'group' && filteredColleagues.length > 0 && (
-                                <div className="px-6 pt-4 pb-1 flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-slate-500">
-                                        {selectedMembers.length} selected
-                                    </span>
-                                    <label className="flex items-center gap-2 cursor-pointer group">
-                                        <span className="text-xs font-semibold text-slate-600 group-hover:text-indigo-600 transition-colors">
-                                            Select All
-                                        </span>
-                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${selectedMembers.length === filteredColleagues.length ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 group-hover:border-indigo-400'}`}>
-                                            {selectedMembers.length === filteredColleagues.length && <Check size={13} className="text-white" />}
-                                        </div>
-                                        <input 
-                                            type="checkbox" 
-                                            className="hidden"
-                                            checked={selectedMembers.length === filteredColleagues.length && filteredColleagues.length > 0}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSelectedMembers(filteredColleagues.map(c => c._id));
-                                                } else {
-                                                    setSelectedMembers([]);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </div>
-                            )}
 
                             <div className="flex-1 overflow-y-auto px-5 py-3 space-y-1 min-h-[200px]">
                                 {filteredColleagues.length === 0 ? (
@@ -1191,7 +1197,7 @@ const MessagesPage = () => {
                             <div className="p-4">
                                 <button
                                     onClick={() => setShowContactInfo(false)}
-                                    className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                 >
                                     Close
                                 </button>

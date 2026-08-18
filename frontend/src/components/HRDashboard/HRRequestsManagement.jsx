@@ -337,7 +337,7 @@ const HRRequestsManagement = ({ requests = [], onUpdate, externalLoans = [], onR
                             }`}
                     >
                         <FileText size={14} /> General Requests
-                        {pendingGeneralCount > 0 && (
+                        {pendingGeneralCount > 0 && subTab !== 'general' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white shadow-sm">
                                 {pendingGeneralCount}
                             </span>
@@ -353,7 +353,7 @@ const HRRequestsManagement = ({ requests = [], onUpdate, externalLoans = [], onR
                             }`}
                     >
                         <Coins size={14} /> Loan Requests
-                        {pendingLoanCount > 0 && (
+                        {pendingLoanCount > 0 && subTab !== 'loans' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white shadow-sm">
                                 {pendingLoanCount}
                             </span>

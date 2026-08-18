@@ -159,7 +159,17 @@ const HRHeader = ({
                 )}
                 
                 <div className="flex items-center ml-2">
-                    <NotificationsPanel onNavigate={onNotificationNavigate} />
+                    <NotificationsPanel onNavigate={(tab, subParam) => {
+                        if (tab === 'messages') {
+                            navigate(`/hr/messages${subParam ? `?chat=${subParam}` : ''}`);
+                        } else if (tab === 'hr-requests') {
+                            navigate(`/hr/hr-requests`);
+                        } else if (tab === 'leaves') {
+                            navigate(`/hr/leaves`);
+                        } else {
+                            navigate(`/hr/${tab}`);
+                        }
+                    }} />
                 </div>
             </div>
         </header>
