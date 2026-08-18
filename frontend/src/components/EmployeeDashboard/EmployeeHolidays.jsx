@@ -103,8 +103,8 @@ const HolidayDetailModal = ({ holiday, onClose }) => {
                     <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">{holiday.name}</h2>
-                            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
-                                {holiday.type || 'Public'}
+                            <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border capitalize ${style.bg} ${style.text} ${style.border}`}>
+                                {String(holiday.type || 'Public').toLowerCase()}
                             </span>
                         </div>
                         {upcoming ? (
@@ -201,8 +201,8 @@ const HolidayCard = ({ holiday, onClick }) => {
                 </div>
 
                 {/* Type badge */}
-                <span className={`shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
-                    {holiday.type || 'Public'}
+                <span className={`shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border capitalize ${style.bg} ${style.text} ${style.border}`}>
+                    {String(holiday.type || 'Public').toLowerCase()}
                 </span>
             </div>
 

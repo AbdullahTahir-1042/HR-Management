@@ -339,7 +339,7 @@ const HRHolidayManagement = ({ holidays, fetchHolidays }) => {
                                     <div className="col-span-3">
                                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{h.name}</p>
                                         <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-lg border ${TYPE_STYLES[h.type] || TYPE_STYLES.public}`}>
-                                            {h.type}
+                                            {String(h.type).toLowerCase()}
                                         </span>
                                     </div>
 

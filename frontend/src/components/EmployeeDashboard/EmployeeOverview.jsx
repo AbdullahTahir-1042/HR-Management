@@ -219,8 +219,8 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                                 {formatDate(schedule.date)}
                                             </span>
                                             {schedule.reason && (
-                                                <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                                    {schedule.reason}
+                                                <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 px-2 py-0.5 rounded-md capitalize tracking-wider">
+                                                    {String(schedule.reason).toLowerCase()}
                                                 </span>
                                             )}
                                         </div>
@@ -421,14 +421,14 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                         {formatShortDate(nextHoliday.startDate)}
                                     </span>
                                     {nextHoliday.type && (
-                                        <span className={`badge ${
-                                            nextHoliday.type === 'Public' ? 'badge-primary' :
-                                            nextHoliday.type === 'Company' ? 'badge-success' :
-                                            nextHoliday.type === 'Optional' ? 'badge-warning' :
-                                            nextHoliday.type === 'Restricted' ? 'badge-danger' :
+                                        <span className={`badge capitalize ${
+                                            String(nextHoliday.type).toLowerCase() === 'public' ? 'badge-primary' :
+                                            String(nextHoliday.type).toLowerCase() === 'company' ? 'badge-success' :
+                                            String(nextHoliday.type).toLowerCase() === 'optional' ? 'badge-warning' :
+                                            String(nextHoliday.type).toLowerCase() === 'restricted' ? 'badge-danger' :
                                             'badge-primary'
                                         }`}>
-                                            {nextHoliday.type}
+                                            {String(nextHoliday.type).toLowerCase()}
                                         </span>
                                     )}
                                 </div>
