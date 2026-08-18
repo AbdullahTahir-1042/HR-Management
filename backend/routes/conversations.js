@@ -26,8 +26,11 @@ const isAdmin = (conversation, userId) =>
 // same as ones coming from the list endpoint.
 const hydrateConversation = async (conv, userId) => {
     const lastMessage = await Message.findOne({ conversation: conv._id }).sort({ createdAt: -1 });
+    // Optimize: Bound the unread scan to the last 30 days to use the createdAt index and prevent full collection scans
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const unreadCount = await Message.countDocuments({
         conversation: conv._id,
+        createdAt: { $gte: thirtyDaysAgo },
         sender: { $ne: userId },
         readBy: { $ne: userId }
     });
@@ -426,18 +429,22 @@ router.get('/:id/messages', auth, async (req, res) => {
             });
         const hasMore = page.length === limit;
         const messages = page.reverse();
+        const messageIds = messages.map(m => m._id);
 
         // Delivered = this participant's client has now fetched the thread.
-        await Message.updateMany(
-            { conversation: conversation._id, sender: { $ne: req.user.id }, deliveredTo: { $ne: req.user.id } },
-            { $addToSet: { deliveredTo: req.user.id } }
-        );
+        // We restrict updateMany to the fetched messageIds to prevent full collection scans.
+        if (messageIds.length > 0) {
+            await Message.updateMany(
+                { _id: { $in: messageIds }, sender: { $ne: req.user.id }, deliveredTo: { $ne: req.user.id } },
+                { $addToSet: { deliveredTo: req.user.id } }
+            );
 
-        // Opening the thread means catching up — mark everything seen.
-        await Message.updateMany(
-            { conversation: conversation._id, sender: { $ne: req.user.id }, readBy: { $ne: req.user.id } },
-            { $addToSet: { readBy: req.user.id } }
-        );
+            // Opening the thread means catching up — mark everything seen in this page.
+            await Message.updateMany(
+                { _id: { $in: messageIds }, sender: { $ne: req.user.id }, readBy: { $ne: req.user.id } },
+                { $addToSet: { readBy: req.user.id } }
+            );
+        }
 
         const typingRows = await TypingStatus.find({
             conversation: conversation._id,
