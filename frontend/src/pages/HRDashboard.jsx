@@ -405,16 +405,7 @@ const HRDashboard = () => {
     };
 
 
-    const filteredLeaves = leaves.filter(l => {
-        if (leaveFilter === 'all') return true;
-        if (leaveFilter === 'pending') {
-            return ['pending', 'pending_team_lead', 'pending_hr'].includes(l.status);
-        }
-        if (leaveFilter === 'rejected') {
-            return ['rejected', 'hr_rejected', 'team_lead_rejected'].includes(l.status);
-        }
-        return l.status === leaveFilter;
-    });
+    const filteredLeaves = leaves.filter(l => leaveFilter === 'all' ? true : l.status === leaveFilter);
     const filteredAttendance = attendance.filter(a => {
         const matchesSearch =
             a.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

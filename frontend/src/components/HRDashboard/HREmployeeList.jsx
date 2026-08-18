@@ -276,14 +276,14 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                         </colgroup>
                         <thead>
                             <tr className="table-header">
-                                <th className="whitespace-nowrap">Employee</th>
-                                <th className="whitespace-nowrap">Dept & Role</th>
-                                <th className="whitespace-nowrap">Reporting To</th>
-                                <th className="whitespace-nowrap">Status</th>
-                                <th className="whitespace-nowrap">Salary</th>
-                                <th className="whitespace-nowrap">Performance</th>
-                                <th className="whitespace-nowrap">Joined</th>
-                                <th className="text-right whitespace-nowrap">Actions</th>
+                                <th>Employee</th>
+                                <th>Dept & Role</th>
+                                <th>Reporting To</th>
+                                <th>Status</th>
+                                <th>Salary</th>
+                                <th>Performance</th>
+                                <th>Joined</th>
+                                <th className="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="table-body">
@@ -325,7 +325,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                         </td>
 
                                         {/* Department & Account Role */}
-                                        <td className="px-3 py-3 whitespace-nowrap">
+                                        <td className="px-3 py-3">
                                             <div className="space-y-0.5">
                                                 <span className="flex items-center gap-1 text-slate-700 text-[11px] font-bold capitalize truncate">
                                                     <Building2 size={12} className="text-indigo-500 shrink-0" />
@@ -339,7 +339,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                         </td>
 
                                         {/* Reporting To */}
-                                        <td className="px-3 py-3 whitespace-nowrap">
+                                        <td className="px-3 py-3">
                                             <span className="flex items-center gap-1 text-slate-600 text-[11px] font-medium truncate">
                                                 <UserCheck size={12} className="text-slate-400 shrink-0" />
                                                 {emp.reportingTo || 'Unassigned'}
@@ -347,7 +347,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                         </td>
 
                                         {/* Employment Status */}
-                                        <td className="px-3 py-3 whitespace-nowrap">
+                                        <td className="px-3 py-3">
                                             <span className={`
                                                 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit
                                                 ${emp.status === 'full time' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : ''}
@@ -361,14 +361,14 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                         </td>
 
                                         {/* Salary */}
-                                        <td className="px-3 py-3 whitespace-nowrap">
+                                        <td className="px-3 py-3">
                                             <div className="text-slate-800 font-black text-[11px] tabular-nums">
                                                 {formatSalary(emp.salary)}
                                             </div>
                                         </td>
 
                                         {/* Performance */}
-                                        <td className="px-3 py-3 whitespace-nowrap">
+                                        <td className="px-3 py-3">
                                             {(() => {
                                                 const stats = getEmployeePerformanceStats(emp._id);
                                                 return (
@@ -390,7 +390,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                         </td>
 
                                         {/* Joined On */}
-                                        <td className="px-3 py-3 text-slate-600 text-[11px] font-medium whitespace-nowrap">
+                                        <td className="px-3 py-3 text-slate-600 text-[11px] font-medium">
                                             <div className="flex items-center gap-1">
                                                 <Calendar size={11} className="text-slate-400 shrink-0" />
                                                 {formatDate(emp.createdAt)}
@@ -398,7 +398,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                         </td>
 
                                         {/* Actions */}
-                                        <td className="px-3 py-3 text-right whitespace-nowrap">
+                                        <td className="px-3 py-3 text-right">
                                             <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
 
                                                 {onEdit && (
