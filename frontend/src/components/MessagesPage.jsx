@@ -814,7 +814,7 @@ const MessagesPage = () => {
                                 )}
                             </AnimatePresence>
 
-                            <form onSubmit={handleSend} className="p-4 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
+                            <form onSubmit={handleSend} className="p-4 pr-24 lg:pr-24 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
                                 <input
                                     value={messageText}
                                     onChange={handleInputChange}
