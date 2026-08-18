@@ -544,7 +544,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             </div>
 
                                             {/* Color Legend */}
-                                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[9px] font-bold text-slate-500 flex-wrap gap-1.5">
+                                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-start text-[9px] font-bold text-slate-500 flex-wrap gap-x-4 gap-y-2">
                                                 <span className="flex items-center gap-1">
                                                     <span className="w-2.5 h-2.5 rounded bg-indigo-600 inline-block" /> Selected
                                                 </span>
