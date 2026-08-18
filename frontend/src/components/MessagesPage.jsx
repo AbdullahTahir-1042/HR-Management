@@ -15,7 +15,7 @@ import { formatDate } from '../utils/dateUtils';
 const POLL_INTERVAL_MS = 3000;
 const TYPING_PING_THROTTLE_MS = 2000;
 const ONLINE_THRESHOLD_MS = 20000;
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 50;
 
 const StatusTicks = ({ message }) => {
     let status = 'sent';
@@ -840,7 +840,7 @@ const MessagesPage = () => {
                                 )}
                             </AnimatePresence>
 
-                            <form onSubmit={handleSend} className="p-4 pr-24 lg:pr-24 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
+                            <form onSubmit={handleSend} className="p-4 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
                                 <input
                                     value={messageText}
                                     onChange={handleInputChange}
@@ -877,7 +877,7 @@ const MessagesPage = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden"
+                            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 dark:ring-white/10 w-full max-w-md max-h-[80vh] flex flex-col"
                         >
                             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                                 <h3 className="text-base font-bold text-slate-800">New Conversation</h3>
@@ -925,34 +925,6 @@ const MessagesPage = () => {
                                     />
                                 </div>
                             </div>
-
-                            {newChatMode === 'group' && filteredColleagues.length > 0 && (
-                                <div className="px-6 pt-4 pb-1 flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-slate-500">
-                                        {selectedMembers.length} selected
-                                    </span>
-                                    <label className="flex items-center gap-2 cursor-pointer group">
-                                        <span className="text-xs font-semibold text-slate-600 group-hover:text-indigo-600 transition-colors">
-                                            Select All
-                                        </span>
-                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${selectedMembers.length === filteredColleagues.length ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 group-hover:border-indigo-400'}`}>
-                                            {selectedMembers.length === filteredColleagues.length && <Check size={13} className="text-white" />}
-                                        </div>
-                                        <input 
-                                            type="checkbox" 
-                                            className="hidden"
-                                            checked={selectedMembers.length === filteredColleagues.length && filteredColleagues.length > 0}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSelectedMembers(filteredColleagues.map(c => c._id));
-                                                } else {
-                                                    setSelectedMembers([]);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </div>
-                            )}
 
                             <div className="flex-1 overflow-y-auto px-5 py-3 space-y-1 min-h-[200px]">
                                 {filteredColleagues.length === 0 ? (
@@ -1217,7 +1189,7 @@ const MessagesPage = () => {
                             <div className="p-4">
                                 <button
                                     onClick={() => setShowContactInfo(false)}
-                                    className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                                 >
                                     Close
                                 </button>
