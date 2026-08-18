@@ -179,6 +179,7 @@ const EmployeeDashboard = () => {
                                 user={fullUser || authUser} 
                                 attendance={attendance} 
                                 leaves={leaves} 
+                                holidays={holidays}
                                 setActiveTab={setActiveTab} 
                             />
                         )}

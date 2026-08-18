@@ -1,9 +1,18 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { User, ArrowRight, Clock, Calendar, TrendingUp } from 'lucide-react';
+import { User, ArrowRight, Clock, Calendar, TrendingUp, Sun, PartyPopper } from 'lucide-react';
 
-const EmployeeOverview = ({ user, attendance, leaves, setActiveTab }) => {
+const EmployeeOverview = ({ user, attendance, leaves, holidays = [], setActiveTab }) => {
     const todayAttendance = attendance;
+
+    const upcomingHolidays = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return holidays
+            .filter(h => new Date(h.startDate) >= today)
+            .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+            .slice(0, 3);
+    }, [holidays]);
 
     const salaryStats = useMemo(() => {
         const baseSalary = Number(user?.salary) || 0;
@@ -146,6 +155,57 @@ const EmployeeOverview = ({ user, attendance, leaves, setActiveTab }) => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Upcoming Holidays */}
+            <motion.div
+                whileHover={{ y: -2 }}
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden cursor-pointer"
+                onClick={() => setActiveTab('holidays')}
+            >
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-amber-50 text-amber-500 rounded-xl">
+                            <Sun size={18} />
+                        </div>
+                        <h3 className="font-bold text-slate-800">Upcoming Holidays</h3>
+                    </div>
+                    <ArrowRight size={16} className="text-slate-300 hover:text-amber-500 transition-colors" />
+                </div>
+                <div className="divide-y divide-slate-50">
+                    {upcomingHolidays.length === 0 ? (
+                        <div className="px-6 py-8 text-center text-slate-400">
+                            <PartyPopper size={32} className="mx-auto mb-2 opacity-30" />
+                            <p className="text-sm">No upcoming holidays</p>
+                        </div>
+                    ) : (
+                        upcomingHolidays.map(h => {
+                            const start = new Date(h.startDate);
+                            const end = new Date(h.endDate);
+                            const days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+                            const daysLeft = Math.ceil((start - new Date()) / (1000 * 60 * 60 * 24));
+                            return (
+                                <div key={h._id} className="px-6 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                    <div>
+                                        <p className="font-semibold text-slate-800 text-sm">{h.name}</p>
+                                        <p className="text-xs text-slate-400">
+                                            {start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                            {days > 1 ? ` – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                                            {' · '}{days} day{days > 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${
+                                        daysLeft === 0 ? 'bg-emerald-100 text-emerald-600' :
+                                        daysLeft <= 7 ? 'bg-amber-100 text-amber-600' :
+                                        'bg-slate-100 text-slate-500'
+                                    }`}>
+                                        {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `In ${daysLeft} days`}
+                                    </span>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </motion.div>
         </motion.div>
     );
 };

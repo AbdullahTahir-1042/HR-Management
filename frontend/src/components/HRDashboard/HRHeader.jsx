@@ -1,5 +1,18 @@
 import React from 'react';
-import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck, Clock, Search, Calendar, Users, ClipboardList, Sun, Tag, BookOpen, Wand2, User } from 'lucide-react';
+
+const tabConfig = {
+    dashboard:       { icon: LayoutDashboard, label: 'Overview' },
+    employees:       { icon: Users,           label: 'Staff Directory' },
+    leaves:          { icon: CalendarCheck,   label: 'Leave Requests' },
+    attendance:      { icon: ClipboardList,   label: 'Attendance Master' },
+    holidays:        { icon: Sun,             label: 'Holiday Management' },
+    'hr-requests':   { icon: ClipboardList,   label: 'HR Requests' },
+    'leave-types':   { icon: Tag,             label: 'Leave Types' },
+    onboarding:      { icon: BookOpen,        label: 'Onboarding Tasks' },
+    'practice-wizard': { icon: Wand2,         label: 'Practice Setup' },
+    profile:         { icon: User,            label: 'My Profile' },
+};
 
 const HRHeader = ({ 
     activeTab, 
@@ -10,14 +23,13 @@ const HRHeader = ({
     searchTerm, 
     setSearchTerm 
 }) => {
+    const config = tabConfig[activeTab] || tabConfig.dashboard;
+    const Icon = config.icon;
     return (
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 sticky top-0 z-40 flex justify-between items-center">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                {activeTab === 'dashboard' && <LayoutDashboard size={24} className="text-indigo-600" />}
-                {activeTab === 'employees' && <Users size={24} className="text-indigo-600" />}
-                {activeTab === 'leaves' && <CalendarCheck size={24} className="text-indigo-600" />}
-                {activeTab === 'attendance' && <ClipboardList size={24} className="text-indigo-600" />}
-                {activeTab === 'dashboard' ? 'Overview' : activeTab === 'employees' ? 'Staff Directory' : activeTab === 'leaves' ? 'Leave Requests' : 'Attendance Master'}
+                <Icon size={24} className="text-indigo-600" />
+                {config.label}
             </h2>
 
             <div className="flex items-center gap-4">
