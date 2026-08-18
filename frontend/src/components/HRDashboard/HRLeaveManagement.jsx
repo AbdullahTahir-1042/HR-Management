@@ -308,7 +308,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className={`
-                                            px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
+                                            whitespace-nowrap px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
                                             ${(leave.status === 'pending' || leave.status === 'pending_hr') ? 'bg-amber-100 text-amber-700' : ''}
                                             ${leave.status === 'pending_team_lead' ? 'bg-indigo-100 text-indigo-700' : ''}
                                             ${leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : ''}
