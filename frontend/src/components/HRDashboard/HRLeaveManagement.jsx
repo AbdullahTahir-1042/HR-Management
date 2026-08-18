@@ -266,7 +266,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                         className="table-row"
                                         onClick={() => setSelectedLeave(leave)}
                                     >
-                                        <td className="px-4 py-4">
+                                        <td className="px-8 py-6">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-slate-800">{emp.name || leave.employee?.name || 'Employee'}</span>
                                                 <span className="text-xs text-slate-400">{emp.email || leave.employee?.email || ''}</span>
