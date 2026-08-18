@@ -88,7 +88,10 @@ const tools = [
 // Load History Endpoint
 router.get('/chat/history', auth, async (req, res) => {
     try {
-        const session = await ChatSession.findOne({ user: req.user.id });
+        const session = await ChatSession.findOne(
+            { user: req.user.id },
+            { messages: { $slice: -50 } }
+        );
         if (!session) {
             return res.json({ history: [] });
         }

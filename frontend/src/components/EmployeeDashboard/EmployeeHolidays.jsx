@@ -289,19 +289,6 @@ const EmployeeHolidays = ({ holidays = [] }) => {
             transition={{ duration: 0.3 }}
             className="space-y-8"
         >
-            {/* ── Page Title ── */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-100">
-                        <PartyPopper size={22} className="text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Holiday Calendar</h1>
-                        <p className="text-sm text-slate-400">Official company holidays for the year</p>
-                    </div>
-                </div>
-            </div>
-
             {/* ── Interactive Stat Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <StatCard

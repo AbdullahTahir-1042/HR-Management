@@ -314,19 +314,8 @@ const HRRequestsManagement = ({ requests = [], onUpdate, externalLoans = [], onR
             transition={{ duration: 0.3 }}
             className="space-y-6"
         >
-            {/* ── Header & Sub-Tab Bar ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none text-white">
-                        <ClipboardList size={22} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Employee Requests Management</h1>
-                        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">Review and process general inquiries and financial loan applications</p>
-                    </div>
-                </div>
-
-                {/* Sub-Tab Bar */}
+            {/* ── Sub-Tab Bar ── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mb-2">                {/* Sub-Tab Bar */}
                 <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 self-start sm:self-auto">
                     <button
                         type="button"

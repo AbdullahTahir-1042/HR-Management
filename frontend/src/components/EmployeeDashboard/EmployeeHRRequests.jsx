@@ -365,19 +365,8 @@ const EmployeeHRRequests = ({ user }) => {
             transition={{ duration: 0.3 }}
             className="space-y-6"
         >
-            {/* ── Page Header & Sub-Tab Switcher ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-100 text-white">
-                        <ClipboardList size={22} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-800">Requests Hub</h1>
-                        <p className="text-xs font-semibold text-slate-400">Manage your HR inquiries and financial loan requests</p>
-                    </div>
-                </div>
-
-                {/* Sub-Tab Navigation Bar */}
+            {/* ── Sub-Tab Switcher ── */}
+            <div className="flex justify-end mt-2 mb-4">
                 <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200/60 self-start sm:self-auto">
                     <button
                         type="button"

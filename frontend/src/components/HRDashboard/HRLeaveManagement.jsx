@@ -151,13 +151,6 @@ const DurationCalendarTooltip = ({ startDateStr, endDateStr, targetRef }) => {
     );
 };
 
-const formatShortDate = (dateInput) => {
-    if (!dateInput) return '—';
-    const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
-
 // ── Duration Cell Helper Component ────────────────────────────────────────────
 const DurationCell = ({ leave, isHovered, onHoverStart, onHoverEnd }) => {
     const targetRef = React.useRef(null);
@@ -169,7 +162,7 @@ const DurationCell = ({ leave, isHovered, onHoverStart, onHoverEnd }) => {
             onMouseEnter={onHoverStart}
             onMouseLeave={onHoverEnd}
         >
-            <span className="flex items-center justify-center gap-1.5 font-medium px-3 py-1.5 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 rounded-lg transition-colors cursor-pointer">
+            <span className="flex items-center gap-1.5 font-medium px-2.5 py-1 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 rounded-lg transition-colors cursor-pointer">
                 <CalendarIcon size={14} className="text-indigo-500" />
                 {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
             </span>
@@ -220,23 +213,15 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                 className="table-container"
             >
                 <div className="overflow-x-auto">
-                    <table className="table-base table-fixed w-full min-w-[900px]">
-                        <colgroup>
-                            <col className="w-[25%]" />
-                            <col className="w-[26%]" />
-                            <col className="w-[9%]" />
-                            <col className="w-[18%]" />
-                            <col className="w-[12%]" />
-                            <col className="w-[10%]" />
-                        </colgroup>
+                    <table className="table-base">
                         <thead>
                             <tr className="table-header">
-                                <th className="whitespace-nowrap">Employee</th>
-                                <th className="text-center whitespace-nowrap">Duration</th>
-                                <th className="text-center whitespace-nowrap">Days</th>
-                                <th className="whitespace-nowrap">Reason</th>
-                                <th className="whitespace-nowrap">Status</th>
-                                <th className="text-right whitespace-nowrap">Actions</th>
+                                <th>Employee</th>
+                                <th>Duration</th>
+                                <th className="text-center">Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th className="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="table-body">
@@ -275,19 +260,13 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                             ? emp.reportingTo.trim()
                                             : null;
 
-                                const todayDateOnly = new Date();
-                                todayDateOnly.setHours(0, 0, 0, 0);
-                                const leaveStartDate = new Date(leave.startDate);
-                                leaveStartDate.setHours(0, 0, 0, 0);
-                                const isPast = leaveStartDate < todayDateOnly;
-
                                 return (
                                     <tr 
                                         key={leave._id} 
                                         className="table-row"
                                         onClick={() => setSelectedLeave(leave)}
                                     >
-                                        <td className="px-8 py-6">
+                                        <td className="px-4 py-4">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-slate-800">{emp.name || leave.employee?.name || 'Employee'}</span>
                                                 <span className="text-xs text-slate-400">{emp.email || leave.employee?.email || ''}</span>
@@ -309,88 +288,81 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                                 </div>
                                             </div>
                                         </td>
-                                    <td className="px-6 py-6 text-slate-600 text-sm whitespace-nowrap text-center">
-                                        <div className="flex justify-center w-full">
-                                            <DurationCell
-                                                leave={leave}
-                                                isHovered={hoveredLeaveId === leave._id}
-                                                onHoverStart={() => setHoveredLeaveId(leave._id)}
-                                                onHoverEnd={() => setHoveredLeaveId(null)}
-                                            />
-                                        </div>
+                                    <td className="px-4 py-4 text-slate-600 text-sm">
+                                        <DurationCell
+                                            leave={leave}
+                                            isHovered={hoveredLeaveId === leave._id}
+                                            onHoverStart={() => setHoveredLeaveId(leave._id)}
+                                            onHoverEnd={() => setHoveredLeaveId(null)}
+                                        />
                                     </td>
-                                    <td className="px-6 py-6 text-center whitespace-nowrap">
+                                    <td className="px-4 py-4 text-center">
                                         <span className="inline-flex items-center justify-center bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-3 py-1 rounded-xl text-xs font-black shadow-2xs">
                                             {calculateDays(leave.startDate, leave.endDate)} {calculateDays(leave.startDate, leave.endDate) === 1 ? 'Day' : 'Days'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-6 max-w-[200px]">
-                                        <span className="text-slate-600 text-sm bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 group-hover:border-indigo-200 transition-colors inline-block truncate max-w-full">
-                                            {leave.reason || 'N/A'}
+                                    <td className="px-4 py-4">
+                                        <span className="text-slate-600 text-sm bg-slate-50 px-3 py-1 rounded-lg border border-slate-100 group-hover:border-indigo-200 transition-colors">
+                                            {truncateReason(leave.reason)}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-6 whitespace-nowrap">
+                                    <td className="px-4 py-4">
                                         <span className={`
-                                            px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest inline-block
+                                            px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
                                             ${(leave.status === 'pending' || leave.status === 'pending_hr') ? 'bg-amber-100 text-amber-700' : ''}
                                             ${leave.status === 'pending_team_lead' ? 'bg-indigo-100 text-indigo-700' : ''}
                                             ${leave.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : ''}
-                                            ${(leave.status === 'rejected' || leave.status === 'hr_rejected' || leave.status === 'team_lead_rejected') ? 'bg-rose-100 text-rose-700' : ''}
+                                            ${(leave.status === 'rejected' || leave.status === 'hr_rejected') ? 'bg-rose-100 text-rose-700' : ''}
                                         `}>
                                             {leave.status === 'pending_hr' ? 'Pending HR' :
                                              leave.status === 'pending_team_lead' ? 'Pending TL' :
                                              leave.status === 'hr_rejected' ? 'HR Rejected' : 
-                                             leave.status === 'team_lead_rejected' ? 'TL Rejected' : 
                                              leave.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                    <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex gap-2 justify-end items-center">
-                                            {!isPast && (
+                                            {(leave.status === 'pending' || leave.status === 'pending_hr') ? (
                                                 <>
-                                                    {(leave.status === 'pending' || leave.status === 'pending_hr') ? (
-                                                        <>
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'approved' }); }}
-                                                                className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-sm transition-colors"
-                                                                title="Approve Leave (Send to TL)"
-                                                            >
-                                                                <Check size={16} />
-                                                            </button>
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'rejected' }); }}
-                                                                className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors"
-                                                                title="Reject Leave"
-                                                            >
-                                                                <X size={16} />
-                                                            </button>
-                                                        </>
-                                                    ) : leave.status === 'pending_team_lead' ? (
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'rejected' }); }}
-                                                            className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors"
-                                                            title="Reject Leave before TL review"
-                                                        >
-                                                            <X size={16} />
-                                                        </button>
-                                                    ) : leave.status === 'approved' ? (
-                                                        <button 
-                                                            onClick={() => setConfirmAction({ leave, action: 'rejected' })}
-                                                            className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors"
-                                                            title="Change status to Rejected"
-                                                        >
-                                                            <X size={16} />
-                                                        </button>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={() => setConfirmAction({ leave, action: 'approved' })}
-                                                            className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
-                                                            title="Change status to Approved"
-                                                        >
-                                                            <Check size={16} />
-                                                        </button>
-                                                    )}
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'approved' }); }}
+                                                        className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-sm transition-colors"
+                                                        title="Approve Leave (Send to TL)"
+                                                    >
+                                                        <Check size={16} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'rejected' }); }}
+                                                        className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors"
+                                                        title="Reject Leave"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
                                                 </>
+                                            ) : leave.status === 'pending_team_lead' ? (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setConfirmAction({ leave, action: 'rejected' }); }}
+                                                    className="px-2.5 py-1 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-lg transition-colors"
+                                                    title="Reject Leave before TL review"
+                                                >
+                                                    Reject
+                                                </button>
+                                            ) : leave.status === 'approved' ? (
+                                                <button 
+                                                    onClick={() => setConfirmAction({ leave, action: 'rejected' })}
+                                                    className="px-2.5 py-1 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 rounded-lg transition-colors"
+                                                    title="Change status to Rejected"
+                                                >
+                                                    Reject
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => setConfirmAction({ leave, action: 'approved' })}
+                                                    className="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors"
+                                                    title="Change status to Approved"
+                                                >
+                                                    Approve
+                                                </button>
                                             )}
                                             <button
                                                 onClick={() => handleDeleteLeave && handleDeleteLeave(leave._id)}

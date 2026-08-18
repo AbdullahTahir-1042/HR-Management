@@ -820,16 +820,7 @@ const HRDepartments = () => {
         <div className="space-y-6">
 
             {/* ── Page Header ── */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2 rounded-xl text-white">
-                        <Building2 size={22} />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Departments</h1>
-                        <p className="text-sm text-slate-400">Manage departments and team leads</p>
-                    </div>
-                </div>
+            <div className="flex justify-end">
                 <button
                     onClick={() => setShowAddModal(true)}
                     className="btn-primary"

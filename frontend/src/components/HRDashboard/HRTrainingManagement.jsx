@@ -170,16 +170,7 @@ const HRTrainingManagement = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto min-h-screen space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <MonitorPlay className="w-6 h-6 text-indigo-600" />
-                        Training Management
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        Manage training materials and video resources for employees.
-                    </p>
-                </div>
+            <div className="flex justify-end">
                 <button
                     onClick={() => handleOpenModal()}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"

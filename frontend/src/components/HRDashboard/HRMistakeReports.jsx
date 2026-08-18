@@ -5,7 +5,7 @@ import {
     AlertTriangle, Search, Calendar, Building2,
     UserCheck, X, ShieldAlert, ChevronDown, ChevronUp,
     CheckCircle, Clock, Eye, RotateCcw, Filter, ChevronLeft, ChevronRight,
-    TrendingUp, FileText, User, Sparkles, Download, Trash2
+    TrendingUp, FileText, User, Sparkles, Upload, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDate } from '../../utils/dateUtils';
@@ -303,29 +303,14 @@ const HRMistakeReports = () => {
     return (
         <div className="space-y-6">
             {/* ── Header ────────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <div className="bg-gradient-to-br from-rose-500 via-rose-600 to-amber-600 p-3 rounded-2xl text-white shadow-xl shadow-rose-200/50">
-                            <AlertTriangle size={26} />
-                        </div>
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full border-2 border-white flex items-center justify-center">
-                            <Sparkles size={8} className="text-white" />
-                        </div>
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Mistake Reports</h1>
-                        <p className="text-[13px] text-slate-400 mt-0.5">Review training issues and mistake reports submitted by Team Leads</p>
-                    </div>
-                </div>
-
+            <div className="flex justify-end">
                 {/* Download Button */}
                 <button
                     onClick={handleDownloadCSV}
                     disabled={filteredReports.length === 0}
-                    className="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-rose-100 hover:from-rose-700 hover:to-rose-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-auto"
+                    className="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-rose-100 hover:from-rose-700 hover:to-rose-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                    <Download size={15} />
+                    <Upload size={15} />
                     <span>Export CSV</span>
                 </button>
             </div>
@@ -678,7 +663,7 @@ const HRMistakeReports = () => {
                                                                                 <button
                                                                                     onClick={e => { e.stopPropagation(); handleUpdateStatus(report._id, 'resolved'); }}
                                                                                     disabled={updatingStatus === report._id}
-                                                                                    className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-emerald-200/50 hover:shadow-emerald-300/60"
+                                                                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-100 hover:shadow-indigo-200"
                                                                                 >
                                                                                     <CheckCircle size={14} />
                                                                                     {updatingStatus === report._id ? 'Updating...' : 'Mark Resolved'}

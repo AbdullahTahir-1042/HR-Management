@@ -16,7 +16,9 @@ import {
     User,
     Menu,
     AlertTriangle,
-    ArrowLeft
+    ArrowLeft,
+    MessageCircle,
+    MonitorPlay
 } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
@@ -56,7 +58,11 @@ const HRHeader = ({
         'hr-requests': { icon: <ClipboardList size={24} className="text-indigo-600" />, title: 'HR Requests' },
         'announcements': { icon: <Bell size={24} className="text-indigo-600" />, title: 'Announcements' },
         'mistake-reports': { icon: <AlertTriangle size={24} className="text-indigo-600" />, title: 'Mistake Reports' },
-        'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' }
+        'office-schedule': { icon: <Clock size={24} className="text-indigo-600" />, title: 'Office Schedule' },
+        'messages': { icon: <MessageCircle size={24} className="text-indigo-600" />, title: 'Messages' },
+        'training': { icon: <MonitorPlay size={24} className="text-indigo-600" />, title: 'Training Management' },
+        'profile': { icon: <User size={24} className="text-indigo-600" />, title: 'My Profile' },
+        'edit-profile': { icon: <User size={24} className="text-indigo-600" />, title: 'Edit Profile' }
     };
 
     let currentMeta = tabMeta[activeTab] || { icon: null, title: '' };
@@ -71,7 +77,7 @@ const HRHeader = ({
     }
 
     return (
-        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-4 sticky top-0 z-40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 py-4 sticky top-0 z-40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
             <div className="flex items-center gap-3">
                 <button
                     onClick={() => setSidebarOpen(true)}

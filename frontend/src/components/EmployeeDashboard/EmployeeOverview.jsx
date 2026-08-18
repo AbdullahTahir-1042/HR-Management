@@ -245,19 +245,19 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/performance`)}
-                    className={`bg-white dark:bg-slate-800 p-5 rounded-2xl border ${performanceSummary?.totalComplaints > 0 ? 'border-rose-200 hover:border-rose-300' : 'border-amber-200 hover:border-amber-300'} shadow-sm cursor-pointer transition-all group`}
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className={`p-2 rounded-xl transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 group-hover:bg-amber-100'}`}>
+                        <div className="p-2 rounded-xl transition-colors bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20">
                             {performanceSummary?.totalComplaints > 0 ? <AlertCircle size={20} /> : <Star size={20} />}
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors ${performanceSummary?.totalComplaints > 0 ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 group-hover:bg-rose-100' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 group-hover:bg-amber-100'}`}>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20">
                             {performanceSummary?.hasReviews ? 'Rated' : 'Pending'}
                         </span>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Performance</p>
                     <div className="flex items-end justify-between mt-0.5">
-                        <p className={`text-xl font-bold ${performanceSummary?.totalComplaints > 0 ? 'text-rose-600' : 'text-slate-900 dark:text-white'}`}>
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">
                             {performanceSummary ? `${performanceSummary.adjustedRating}/5` : '-'}
                         </p>
                     </div>
@@ -267,19 +267,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/attendance`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
                 >
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <Clock size={20} />
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
-                            todayAttendance 
-                                ? (todayAttendance.checkOut 
-                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' 
-                                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600') 
-                                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400'
-                        }`}>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20">
                             {todayAttendance 
                                 ? (todayAttendance.checkOut ? 'Completed' : 'On Shift') 
                                 : 'Absent'}
@@ -302,20 +296,20 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/leaves`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-amber-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-colors">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
                             <Calendar size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-lg group-hover:bg-amber-100 transition-colors">
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
                             Month
                         </span>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Leaves Taken</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <p className="text-xl font-bold text-slate-800 dark:text-white">{salaryStats.totalDays} Days</p>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                 </motion.div>
 
@@ -323,13 +317,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/hr-requests`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-blue-200 dark:hover:border-blue-500/50"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
                             <MessageSquare size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-blue-100 dark:group-hover:bg-blue-500/20 transition-colors">
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
                             Support
                         </span>
                     </div>
@@ -339,7 +333,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             <p className="text-xl font-bold text-slate-900 dark:text-white">Get Help</p>
                             <p className="text-[10px] text-slate-400 font-medium">Contact HR Department</p>
                         </div>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                 </motion.div>
 
@@ -347,7 +341,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/announcements`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-200"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
                 >
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
@@ -372,21 +366,21 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-6xl">
                     
-                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/messages`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/messages`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <MessageCircle size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Messages</span>
                     </motion.div>
 
-                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/training`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/training`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <MonitorPlay size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Training Center</span>
                     </motion.div>
                     
-                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/holidays`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer transition-all group hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/holidays`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
                         <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                             <PartyPopper size={24} />
                         </div>
@@ -394,11 +388,11 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                     </motion.div>
 
                     {user?.isTeamLead && (
-                        <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/myTeam`)} className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20 shadow-sm cursor-pointer transition-all group hover:border-amber-400 dark:hover:border-amber-500/50 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
-                            <div className="p-3 bg-amber-100 dark:bg-amber-500/20 text-amber-600 rounded-xl group-hover:bg-amber-200 dark:bg-amber-500/30 transition-colors">
+                        <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/myTeam`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                            <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
                                 <Users size={24} />
                             </div>
-                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">My Team</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">My Team</span>
                         </motion.div>
                     )}
 
@@ -427,7 +421,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                                         {formatShortDate(nextHoliday.startDate)}
                                     </span>
                                     {nextHoliday.type && (
-                                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">
+                                        <span className={`badge ${
+                                            nextHoliday.type === 'Public' ? 'badge-primary' :
+                                            nextHoliday.type === 'Company' ? 'badge-success' :
+                                            nextHoliday.type === 'Optional' ? 'badge-warning' :
+                                            nextHoliday.type === 'Restricted' ? 'badge-danger' :
+                                            'badge-primary'
+                                        }`}>
                                             {nextHoliday.type}
                                         </span>
                                     )}

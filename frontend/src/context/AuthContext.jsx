@@ -17,9 +17,11 @@ export const AuthProvider = ({ children }) => {
                     sessionStorage.setItem('user', JSON.stringify(res.data));
                 } catch (err) {
                     console.error("Token verification failed", err);
-                    sessionStorage.removeItem('token');
-                    sessionStorage.removeItem('user');
-                    setToken(null);
+                    if (err.response && err.response.status === 401) {
+                        sessionStorage.removeItem('token');
+                        sessionStorage.removeItem('user');
+                        setToken(null);
+                    }
                     setUser(null);
                 }
             } else {
