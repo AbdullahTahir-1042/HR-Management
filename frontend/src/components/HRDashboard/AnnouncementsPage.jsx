@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import { useState, useEffect, useContext } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import apiClient from '../../api/axiosClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Megaphone, Calendar, User, Plus, Trash2, X, Loader2, ArrowLeft, Pencil, Check, CheckCheck, Eye } from 'lucide-react';
@@ -19,7 +20,18 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const [selected, setSelected] = useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const selectedId = searchParams.get('id');
+    const selected = announcements.find(a => a._id === selectedId) || null;
+
+    const setSelected = (val) => {
+        if (val) {
+            setSearchParams({ id: val._id });
+        } else {
+            searchParams.delete('id');
+            setSearchParams(searchParams);
+        }
+    };
 
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState('');
@@ -176,13 +188,7 @@ const AnnouncementPage = ({ initialAnnouncements, initialEmployees, onRefreshAnn
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-6"
             >
-                <button
-                    onClick={() => { setSelected(null); setIsEditing(false); }}
-                    className="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                    <ArrowLeft size={16} />
-                    Back to Announcements
-                </button>
+
 
                 <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm p-8 space-y-6">
                     <div className="flex items-start justify-between gap-4">
