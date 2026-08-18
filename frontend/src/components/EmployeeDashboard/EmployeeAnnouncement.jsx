@@ -1,5 +1,6 @@
 import { formatDate } from '../../utils/dateUtils';
 import { useState, useEffect, useContext } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import apiClient from '../../api/axiosClient';
 import { motion } from 'framer-motion';
 import { Megaphone, Calendar, User, Loader2, ArrowLeft } from 'lucide-react';
@@ -9,7 +10,18 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
     const { user } = useContext(AuthContext);
     const [announcements, setAnnouncements] = useState(initialAnnouncements || []);
     const [loading, setLoading] = useState(!initialAnnouncements);
-    const [selected, setSelected] = useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const selectedId = searchParams.get('id');
+    const selected = announcements.find(a => a._id === selectedId) || null;
+
+    const setSelected = (val) => {
+        if (val) {
+            setSearchParams({ id: val._id });
+        } else {
+            searchParams.delete('id');
+            setSearchParams(searchParams);
+        }
+    };
 
     useEffect(() => {
         if (initialAnnouncements) {
@@ -57,13 +69,7 @@ const AnnouncementPage = ({ initialAnnouncements, onRefreshAnnouncements }) => {
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-6"
             >
-                <button
-                    onClick={() => setSelected(null)}
-                    className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
-                >
-                    <ArrowLeft size={16} />
-                    Back to Announcements
-                </button>
+
 
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
                     <div className="flex items-center gap-3">
