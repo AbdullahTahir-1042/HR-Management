@@ -169,28 +169,26 @@ const HRTrainingManagement = () => {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto min-h-screen space-y-6">
-            {/* Header */}
-            <div className="flex justify-end">
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add Resource
-                </button>
-            </div>
-
-            {/* Search & Filters */}
+            {/* Search, Filters & Add Button */}
             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-4">
-                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-                    <Search className="w-5 h-5 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search resources by title..."
-                        className="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-700 dark:text-slate-200"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex-1 flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all w-full">
+                        <Search className="w-5 h-5 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search resources by title..."
+                            className="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-700 dark:text-slate-200"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap w-full sm:w-auto justify-center"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Resource
+                    </button>
                 </div>
                 
                 {/* Filter Tabs */}
