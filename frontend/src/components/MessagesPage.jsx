@@ -579,7 +579,7 @@ const MessagesPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex h-[calc(100vh-180px)] min-h-[600px]">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/50 shadow-sm shadow-slate-100 dark:shadow-none overflow-hidden flex h-[calc(100vh-180px)] min-h-[400px]">
                 {/* Conversation list */}
                 <div className={`w-full sm:w-80 shrink-0 border-r border-slate-100 dark:border-slate-600 flex flex-col bg-slate-50/40 dark:bg-slate-900/40 ${activeConversation ? 'hidden sm:flex' : 'flex'}`}>
                     <div className="p-3.5 border-b border-slate-100 dark:border-slate-600">
@@ -840,12 +840,24 @@ const MessagesPage = () => {
                                 )}
                             </AnimatePresence>
 
-                            <form onSubmit={handleSend} className="p-4 pr-24 lg:pr-24 border-t border-slate-100 dark:border-slate-600 flex items-center gap-2 bg-white dark:bg-slate-800">
-                                <input
+                            <form onSubmit={handleSend} className="p-4 pr-24 lg:pr-24 border-t border-slate-100 dark:border-slate-600 flex items-end gap-2 bg-white dark:bg-slate-800">
+                                <textarea
                                     value={messageText}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        handleInputChange(e);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSend(e);
+                                        }
+                                    }}
                                     placeholder="Type a message..."
-                                    className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-200 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all"
+                                    rows={1}
+                                    className="flex-1 px-4 py-2.5 resize-none overflow-y-auto bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-600 dark:text-slate-200 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 dark:focus:ring-indigo-500/20 focus:border-indigo-300 dark:focus:border-indigo-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all"
+                                    style={{ minHeight: '44px', maxHeight: '120px' }}
                                 />
                                 <motion.button
                                     type="submit"

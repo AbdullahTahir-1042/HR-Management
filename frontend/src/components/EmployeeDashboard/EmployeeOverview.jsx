@@ -245,13 +245,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/performance`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-amber-200 dark:border-amber-500/30 shadow-sm cursor-pointer transition-all group hover:border-amber-400 dark:hover:border-amber-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 rounded-xl transition-colors bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20">
+                        <div className="p-2 rounded-xl transition-colors bg-amber-50 dark:bg-amber-500/10 text-amber-600 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20">
                             {performanceSummary?.totalComplaints > 0 ? <AlertCircle size={20} /> : <Star size={20} />}
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-tight transition-colors bg-amber-50 dark:bg-amber-500/10 text-amber-600 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/20">
                             {performanceSummary?.hasReviews ? 'Rated' : 'Pending'}
                         </span>
                     </div>
@@ -296,20 +296,20 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/leaves`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-violet-200 dark:border-violet-500/30 shadow-sm cursor-pointer transition-all group hover:border-violet-400 dark:hover:border-violet-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
+                        <div className="p-2 bg-violet-50 dark:bg-violet-500/10 text-violet-600 rounded-xl group-hover:bg-violet-100 dark:group-hover:bg-violet-500/20 transition-colors">
                             <Calendar size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
+                        <span className="text-[10px] font-bold text-violet-600 bg-violet-50 dark:bg-violet-500/10 px-2 py-0.5 rounded-lg group-hover:bg-violet-100 dark:group-hover:bg-violet-500/20 transition-colors">
                             Month
                         </span>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Leaves Taken</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <p className="text-xl font-bold text-slate-800 dark:text-white">{salaryStats.totalDays} Days</p>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-violet-500 transition-colors" />
                     </div>
                 </motion.div>
 
@@ -317,13 +317,13 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/hr-requests`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-sky-200 dark:border-sky-500/30 shadow-sm cursor-pointer transition-all group hover:border-sky-400 dark:hover:border-sky-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
+                        <div className="p-2 bg-sky-50 dark:bg-sky-500/10 text-sky-600 rounded-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-500/20 transition-colors">
                             <MessageSquare size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20 transition-colors">
+                        <span className="text-[10px] font-bold text-sky-600 bg-sky-50 dark:bg-sky-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-sky-100 dark:group-hover:bg-sky-500/20 transition-colors">
                             Support
                         </span>
                     </div>
@@ -333,7 +333,7 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                             <p className="text-xl font-bold text-slate-900 dark:text-white">Get Help</p>
                             <p className="text-[10px] text-slate-400 font-medium">Contact HR Department</p>
                         </div>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-sky-500 transition-colors" />
                     </div>
                 </motion.div>
 
@@ -341,18 +341,18 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 <motion.div 
                     whileHover={{ y: -4 }}
                     onClick={() => navigate(`/employee/${user?._id || user?.id}/announcements`)}
-                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 shadow-sm cursor-pointer transition-all group hover:border-emerald-400 dark:hover:border-emerald-400"
                 >
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                        <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 transition-colors">
                             <Megaphone size={20} />
                         </div>
-                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">All</span>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-lg uppercase tracking-tight group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/20 transition-colors">All</span>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">Announcements</p>
                     <div className="flex items-end justify-between mt-0.5">
                         <p className="text-xl font-bold text-slate-900 dark:text-white">{announcements.length}</p>
-                        <ArrowRight size={14} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                        <ArrowRight size={14} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
                     </div>
                 </motion.div>
 
@@ -366,30 +366,30 @@ const EmployeeOverview = ({ user, attendance, leaves, holidays = [], announcemen
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-6xl">
                     
-                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/messages`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/messages`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-sky-200 dark:border-sky-500/30 shadow-sm cursor-pointer transition-all group hover:border-sky-400 dark:hover:border-sky-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                        <div className="p-3 bg-sky-50 dark:bg-sky-500/10 text-sky-600 rounded-xl group-hover:bg-sky-100 dark:bg-sky-500/20 transition-colors">
                             <MessageCircle size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Messages</span>
                     </motion.div>
 
-                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/training`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/training`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/30 shadow-sm cursor-pointer transition-all group hover:border-amber-400 dark:hover:border-amber-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-600 rounded-xl group-hover:bg-amber-100 dark:bg-amber-500/20 transition-colors">
                             <MonitorPlay size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Training Center</span>
                     </motion.div>
                     
-                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/holidays`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                    <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/holidays`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 shadow-sm cursor-pointer transition-all group hover:border-emerald-400 dark:hover:border-emerald-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 rounded-xl group-hover:bg-emerald-100 dark:bg-emerald-500/20 transition-colors">
                             <PartyPopper size={24} />
                         </div>
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Holidays</span>
                     </motion.div>
 
                     {user?.isTeamLead && (
-                        <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/myTeam`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm cursor-pointer transition-all group hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
-                            <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:bg-indigo-100 dark:bg-indigo-500/20 transition-colors">
+                        <motion.div whileHover={{ y: -4 }} onClick={() => navigate(`/employee/${user?._id || user?.id}/myTeam`)} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-violet-200 dark:border-violet-500/30 shadow-sm cursor-pointer transition-all group hover:border-violet-400 dark:hover:border-violet-400 hover:shadow-md flex flex-col items-center justify-center gap-3 text-center relative">
+                            <div className="p-3 bg-violet-50 dark:bg-violet-500/10 text-violet-600 rounded-xl group-hover:bg-violet-100 dark:bg-violet-500/20 transition-colors">
                                 <Users size={24} />
                             </div>
                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">My Team</span>

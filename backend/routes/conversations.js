@@ -99,9 +99,61 @@ router.get('/', auth, async (req, res) => {
             return true;
         });
 
-        const results = await Promise.all(
-            conversations.map(conv => hydrateConversation(conv, req.user.id))
-        );
+        const convIds = conversations.map(c => c._id);
+        const userIdObj = new mongoose.Types.ObjectId(req.user.id);
+
+        const [latestMessages, unreadCounts] = await Promise.all([
+            Message.aggregate([
+                { $match: { conversation: { $in: convIds } } },
+                { $sort: { createdAt: -1 } },
+                { $group: {
+                    _id: "$conversation",
+                    text: { $first: "$text" },
+                    createdAt: { $first: "$createdAt" },
+                    sender: { $first: "$sender" }
+                }}
+            ]),
+            Message.aggregate([
+                { $match: { 
+                    conversation: { $in: convIds },
+                    sender: { $ne: userIdObj },
+                    readBy: { $ne: userIdObj }
+                }},
+                { $group: { _id: "$conversation", count: { $sum: 1 } } }
+            ])
+        ]);
+
+        const latestMsgMap = new Map(latestMessages.map(m => [String(m._id), m]));
+        const unreadCountMap = new Map(unreadCounts.map(u => [String(u._id), u.count]));
+
+        const results = conversations.map(conv => {
+            const lastMessage = latestMsgMap.get(String(conv._id));
+            const unreadCount = unreadCountMap.get(String(conv._id)) || 0;
+            const userIdStr = String(req.user.id);
+            const otherParticipant = conv.type === 'dm'
+                ? conv.participants.find(p => String(p._id || p) !== userIdStr)
+                : null;
+
+            return {
+                _id: conv._id,
+                type: conv.type,
+                name: conv.type === 'group' ? conv.name : (otherParticipant?.name || 'Unknown User'),
+                photo: conv.type === 'dm' ? (otherParticipant?.photo || null) : null,
+                participants: conv.participants,
+                memberCount: conv.participants.length,
+                adminIds: (conv.admins || []).map(a => String(a._id || a)),
+                viewerIsAdmin: conv.type === 'group' ? isAdmin(conv, userIdStr) : false,
+                otherUser: otherParticipant ? {
+                    _id: otherParticipant._id,
+                    name: otherParticipant.name,
+                    lastSeenAt: otherParticipant.lastSeenAt
+                } : null,
+                lastMessage: lastMessage?.text || '',
+                lastMessageAt: lastMessage?.createdAt || conv.createdAt,
+                lastMessageFromMe: lastMessage ? String(lastMessage.sender) === userIdStr : false,
+                unreadCount
+            };
+        });
 
         results.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
         res.json(results);
