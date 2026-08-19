@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
@@ -55,7 +56,7 @@ const tools = [
       },
       {
         name: "get_my_attendance_report",
-        description: "Get the attendance history for the currently logged-in user.",
+        description: "Get the PAST attendance HISTORY (previous days) for the currently logged-in user ONLY.",
         parameters: { 
           type: SchemaType.OBJECT, 
           properties: { days: { type: SchemaType.INTEGER, description: "Past days to retrieve (default 7)." } }
@@ -81,16 +82,6 @@ const tools = [
         description: "Get the full list of all upcoming company holidays for the year.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
       },
-      {
-        name: "get_my_team_leaves",
-        description: "Get a list of pending leave requests submitted by the direct reports of the logged-in Team Lead.",
-        parameters: { type: SchemaType.OBJECT, properties: {} }
-      },
-      {
-        name: "get_my_team_attendance",
-        description: "Get the attendance for today for the direct reports of the logged-in Team Lead.",
-        parameters: { type: SchemaType.OBJECT, properties: {} }
-      }
     ]
   }
 ];
@@ -116,6 +107,17 @@ router.get('/chat/history', auth, async (req, res) => {
     } catch (err) {
         console.error('History fetch error:', err);
         res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
+// Clear History Endpoint
+router.delete('/chat/history', auth, async (req, res) => {
+    try {
+        await ChatSession.findOneAndDelete({ user: req.user.id });
+        res.json({ success: true, msg: 'Chat history cleared' });
+    } catch (err) {
+        console.error('Clear history error:', err);
+        res.status(500).json({ error: 'Failed to clear chat history' });
     }
 });
 
@@ -145,21 +147,18 @@ router.post('/chat', auth, async (req, res) => {
         const isUserHR = user.role === 'hr';
         const allowedFunctionNames = isUserHR 
             ? ["apply_leave", "get_company_attendance_today", "get_employee_directory", "get_pending_leave_requests", "get_pending_hr_requests", "get_company_holidays", "get_my_attendance_report"]
-            : user.isTeamLead
-            ? ["apply_leave", "get_company_holidays", "get_my_attendance_report", "get_my_team_leaves", "get_my_team_attendance"]
             : ["apply_leave", "get_company_holidays", "get_my_attendance_report"];
             
         const userTools = [{
             functionDeclarations: tools[0].functionDeclarations.filter(t => allowedFunctionNames.includes(t.name))
         }];
 
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", tools: userTools });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash", tools: userTools });
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayAttendance = await Attendance.findOne({ employee: req.user.id, date: today });
-        const upcomingHolidays = await Holiday.find({ date: { $gte: today } }).sort({ date: 1 }).limit(2);
-        const latestAnnouncements = await Announcement.find().sort({ date: -1 }).limit(2);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayAttendance = await Attendance.findOne({ employee: req.user.id, date: todayStr });
+        const upcomingHolidays = await Holiday.find({ startDate: { $gte: todayStr } }).sort({ startDate: 1 }).limit(2);
+        const latestAnnouncements = await Announcement.find().sort({ createdAt: -1 }).limit(2);
 
         const leaveTypes = await LeaveType.find();
         const usedLeaves = await LeaveRequest.aggregate([
@@ -182,11 +181,21 @@ router.post('/chat', auth, async (req, res) => {
         let chatSession = await ChatSession.findOne({ user: req.user.id });
         if (!chatSession) chatSession = new ChatSession({ user: req.user.id, messages: [] });
 
-        // Build native history array for Gemini SDK
-        const nativeHistory = chatSession.messages.map(msg => ({
-            role: msg.role,
-            parts: msg.parts
-        }));
+        // Build native history array for Gemini SDK (filter out breaking functionResponses)
+        // Limit to last 20 messages to keep token count low and improve response speed
+        const recentMessages = chatSession.messages.slice(-20);
+        const nativeHistory = recentMessages.map(msg => {
+            const safeParts = msg.parts.map(p => {
+                if (p && p.functionResponse) {
+                    return { text: `[System Note: Function ${p.functionResponse.name} was executed]` };
+                }
+                return p;
+            });
+            return {
+                role: msg.role === 'function' ? 'user' : msg.role,
+                parts: safeParts
+            };
+        });
 
         const chat = model.startChat({
             history: nativeHistory,
@@ -197,7 +206,16 @@ router.post('/chat', auth, async (req, res) => {
         chatSession.messages.push({ role: 'user', parts: [{ text: message }] });
         await chatSession.save();
 
-        let streamResult = await chat.sendMessageStream(message);
+        // Add a 15-second timeout to prevent hanging connections
+        const timeoutMs = 15000;
+        const sendWithTimeout = (msg) => {
+            return Promise.race([
+                chat.sendMessageStream(msg),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI_TIMEOUT')), timeoutMs))
+            ]);
+        };
+
+        let streamResult = await sendWithTimeout(message);
         
         let fullResponse = "";
         let functionCallToExecute = null;
@@ -259,37 +277,22 @@ router.post('/chat', auth, async (req, res) => {
                 responseObj = { data: responseText };
                 res.write(`data: ${JSON.stringify({ type: 'ui', component: 'LeaveRequests', data: pendingLeaves })}\n\n`);
             } else if (call.name === 'get_pending_hr_requests') {
-                const pendingRequests = await HRRequest.find({ status: { $in: ['Open', 'In Progress'] } }).populate('employee', 'name');
-                responseText = pendingRequests.length > 0 ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.subject}"`).join('\n') : 'No open HR requests.';
+                const pendingRequests = await HRRequest.find({ status: { $in: ['Pending', 'In Review'] } }).populate('employee', 'name');
+                responseText = pendingRequests.length > 0 ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.description}"`).join('\n') : 'No open HR requests.';
                 responseObj = { data: responseText };
             } else if (call.name === 'get_company_holidays') {
-                const todayZero = new Date(); todayZero.setHours(0,0,0,0);
-                const holidays = await Holiday.find({ date: { $gte: todayZero } }).sort({ date: 1 });
-                responseText = holidays.length > 0 ? holidays.map(h => `- ${h.name} on ${new Date(h.date).toLocaleDateString()}`).join('\n') : 'No upcoming holidays.';
-                responseObj = { data: responseText };
-            } else if (call.name === 'get_my_team_leaves') {
-                const teamLeaves = await LeaveRequest.find({ status: 'pending_team_lead' })
-                    .populate({ path: 'employee', match: { department: user.department }, select: 'name email department photo' })
-                    .populate('leaveType', 'name');
-                const validTeamLeaves = teamLeaves.filter(l => l.employee != null);
-                responseText = validTeamLeaves.length > 0 ? validTeamLeaves.map(l => `- ${l.employee.name} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()}`).join('\n') : 'No pending team leaves.';
-                responseObj = { data: responseText };
-                res.write(`data: ${JSON.stringify({ type: 'ui', component: 'LeaveRequests', data: validTeamLeaves })}\n\n`);
-            } else if (call.name === 'get_my_team_attendance') {
                 const todayStr = new Date().toISOString().split('T')[0];
-                const teamAttendance = await Attendance.find({ date: todayStr })
-                    .populate({ path: 'employee', match: { department: user.department }, select: 'name department' });
-                const validTeamAttendance = teamAttendance.filter(a => a.employee != null);
-                responseText = validTeamAttendance.length > 0 ? validTeamAttendance.map(a => `- ${a.employee.name} - Status: ${a.status}`).join('\n') : 'No team members checked in.';
+                const holidays = await Holiday.find({ startDate: { $gte: todayStr } }).sort({ startDate: 1 });
+                responseText = holidays.length > 0 ? holidays.map(h => `- ${h.name} from ${h.startDate} to ${h.endDate}`).join('\n') : 'No upcoming holidays.';
                 responseObj = { data: responseText };
             }
 
-            const funcRespPart = { functionResponse: { name: call.name, response: responseObj } };
-            chatSession.messages.push({ role: 'function', parts: [funcRespPart] });
+            const funcRespPart = { text: `[System Note: Function ${call.name} executed. Result: ${JSON.stringify(responseObj)}]` };
+            chatSession.messages.push({ role: 'user', parts: [funcRespPart] });
             await chatSession.save();
 
             // Send tool response to model and stream the result
-            const followupStream = await chat.sendMessageStream([funcRespPart]);
+            const followupStream = await sendWithTimeout([funcRespPart]);
             for await (const chunk of followupStream.stream) {
                 const chunkText = chunk.text();
                 fullResponse += chunkText;
@@ -305,7 +308,9 @@ router.post('/chat', auth, async (req, res) => {
         res.end();
 
     } catch (error) {
-        console.error('AI Chat Error:', error);
+        const isTimeout = error.message === 'AI_TIMEOUT';
+        console.error(isTimeout ? 'AI Timeout (15s)' : 'AI Chat Error:', error);
+        require('fs').appendFileSync('error_log.txt', new Date().toISOString() + (isTimeout ? ' AI Timeout' : ' AI Chat Error: ' + (error.stack || error)) + '\n');
         
         // Push error message to DB so history doesn't get desynced
         try {

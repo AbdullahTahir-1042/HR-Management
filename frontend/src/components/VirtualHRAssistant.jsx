@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Sparkles, Loader2, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../api/axiosClient';
 import ReactMarkdown from 'react-markdown';
@@ -81,9 +81,10 @@ const VirtualHRAssistant = ({ user }) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [toolStatus, setToolStatus] = useState(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const messagesEndRef = useRef(null);
 
-    const suggestedActions = ["🏖️ Apply for Leave", "🗓️ Check my attendance", "🎉 Upcoming Holidays"];
+    const suggestedActions = ["🏖️ Apply for Leave", "🗓️ My Attendance History", "🎉 Show Company Public Holidays"];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,6 +107,16 @@ const VirtualHRAssistant = ({ user }) => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
+
+    const handleClearChat = async () => {
+        try {
+            await apiClient.delete('/ai/chat/history');
+            setMessages([{ role: 'model', parts: `Hi ${user?.name || 'there'}! I'm your Virtual HR Assistant ✨ How can I help you today?` }]);
+            setIsMenuOpen(false);
+        } catch (err) {
+            console.error('Failed to clear chat', err);
+        }
+    };
 
     const handleSend = async (e, directMessage = null) => {
         if (e) e.preventDefault();
@@ -219,12 +230,22 @@ const VirtualHRAssistant = ({ user }) => {
                                     <p className="text-xs text-indigo-200">Powered by AI</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setIsOpen(false)}
-                                className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-md transition-colors shrink-0 ml-2"
-                            >
-                                <X size={18} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button 
+                                    onClick={handleClearChat}
+                                    className="flex items-center gap-1.5 text-indigo-100 hover:text-white px-2.5 py-1.5 hover:bg-white/10 rounded-lg transition-colors text-xs font-medium tracking-wide"
+                                >
+                                    <Plus size={14} />
+                                    <span>New Chat</span>
+                                </button>
+
+                                <button 
+                                    onClick={() => setIsOpen(false)}
+                                    className="text-white/80 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0 ml-1"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Chat Window */}
