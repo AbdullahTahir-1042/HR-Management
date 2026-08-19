@@ -1,0 +1,25 @@
+2026-08-19T07:42:40.590Z AI Chat Error: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse: [400 Bad Request] Role 'function' is not supported. Please use a valid role: SYSTEM, SYSTEM_1, USER, ASSISTANT, DEVELOPER, CONTEXT, USER_CONTEXT, MODEL, USER.
+    at handleResponseNotOk (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:434:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async makeRequest (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:403:9)
+    at async generateContentStream (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:862:22)
+2026-08-19T07:51:26.824Z AI Chat Error: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse: [400 Bad Request] Role 'function' is not supported. Please use a valid role: SYSTEM, SYSTEM_1, USER, ASSISTANT, DEVELOPER, CONTEXT, USER_CONTEXT, MODEL, USER.
+    at handleResponseNotOk (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:434:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async makeRequest (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:403:9)
+    at async generateContentStream (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:862:22)
+2026-08-19T07:56:09.655Z AI Chat Error: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.
+    at handleResponseNotOk (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:434:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async makeRequest (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:403:9)
+    at async generateContentStream (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:862:22)
+2026-08-19T07:56:42.091Z AI Chat Error: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse: [404 Not Found] This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash for the latest features and improvements.
+    at handleResponseNotOk (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:434:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async makeRequest (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:403:9)
+    at async generateContentStream (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:862:22)
+2026-08-19T08:09:27.730Z AI Chat Error: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:streamGenerateContent?alt=sse: [400 Bad Request] Duplicate function declaration found: get_company_holidays
+    at handleResponseNotOk (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:434:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async makeRequest (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:403:9)
+    at async generateContentStream (D:\hrmanagement\HR-Management\backend\node_modules\@google\generative-ai\dist\index.js:862:22)

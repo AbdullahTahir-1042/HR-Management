@@ -84,7 +84,9 @@ const VirtualHRAssistant = ({ user }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const messagesEndRef = useRef(null);
 
-    const suggestedActions = ["🏖️ Apply for Leave", "🗓️ My Attendance History", "🎉 Show Company Public Holidays"];
+    const suggestedActions = user?.role === 'hr' 
+        ? ["👥 Employee Directory", "📝 Pending Leaves", "🎫 Open HR Requests"]
+        : ["🏖️ Apply for Leave", "🗓️ My Attendance History", "🎉 Show Company Public Holidays"];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -330,7 +332,7 @@ const VirtualHRAssistant = ({ user }) => {
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Ask about leaves, policies..."
+                                    placeholder={user?.role === 'hr' ? "Lookup employee attendance, requests..." : "Ask about leaves, policies..."}
                                     className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all dark:text-white"
                                     disabled={isLoading}
                                 />

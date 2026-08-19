@@ -63,6 +63,18 @@ const tools = [
         }
       },
       {
+        name: "get_employee_attendance_report",
+        description: "HR ONLY: Get the past attendance history for a specific employee by name.",
+        parameters: { 
+          type: SchemaType.OBJECT, 
+          properties: { 
+            employeeName: { type: SchemaType.STRING, description: "The full or partial name of the employee." },
+            days: { type: SchemaType.INTEGER, description: "Past days to retrieve (default 7)." }
+          },
+          required: ["employeeName"]
+        }
+      },
+      {
         name: "get_employee_directory",
         description: "Get the company staff directory, including names, emails, departments, and roles.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
@@ -96,9 +108,12 @@ router.get('/chat/history', auth, async (req, res) => {
         if (!session) {
             return res.json({ history: [] });
         }
-        // Filter out function calls for the frontend UI, only show user/model text
+        // Filter out function calls and system notes for the frontend UI
         const uiHistory = session.messages.filter(msg => 
-            msg.parts && msg.parts[0] && typeof msg.parts[0].text === 'string'
+            msg.parts && 
+            msg.parts[0] && 
+            typeof msg.parts[0].text === 'string' &&
+            !msg.parts[0].text.startsWith('[System Note:')
         ).map(msg => ({
             role: msg.role,
             parts: msg.parts[0].text
@@ -146,7 +161,7 @@ router.post('/chat', auth, async (req, res) => {
         const user = await User.findById(req.user.id).select('-password');
         const isUserHR = user.role === 'hr';
         const allowedFunctionNames = isUserHR 
-            ? ["apply_leave", "get_company_attendance_today", "get_employee_directory", "get_pending_leave_requests", "get_pending_hr_requests", "get_company_holidays", "get_my_attendance_report"]
+            ? ["apply_leave", "get_company_attendance_today", "get_employee_directory", "get_pending_leave_requests", "get_pending_hr_requests", "get_company_holidays", "get_my_attendance_report", "get_employee_attendance_report"]
             : ["apply_leave", "get_company_holidays", "get_my_attendance_report"];
             
         const userTools = [{
@@ -266,6 +281,18 @@ router.post('/chat', auth, async (req, res) => {
                 const pastDateStr = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                 const myAttendance = await Attendance.find({ employee: req.user.id, date: { $gte: pastDateStr } }).sort({ date: -1 });
                 responseText = myAttendance.length > 0 ? myAttendance.map(a => `- Date: ${a.date} | Status: ${a.status} | In: ${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : 'N/A'}`).join('\n') : 'No records.';
+                responseObj = { data: responseText };
+            } else if (call.name === 'get_employee_attendance_report') {
+                const { employeeName } = call.args;
+                const days = call.args.days || 7;
+                const targetEmployee = await User.findOne({ name: { $regex: new RegExp(escapeRegex(employeeName), "i") } });
+                if (!targetEmployee) {
+                    responseText = `Employee matching "${employeeName}" not found.`;
+                } else {
+                    const pastDateStr = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    const employeeAttendance = await Attendance.find({ employee: targetEmployee._id, date: { $gte: pastDateStr } }).sort({ date: -1 });
+                    responseText = employeeAttendance.length > 0 ? employeeAttendance.map(a => `- Date: ${a.date} | Status: ${a.status} | In: ${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : 'N/A'}`).join('\n') : `No records for ${targetEmployee.name}.`;
+                }
                 responseObj = { data: responseText };
             } else if (call.name === 'get_employee_directory') {
                 const employees = await User.find({ status: { $ne: 'Inactive' } }).select('name email department role promotionRank status contractDetails joiningStatus salary');
