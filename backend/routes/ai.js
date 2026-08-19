@@ -80,6 +80,16 @@ const tools = [
         name: "get_company_holidays",
         description: "Get the full list of all upcoming company holidays for the year.",
         parameters: { type: SchemaType.OBJECT, properties: {} }
+      },
+      {
+        name: "get_my_team_leaves",
+        description: "Get a list of pending leave requests submitted by the direct reports of the logged-in Team Lead.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
+      },
+      {
+        name: "get_my_team_attendance",
+        description: "Get the attendance for today for the direct reports of the logged-in Team Lead.",
+        parameters: { type: SchemaType.OBJECT, properties: {} }
       }
     ]
   }
@@ -135,6 +145,8 @@ router.post('/chat', auth, async (req, res) => {
         const isUserHR = user.role === 'hr';
         const allowedFunctionNames = isUserHR 
             ? ["apply_leave", "get_company_attendance_today", "get_employee_directory", "get_pending_leave_requests", "get_pending_hr_requests", "get_company_holidays", "get_my_attendance_report"]
+            : user.isTeamLead
+            ? ["apply_leave", "get_company_holidays", "get_my_attendance_report", "get_my_team_leaves", "get_my_team_attendance"]
             : ["apply_leave", "get_company_holidays", "get_my_attendance_report"];
             
         const userTools = [{
@@ -206,6 +218,9 @@ router.post('/chat', auth, async (req, res) => {
             chatSession.messages.push({ role: 'model', parts: [{ functionCall: call }] });
             await chatSession.save();
             
+            // Notify frontend that we are executing a tool
+            res.write(`data: ${JSON.stringify({ type: 'status', text: `Fetching data...` })}\n\n`);
+            
             let responseText = "Success";
             let responseObj = { data: "Success" };
 
@@ -239,9 +254,10 @@ router.post('/chat', auth, async (req, res) => {
                 responseText = employees.length > 0 ? employees.map(e => `- ${e.name} (${e.department || 'General'}) | Email: ${e.email} | Rank: ${e.promotionRank} | Status: ${e.status} | Joined: ${e.contractDetails?.startDate ? new Date(e.contractDetails.startDate).toISOString().split('T')[0] : 'Not specified'}`).join('\n') : 'No employees.';
                 responseObj = { data: responseText };
             } else if (call.name === 'get_pending_leave_requests') {
-                const pendingLeaves = await LeaveRequest.find({ status: 'pending_hr' }).populate('employee', 'name').populate('leaveType', 'name');
+                const pendingLeaves = await LeaveRequest.find({ status: 'pending_hr' }).populate('employee', 'name email department photo').populate('leaveType', 'name');
                 responseText = pendingLeaves.length > 0 ? pendingLeaves.map(l => `- ${l.employee?.name || 'Unknown'} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()}`).join('\n') : 'No pending requests.';
                 responseObj = { data: responseText };
+                res.write(`data: ${JSON.stringify({ type: 'ui', component: 'LeaveRequests', data: pendingLeaves })}\n\n`);
             } else if (call.name === 'get_pending_hr_requests') {
                 const pendingRequests = await HRRequest.find({ status: { $in: ['Open', 'In Progress'] } }).populate('employee', 'name');
                 responseText = pendingRequests.length > 0 ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.subject}"`).join('\n') : 'No open HR requests.';
@@ -250,6 +266,21 @@ router.post('/chat', auth, async (req, res) => {
                 const todayZero = new Date(); todayZero.setHours(0,0,0,0);
                 const holidays = await Holiday.find({ date: { $gte: todayZero } }).sort({ date: 1 });
                 responseText = holidays.length > 0 ? holidays.map(h => `- ${h.name} on ${new Date(h.date).toLocaleDateString()}`).join('\n') : 'No upcoming holidays.';
+                responseObj = { data: responseText };
+            } else if (call.name === 'get_my_team_leaves') {
+                const teamLeaves = await LeaveRequest.find({ status: 'pending_team_lead' })
+                    .populate({ path: 'employee', match: { department: user.department }, select: 'name email department photo' })
+                    .populate('leaveType', 'name');
+                const validTeamLeaves = teamLeaves.filter(l => l.employee != null);
+                responseText = validTeamLeaves.length > 0 ? validTeamLeaves.map(l => `- ${l.employee.name} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()}`).join('\n') : 'No pending team leaves.';
+                responseObj = { data: responseText };
+                res.write(`data: ${JSON.stringify({ type: 'ui', component: 'LeaveRequests', data: validTeamLeaves })}\n\n`);
+            } else if (call.name === 'get_my_team_attendance') {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const teamAttendance = await Attendance.find({ date: todayStr })
+                    .populate({ path: 'employee', match: { department: user.department }, select: 'name department' });
+                const validTeamAttendance = teamAttendance.filter(a => a.employee != null);
+                responseText = validTeamAttendance.length > 0 ? validTeamAttendance.map(a => `- ${a.employee.name} - Status: ${a.status}`).join('\n') : 'No team members checked in.';
                 responseObj = { data: responseText };
             }
 

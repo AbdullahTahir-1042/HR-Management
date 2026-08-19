@@ -5,6 +5,74 @@ import apiClient from '../api/axiosClient';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+const LeaveRequestCard = ({ leave, user }) => {
+    const [status, setStatus] = useState(leave.status);
+    const [loading, setLoading] = useState(false);
+
+    const handleAction = async (action) => {
+        setLoading(true);
+        try {
+            const endpoint = user.role === 'hr' ? `/leaves/${leave._id}/hr-review` : `/leaves/${leave._id}/team-lead-review`;
+            await apiClient.put(endpoint, { action, remark: 'Actioned via HR Assistant' });
+            setStatus(action);
+        } catch (err) {
+            console.error('Error actioning leave:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (status === 'approved' || status === 'rejected' || status === 'hr_rejected') {
+        return (
+            <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-sm border border-slate-200 dark:border-slate-700 shadow-sm">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold">{leave.employee?.name}</span>'s leave was <span className="font-bold">{status.includes('reject') ? 'Rejected' : 'Approved'}</span>.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white dark:bg-slate-800 p-3.5 rounded-2xl rounded-tl-sm shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col gap-2 w-64 sm:w-72">
+            <div className="flex items-center gap-3">
+                {leave.employee?.photo ? (
+                    <img src={leave.employee.photo} alt="" className="w-9 h-9 rounded-full object-cover shadow-sm" />
+                ) : (
+                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shadow-sm">
+                        {leave.employee?.name?.charAt(0)}
+                    </div>
+                )}
+                <div>
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{leave.employee?.name}</h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{leave.leaveType?.name}</p>
+                </div>
+            </div>
+            <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                <span className="font-bold text-slate-700 dark:text-slate-200">Reason:</span> {leave.reason}
+            </div>
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 text-center">
+                {new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}
+            </div>
+            <div className="flex gap-2 mt-1">
+                <button 
+                    onClick={() => handleAction('approved')}
+                    disabled={loading}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                >
+                    {loading ? <Loader2 size={14} className="animate-spin mx-auto" /> : 'Approve'}
+                </button>
+                <button 
+                    onClick={() => handleAction(user.role === 'hr' ? 'hr_rejected' : 'rejected')}
+                    disabled={loading}
+                    className="flex-1 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 rounded-xl transition-all shadow-sm disabled:opacity-50"
+                >
+                    {loading ? <Loader2 size={14} className="animate-spin mx-auto" /> : 'Reject'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const VirtualHRAssistant = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -12,6 +80,7 @@ const VirtualHRAssistant = ({ user }) => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [toolStatus, setToolStatus] = useState(null);
     const messagesEndRef = useRef(null);
 
     const suggestedActions = ["🏖️ Apply for Leave", "🗓️ Check my attendance", "🎉 Upcoming Holidays"];
@@ -86,7 +155,13 @@ const VirtualHRAssistant = ({ user }) => {
                         if (dataStr) {
                             try {
                                 const parsed = JSON.parse(dataStr);
-                                if (parsed.text) {
+                                if (parsed.type === 'status') {
+                                    setToolStatus(parsed.text);
+                                } else if (parsed.type === 'ui') {
+                                    setToolStatus(null);
+                                    setMessages(prev => [...prev, { role: 'ui', component: parsed.component, data: parsed.data }]);
+                                } else if (parsed.text) {
+                                    setToolStatus(null);
                                     if (isFirstChunk) {
                                         setIsLoading(false);
                                         setMessages(prev => [...prev, { role: 'model', parts: parsed.text }]);
@@ -163,14 +238,26 @@ const VirtualHRAssistant = ({ user }) => {
                                         {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                                     </div>
                                     <div 
-                                        className={`p-3 rounded-2xl text-sm prose prose-sm dark:prose-invert ${
+                                        className={`rounded-2xl text-sm ${msg.role !== 'ui' ? 'prose prose-sm dark:prose-invert p-3' : 'w-full'} ${
                                             msg.role === 'user' 
-                                                ? 'bg-indigo-600 text-white rounded-tr-sm' 
-                                                : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-tl-sm shadow-sm'
+                                                ? 'bg-indigo-600 text-white rounded-tr-sm shadow-sm' 
+                                                : msg.role === 'model'
+                                                    ? 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-tl-sm shadow-sm'
+                                                    : 'bg-transparent'
                                         }`}
                                     >
                                         {msg.role === 'user' ? (
                                             msg.parts
+                                        ) : msg.role === 'ui' ? (
+                                            msg.component === 'LeaveRequests' && (
+                                                <div className="flex flex-col gap-3 w-full items-start">
+                                                    {msg.data.length > 0 ? msg.data.map(leave => (
+                                                        <LeaveRequestCard key={leave._id} leave={leave} user={user} />
+                                                    )) : (
+                                                        <p className="text-slate-500 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">No pending requests found.</p>
+                                                    )}
+                                                </div>
+                                            )
                                         ) : (
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {msg.parts}
@@ -179,15 +266,24 @@ const VirtualHRAssistant = ({ user }) => {
                                     </div>
                                 </div>
                             ))}
-                            {isLoading && (
+                            {(isLoading || toolStatus) && (
                                 <div className="flex items-start gap-2 max-w-[85%]">
                                     <div className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center shrink-0">
                                         <Bot size={16} />
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm rounded-tl-sm flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    <div className="px-4 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm rounded-tl-sm flex items-center gap-2">
+                                        {toolStatus ? (
+                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 tracking-wide">
+                                                <Loader2 size={14} className="animate-spin text-indigo-500" />
+                                                {toolStatus}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}
