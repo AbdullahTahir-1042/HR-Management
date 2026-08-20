@@ -164,6 +164,11 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
     const handleCalendarDayClick = (dateStr) => {
         if (dateStr < todayStr) return; // Block past date selection
 
+        if (leaveForm.isHalfDay) {
+            setLeaveForm(prev => ({ ...prev, startDate: dateStr, endDate: dateStr }));
+            return;
+        }
+
         if (!leaveForm.startDate || (leaveForm.startDate && leaveForm.endDate)) {
             setLeaveForm(prev => ({ ...prev, startDate: dateStr, endDate: '' }));
         } else {
@@ -186,13 +191,12 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
     };
 
     const deductionPreview = React.useMemo(() => {
-        if (!leaveForm.startDate || !leaveForm.endDate || !leaveForm.leaveTypeId) return null;
+        if (!leaveForm.startDate || !leaveForm.endDate || (!leaveForm.leaveTypeId && !leaveForm.isHalfDay)) return null;
         const s = new Date(leaveForm.startDate + 'T00:00:00');
         const e = new Date(leaveForm.endDate + 'T00:00:00');
         if (isNaN(s.getTime()) || isNaN(e.getTime()) || s > e) return null;
 
         const requestedDates = getDatesInRange(leaveForm.startDate, leaveForm.endDate);
-        const totalDuration = requestedDates.length;
 
         // Separate overlapping vs net new dates
         const overlappingDates = [];
@@ -208,34 +212,50 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
             }
         });
 
-        const overlapCount = overlappingDates.length;
-        const netDuration = netNewDates.length;
+        let overlapCount = overlappingDates.length;
+        let netDuration = netNewDates.length;
+        let totalDuration = requestedDates.length;
+
+        if (leaveForm.isHalfDay) {
+            totalDuration = 0.5;
+            netDuration = 0.5;
+            if (overlappingDates.length > 0) {
+                overlapCount = 0.5;
+                netDuration = 0;
+            }
+        }
 
         // 1. Get balance or fallback to calculate from leaves array
         let remaining = 0;
         let allocated = 12;
+        let lTypeObj = null;
 
-        const typeIdStr = String(leaveForm.leaveTypeId);
-        const bal = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeIdStr);
-
-        const lTypeObj = leaveTypes.find(t => String(t._id || t.id || '') === typeIdStr);
-
-        if (bal !== undefined) {
-            remaining = bal.remaining ?? 0;
-            allocated = bal.allocated ?? 12;
+        if (leaveForm.isHalfDay) {
+            remaining = 999;
+            allocated = 999;
         } else {
-            allocated = Number(lTypeObj?.quota || lTypeObj?.maxDays) || 12;
+            const typeIdStr = String(leaveForm.leaveTypeId);
+            const bal = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeIdStr);
 
-            // Calculate approved and pending used days from leaves list
-            const usedDays = leaves
-                .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending_hr', 'pending_team_lead'].includes(l.status))
-                .reduce((acc, l) => {
-                    const ls = String(l.startDate).slice(0, 10);
-                    const le = String(l.endDate).slice(0, 10);
-                    return acc + getDatesInRange(ls, le).length;
-                }, 0);
+            lTypeObj = leaveTypes.find(t => String(t._id || t.id || '') === typeIdStr);
 
-            remaining = Math.max(0, allocated - usedDays);
+            if (bal !== undefined) {
+                remaining = bal.remaining ?? 0;
+                allocated = bal.allocated ?? 12;
+            } else {
+                allocated = Number(lTypeObj?.quota || lTypeObj?.maxDays) || 12;
+
+                // Calculate approved and pending used days from leaves list
+                const usedDays = leaves
+                    .filter(l => getLeaveTypeId(l.leaveType) === typeIdStr && ['approved', 'pending_hr', 'pending_team_lead'].includes(l.status))
+                    .reduce((acc, l) => {
+                        const ls = String(l.startDate).slice(0, 10);
+                        const le = String(l.endDate).slice(0, 10);
+                        return acc + (l.isHalfDay ? 0.5 : getDatesInRange(ls, le).length);
+                    }, 0);
+
+                remaining = Math.max(0, allocated - usedDays);
+            }
         }
 
         const maxConsecutiveDays = Number(lTypeObj?.maxConsecutiveDays) || 0;
@@ -255,7 +275,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                 if (leaveYear === currentYear) {
                     const ls = String(l.startDate).slice(0, 10);
                     const le = String(l.endDate).slice(0, 10);
-                    globalUsed += getDatesInRange(ls, le).length;
+                    globalUsed += l.isHalfDay ? 0.5 : getDatesInRange(ls, le).length;
                 }
             }
         });
@@ -341,26 +361,27 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                             </h3>
                             <form onSubmit={handleApplyLeave} className="flex-1 flex flex-col justify-between space-y-4">
                                 <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Leave Type</label>
-                                        <LeaveTypeSelect
-                                            value={leaveForm.leaveTypeId || ''}
-                                            onChange={(val) => setLeaveForm({ ...leaveForm, leaveTypeId: val })}
-                                            options={leaveTypes.map(t => {
-                                                const typeId = String(t._id || t.id || '');
-                                                const balance = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeId);
-                                                const remaining = balance !== undefined ? balance.remaining : t.quota;
-                                                return {
-                                                    value: typeId,
-                                                    label: `${t.name} (${remaining} ${remaining === 1 ? 'day left' : 'days left'})`
-                                                };
-                                            })}
-                                            placeholder="Select Type"
-                                        />
-                                        
-                                        {/* Policy Hint Display */}
-                                        {(() => {
-                                            if (!leaveForm.leaveTypeId) return null;
+                                    {!leaveForm.isHalfDay && (
+                                        <div>
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider">Leave Type</label>
+                                            <LeaveTypeSelect
+                                                value={leaveForm.leaveTypeId || ''}
+                                                onChange={(val) => setLeaveForm({ ...leaveForm, leaveTypeId: val })}
+                                                options={leaveTypes.map(t => {
+                                                    const typeId = String(t._id || t.id || '');
+                                                    const balance = leaveBalances.find(b => getLeaveTypeId(b.leaveType) === typeId);
+                                                    const remaining = balance !== undefined ? balance.remaining : t.quota;
+                                                    return {
+                                                        value: typeId,
+                                                        label: `${t.name} (${remaining} ${remaining === 1 ? 'day left' : 'days left'})`
+                                                    };
+                                                })}
+                                                placeholder="Select Type"
+                                            />
+                                            
+                                            {/* Policy Hint Display */}
+                                            {(() => {
+                                                if (!leaveForm.leaveTypeId) return null;
                                             const selectedType = leaveTypes.find(t => String(t._id || t.id || '') === leaveForm.leaveTypeId);
                                             if (!selectedType) return null;
                                             const hasMax = selectedType.maxConsecutiveDays > 0;
@@ -381,8 +402,59 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                 </div>
                                             );
                                         })()}
-                                    </div>
+                                        </div>
+                                    )}
+
                                     {/* Start & End Date Status Cards */}
+                                    
+                                    <div className="flex items-center gap-2 px-1">
+                                        <input 
+                                            type="checkbox" 
+                                            id="half-day-leave"
+                                            checked={leaveForm.isHalfDay || false}
+                                            onChange={(e) => {
+                                                const isHalfDay = e.target.checked;
+                                                setLeaveForm(prev => ({ 
+                                                    ...prev, 
+                                                    isHalfDay,
+                                                    halfDayPeriod: isHalfDay ? 'First Half' : '',
+                                                    endDate: (isHalfDay && prev.startDate) ? prev.startDate : prev.endDate
+                                                }));
+                                            }}
+                                            className="w-4 h-4 rounded border-slate-300 text-indigo-500 focus:ring-indigo-500/20"
+                                        />
+                                        <label htmlFor="half-day-leave" className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 cursor-pointer select-none">
+                                            Request Half Day / Early Leave
+                                        </label>
+                                    </div>
+                                    
+                                    {leaveForm.isHalfDay && (
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2 text-sm text-slate-600 font-medium cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="halfDayPeriod" 
+                                                    value="First Half" 
+                                                    checked={leaveForm.halfDayPeriod === 'First Half'}
+                                                    onChange={(e) => setLeaveForm(prev => ({ ...prev, halfDayPeriod: e.target.value }))}
+                                                    className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                First Half (Morning)
+                                            </label>
+                                            <label className="flex items-center gap-2 text-sm text-slate-600 font-medium cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="halfDayPeriod" 
+                                                    value="Second Half" 
+                                                    checked={leaveForm.halfDayPeriod === 'Second Half'}
+                                                    onChange={(e) => setLeaveForm(prev => ({ ...prev, halfDayPeriod: e.target.value }))}
+                                                    className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                Second Half (Early Check-out)
+                                            </label>
+                                        </div>
+                                    )}
+
                                     <div className="mb-4">
                                         <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 tracking-wider flex items-center justify-between mb-1.5">
                                             <span>Duration (Start to End)</span>
@@ -391,25 +463,32 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                             )}
                                         </label>
                                         <DatePicker
-                                            selectsRange={true}
+                                            selectsRange={!leaveForm.isHalfDay}
+                                            selected={leaveForm.isHalfDay && leaveForm.startDate ? new Date(leaveForm.startDate) : null}
                                             startDate={leaveForm.startDate ? new Date(leaveForm.startDate) : null}
                                             endDate={leaveForm.endDate ? new Date(leaveForm.endDate) : null}
                                             onChange={(update) => {
-                                                const [start, end] = update;
                                                 const parseDate = (d) => {
                                                     if (!d) return '';
                                                     const offset = d.getTimezoneOffset() * 60000;
                                                     return new Date(d.getTime() - offset).toISOString().split('T')[0];
                                                 };
-                                                setLeaveForm(prev => ({ 
-                                                    ...prev, 
-                                                    startDate: parseDate(start), 
-                                                    endDate: parseDate(end) 
-                                                }));
+                                                
+                                                if (leaveForm.isHalfDay) {
+                                                    const dateStr = parseDate(update);
+                                                    setLeaveForm(prev => ({ ...prev, startDate: dateStr, endDate: dateStr }));
+                                                } else {
+                                                    const [start, end] = update;
+                                                    setLeaveForm(prev => ({ 
+                                                        ...prev, 
+                                                        startDate: parseDate(start), 
+                                                        endDate: parseDate(end) 
+                                                    }));
+                                                }
                                             }}
                                             dateFormat="yyyy-MM-dd"
                                             isClearable={true}
-                                            placeholderText="Select date range"
+                                            placeholderText={leaveForm.isHalfDay ? "Select date" : "Select date range"}
                                             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-700 cursor-pointer"
                                             wrapperClassName="w-full"
                                             minDate={new Date()}
@@ -768,6 +847,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                     <th className="px-3 py-3 text-center">Days</th>
                                     <th className="px-3 py-3">Reason</th>
                                     <th className="px-3 py-3 text-right">Status</th>
+                                    <th className="px-3 py-3 w-8"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -810,6 +890,9 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                                                  leave.status === 'hr_rejected' ? 'HR Rejected' : 
                                                  leave.status}
                                             </span>
+                                        </td>
+                                        <td className="px-3 py-3 text-right text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                            <ChevronRight size={16} />
                                         </td>
                                     </tr>
                                 ))}

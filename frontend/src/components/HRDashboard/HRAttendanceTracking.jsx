@@ -4,7 +4,7 @@ import { Clock, Calendar, AlertCircle } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 import apiClient from '../../api/axiosClient';
 
-const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
+const HRAttendanceTracking = ({ filteredAttendance, searchTerm, leaves = [] }) => {
     const [schedule, setSchedule] = useState(null);
 
     useEffect(() => {
@@ -233,7 +233,20 @@ const HRAttendanceTracking = ({ filteredAttendance, searchTerm }) => {
                                     </div>
                                 </td>
                                 <td className="table-cell px-6 py-5">
-                                    {formatDuration(record)}
+                                    <div className="flex flex-col gap-1 w-fit">
+                                        {formatDuration(record)}
+                                        {leaves.some(l => 
+                                            l.status === 'approved' && 
+                                            l.isHalfDay && 
+                                            String(l.employee?._id || l.employee) === String(record.employee?._id || record.employee) &&
+                                            record.date >= l.startDate && 
+                                            record.date <= l.endDate
+                                        ) && (
+                                            <span className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider w-fit">
+                                                Half Day Leave
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="table-cell px-6 py-5">
                                     {workStatus ? (

@@ -160,6 +160,12 @@ const MessagesPage = () => {
                 `${import.meta.env.VITE_API_URL}/conversations/${conversationId}/messages?limit=${PAGE_SIZE}`,
                 authHeaders()
             );
+            
+            // Prevent race condition: if the user switched conversations before this request resolved, discard the response.
+            if (activeConversationRef.current && activeConversationRef.current._id !== conversationId) {
+                return;
+            }
+
             setMessages(prev => {
                 const serverMessages = res.data.messages || [];
                 const tempMessages = prev.filter(m => m._sending);

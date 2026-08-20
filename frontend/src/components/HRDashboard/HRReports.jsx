@@ -466,7 +466,9 @@ const HRReports = ({ employees, loans = [] }) => {
                 const leaveStart = new Date(l.startDate);
                 const leaveEnd = new Date(l.endDate);
                 const diffTime = Math.abs(leaveEnd - leaveStart);
-                const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                if (l.isHalfDay) days = 0.5;
+                
                 totalLeaveDays += days;
 
                 const isUnpaid = l.leaveType && String(l.leaveType.name || '').toLowerCase().includes('unpaid');

@@ -84,7 +84,7 @@ const EmployeeDashboard = () => {
     const [hrRequests, setHrRequests] = useState([]);
     const [hrRequestSubmitting, setHrRequestSubmitting] = useState(false);
 
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '', isUrgent: false });
+    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '', leaveTypeId: '', isUrgent: false, isHalfDay: false, halfDayPeriod: '' });
     const [activeTab, setActiveTab] = useState('dashboard');
     const [navHistory, setNavHistory] = useState([]);
 
@@ -559,7 +559,7 @@ const EmployeeDashboard = () => {
 
     const handleApplyLeave = async (e) => {
         e.preventDefault();
-        if (!leaveForm.leaveTypeId) return toast.error('Please select a leave type.');
+        if (!leaveForm.leaveTypeId && !leaveForm.isHalfDay) return toast.error('Please select a leave type.');
         const start = new Date(leaveForm.startDate);
         const end = new Date(leaveForm.endDate);
         if (start > end) return toast.error('Start date cannot be after the end date.');
@@ -567,7 +567,7 @@ const EmployeeDashboard = () => {
         try {
             await apiClient.post('/leaves/apply', leaveForm);
             toast.success('Leave request submitted!');
-            setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: '' });
+            setLeaveForm({ startDate: '', endDate: '', reason: '', leaveTypeId: '', isUrgent: false, isHalfDay: false, halfDayPeriod: '' });
             fetchMyLeaves();
             fetchLeaveBalances();
             // Notify HR portal instantly via BroadcastChannel (same pattern as announcements)
@@ -661,6 +661,12 @@ const EmployeeDashboard = () => {
                     
                     
                     setSidebarOpen={setSidebarOpen}
+                    onNotificationNavigate={(path) => {
+                        const userId = fullUser?._id || authUser?._id;
+                        navigate(`/employee/${userId}${path === 'dashboard' ? '' : '/' + path}`);
+                        setActiveTab(path);
+                        setNavHistory([]);
+                    }}
                     
                 />
 
@@ -678,6 +684,7 @@ const EmployeeDashboard = () => {
                                 user={fullUser || authUser}
                                 attendance={attendance}
                                 history={attendanceHistory.filter(a => attendanceDateFilter ? a.date === attendanceDateFilter : true)}
+                                leaves={leaves}
                                 dateFilter={attendanceDateFilter} setDateFilter={setAttendanceDateFilter}
                                 handleCheckIn={handleCheckIn} handleCheckOut={handleCheckOut}
                             />

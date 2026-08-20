@@ -55,6 +55,15 @@ const LeaveRequestSchema = new mongoose.Schema({
     isUrgent: {
         type: Boolean,
         default: false
+    },
+    isHalfDay: {
+        type: Boolean,
+        default: false
+    },
+    halfDayPeriod: {
+        type: String,
+        enum: ['First Half', 'Second Half', ''],
+        default: ''
     }
 }, { timestamps: true });
 

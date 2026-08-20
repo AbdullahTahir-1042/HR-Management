@@ -222,7 +222,7 @@ const NotificationsPanel = ({ onNavigate }) => {
                                         onClick={() => handleActionNavigate(selectedNotification)}
                                         className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-md flex items-center gap-2"
                                     >
-                                        Take Action
+                                        View Details
                                     </button>
                                 )}
                             </div>

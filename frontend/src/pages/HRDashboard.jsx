@@ -468,6 +468,12 @@ const HRDashboard = () => {
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     setSidebarOpen={setSidebarOpen}
+                    onNotificationNavigate={(path, subTab) => {
+                        navigate(`/hr/${path}`);
+                        if (subTab && path === 'hr-requests') {
+                            setHrRequestsSubTab(subTab);
+                        }
+                    }}
                 />
 
                 <div className="p-4 lg:p-6 max-w-full mx-auto">
@@ -505,7 +511,7 @@ const HRDashboard = () => {
                         } />
                         <Route path="leaves" element={<HRLeaveManagement filteredLeaves={filteredLeaves} handleStatusUpdate={handleStatusUpdate} handleDeleteLeave={handleDeleteLeave} employees={employees} departments={departments} />} />
                         <Route path="leave-types" element={<HRLeaveTypeManagement leaveTypes={leaveTypes} fetchLeaveTypes={fetchLeaveTypes} />} />
-                        <Route path="attendance" element={<HRAttendanceTracking filteredAttendance={filteredAttendance} searchTerm={searchTerm} />} />
+                        <Route path="attendance" element={<HRAttendanceTracking filteredAttendance={filteredAttendance} searchTerm={searchTerm} leaves={leaves} />} />
                         <Route path="holidays" element={<HRHolidayManagement holidays={holidays} fetchHolidays={fetchHolidays} />} />
                         <Route path="hr-requests" element={<HRRequestsManagement requests={hrRequests} onUpdate={handleUpdateHRRequest} initialSubTab={hrRequestsSubTab} externalLoans={loans} onRefreshLoans={setLoans} />} />
                         <Route path="profile" element={<UpdateProfilePage user={user} onBack={() => navigate('/hr')} />} />

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users } from 'lucide-react';
+import { LayoutDashboard, Clock, Calendar, Bell, User, PartyPopper, MessageSquare, Menu, ArrowLeft, MessageCircle, MonitorPlay, Users, TrendingUp } from 'lucide-react';
 import NotificationsPanel from '../NotificationsPanel';
 
 const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
@@ -24,7 +24,7 @@ const EmployeeHeader = ({ setSidebarOpen, onNotificationNavigate }) => {
         myTeam: { icon: <Users size={24} className="text-indigo-600" />, label: 'My Team' },
         'team-leaves': { icon: <Calendar size={24} className="text-indigo-600" />, label: 'Team Leaves' },
         training: { icon: <MonitorPlay size={24} className="text-indigo-600" />, label: 'Training Center' },
-        performance: { icon: <PartyPopper size={24} className="text-indigo-600" />, label: 'My Performance' },
+        performance: { icon: <TrendingUp size={24} className="text-indigo-600" />, label: 'My Performance' },
     };
 
     const current = config[activeTab] || config.dashboard;

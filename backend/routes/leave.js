@@ -159,7 +159,7 @@ router.get('/balances', auth, async (req, res) => {
         // Compute used days per leave type
         const usedMap = {};
         approvedLeaves.forEach(leave => {
-            const days = calculateDays(leave.startDate, leave.endDate);
+            const days = leave.isHalfDay ? 0.5 : calculateDays(leave.startDate, leave.endDate);
             if (leave.leaveType) {
                 const typeIdStr = leave.leaveType.toString();
                 usedMap[typeIdStr] = (usedMap[typeIdStr] || 0) + days;
@@ -187,14 +187,29 @@ router.get('/balances', auth, async (req, res) => {
 // @desc    Employee Apply for Leave
 // @access  Private
 router.post('/apply', auth, async (req, res) => {
-    const { startDate, endDate, reason, leaveTypeId, isUrgent } = req.body;
+    const { startDate, endDate, reason, leaveTypeId, isUrgent, isHalfDay, halfDayPeriod } = req.body;
 
     try {
-        if (!leaveTypeId) {
-            return res.status(400).json({ msg: 'Leave type is required.' });
+        let actualLeaveTypeId = leaveTypeId;
+
+        if (isHalfDay) {
+            let halfDayType = await LeaveType.findOne({ name: 'Half Day Leave' });
+            if (!halfDayType) {
+                halfDayType = new LeaveType({
+                    name: 'Half Day Leave',
+                    quota: 30, // Generous quota for half days
+                    description: 'Automatically created paid Half Day Leave',
+                    maxConsecutiveDays: 1,
+                    cooldownDays: 0
+                });
+                await halfDayType.save();
+            }
+            actualLeaveTypeId = halfDayType._id;
+        } else if (!actualLeaveTypeId) {
+            return res.status(400).json({ msg: 'Please select a leave type.' });
         }
 
-        const leaveType = await LeaveType.findById(leaveTypeId);
+        const leaveType = await LeaveType.findById(actualLeaveTypeId);
         if (!leaveType) {
             return res.status(404).json({ msg: 'Leave type not found.' });
         }
@@ -210,7 +225,13 @@ router.post('/apply', auth, async (req, res) => {
         today.setHours(0,0,0,0); // Reset time for accurate day comparison
 
         // Calculate duration in working days (backend recalculates securely, does not trust frontend)
-        const duration = calculateDays(start, end);
+        let duration = calculateDays(start, end);
+        if (isHalfDay) {
+            duration = 0.5;
+            // Force end date to equal start date for half days
+            end.setTime(start.getTime()); 
+        }
+        
         if (duration <= 0) {
             return res.status(400).json({ msg: 'End date cannot be before start date.' });
         }
@@ -248,8 +269,9 @@ router.post('/apply', auth, async (req, res) => {
             date: { $in: dateStrings }
         });
 
-        if (existingAttendance.length > 0) {
-            return res.status(400).json({ msg: 'You have already checked in for one or more days in this period.' });
+        // Rule Bypass: Allow same-day Half Day application even if checked in
+        if (existingAttendance.length > 0 && !isHalfDay) {
+            return res.status(400).json({ msg: `You already have attendance marked for dates in this period: ${existingAttendance.map(a => a.date).join(', ')}. Cannot apply for leave on days you were present.` });
         }
 
         // --- Advanced Policy Validations ---
@@ -270,7 +292,7 @@ router.post('/apply', auth, async (req, res) => {
             // Find the most recent approved or pending leave of this type
             const lastLeave = await LeaveRequest.findOne({
                 employee: req.user.id,
-                leaveType: leaveTypeId,
+                leaveType: actualLeaveTypeId,
                 status: { $in: ['approved', 'pending_hr', 'pending_team_lead'] }
             }).sort({ endDate: -1 });
 
@@ -292,14 +314,14 @@ router.post('/apply', auth, async (req, res) => {
             
             const approvedAndPendingLeavesThisYear = await LeaveRequest.find({
                 employee: req.user.id,
-                leaveType: leaveTypeId,
+                leaveType: actualLeaveTypeId,
                 status: { $in: ['approved', 'pending_hr', 'pending_team_lead'] },
                 startDate: { $gte: startOfYear, $lte: endOfYear }
             });
 
             let usedDays = 0;
             approvedAndPendingLeavesThisYear.forEach(l => {
-                usedDays += calculateDays(l.startDate, l.endDate);
+                usedDays += l.isHalfDay ? 0.5 : calculateDays(l.startDate, l.endDate);
             });
 
         if (usedDays + duration > leaveType.quota) {
@@ -323,7 +345,7 @@ router.post('/apply', auth, async (req, res) => {
             let totalGlobalUsed = 0;
             allYearlyLeaves.forEach(l => {
                 if (l.leaveType && !['Maternity Leave', 'Paternity Leave', 'Unpaid Leave'].includes(l.leaveType.name)) {
-                    totalGlobalUsed += calculateDays(l.startDate, l.endDate);
+                    totalGlobalUsed += l.isHalfDay ? 0.5 : calculateDays(l.startDate, l.endDate);
                 }
             });
 
@@ -339,8 +361,11 @@ router.post('/apply', auth, async (req, res) => {
             startDate,
             endDate,
             reason,
-            leaveType: leaveTypeId,
-            isUrgent: isUrgent || false
+            leaveType: actualLeaveTypeId,
+            status: 'pending_hr',
+            isUrgent: !!isUrgent,
+            isHalfDay: !!isHalfDay,
+            halfDayPeriod: halfDayPeriod || ''
         });
 
         await leave.save();
@@ -348,6 +373,23 @@ router.post('/apply', auth, async (req, res) => {
         const populatedLeave = await LeaveRequest.findById(leave._id)
             .populate('employee', ['name', 'email'])
             .populate('leaveType');
+
+        try {
+            const User = require('../models/User');
+            const Notification = require('../models/Notification');
+            const hrUsers = await User.find({ role: 'hr' });
+            if (hrUsers.length > 0) {
+                const hrNotifications = hrUsers.map(hr => ({
+                    recipient: hr._id,
+                    type: 'LeaveRequest',
+                    title: 'New Leave Request',
+                    message: `${populatedLeave.employee.name} has applied for leave (${populatedLeave.leaveType.name}).`
+                }));
+                await Notification.insertMany(hrNotifications);
+            }
+        } catch (notifErr) {
+            console.error('Failed to send HR notification for leave:', notifErr);
+        }
 
         res.json(populatedLeave);
     } catch (err) {

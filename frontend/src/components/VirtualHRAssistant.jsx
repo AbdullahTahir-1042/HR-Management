@@ -50,8 +50,12 @@ const LeaveRequestCard = ({ leave, user }) => {
             <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/50">
                 <span className="font-bold text-slate-700 dark:text-slate-200">Reason:</span> {leave.reason}
             </div>
-            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 text-center">
-                {new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 text-center flex flex-col">
+                {leave.isHalfDay ? (
+                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">Half Day ({leave.halfDayPeriod})<br/>{new Date(leave.startDate).toLocaleDateString()}</span>
+                ) : (
+                    <span>{new Date(leave.startDate).toLocaleDateString()} — {new Date(leave.endDate).toLocaleDateString()}</span>
+                )}
             </div>
             <div className="flex gap-2 mt-1">
                 <button 

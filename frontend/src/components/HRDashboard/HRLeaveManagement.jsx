@@ -164,7 +164,7 @@ const DurationCell = ({ leave, isHovered, onHoverStart, onHoverEnd }) => {
         >
             <span className="flex items-center gap-1.5 font-medium px-2.5 py-1 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 rounded-lg transition-colors cursor-pointer">
                 <CalendarIcon size={14} className="text-indigo-500" />
-                {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                {leave.isHalfDay ? `Half Day (${leave.halfDayPeriod})` : `${formatDate(leave.startDate)} - ${formatDate(leave.endDate)}`}
             </span>
 
             <AnimatePresence>
@@ -190,7 +190,8 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
         return reason.length > 20 ? reason.substring(0, 20) + '...' : reason;
     };
 
-    const calculateDays = (start, end) => {
+    const calculateDays = (start, end, isHalfDay = false) => {
+        if (isHalfDay) return 0.5;
         const startDate = new Date(start);
         const endDate = new Date(end);
         const diffTime = Math.abs(endDate - startDate);
@@ -298,7 +299,7 @@ const HRLeaveManagement = ({ filteredLeaves, handleStatusUpdate, handleDeleteLea
                                     </td>
                                     <td className="px-4 py-4 text-center">
                                         <span className="inline-flex items-center justify-center bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-3 py-1 rounded-xl text-xs font-black shadow-2xs">
-                                            {calculateDays(leave.startDate, leave.endDate)} {calculateDays(leave.startDate, leave.endDate) === 1 ? 'Day' : 'Days'}
+                                            {calculateDays(leave.startDate, leave.endDate, leave.isHalfDay)} {calculateDays(leave.startDate, leave.endDate, leave.isHalfDay) === 1 ? 'Day' : 'Days'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">

@@ -5,7 +5,7 @@ import { formatDate } from '../../utils/dateUtils';
 import apiClient from '../../api/axiosClient';
 
 
-const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCheckOut }) => {
+const EmployeeAttendance = ({ user, attendance, history, leaves = [], handleCheckIn, handleCheckOut }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [schedule, setSchedule] = useState(null);
 
@@ -275,7 +275,7 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
                                         const isRecordLate = !!recordLate;
                                         const workStatus = record.checkIn && record.checkOut ? getWorkStatus(record) : null;
                                         return (
-                                             <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
+                                            <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-4 py-3.5 text-slate-700 font-medium text-sm">
                                                     {formatDate(record.date)}
                                                 </td>
@@ -290,7 +290,14 @@ const EmployeeAttendance = ({ user, attendance, history, handleCheckIn, handleCh
                                                     ) : record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                                 </td>
                                                 <td className="px-4 py-3.5 text-slate-600 text-sm text-center font-medium">
-                                                    {record.status === 'absent' || !record.checkIn ? '-' : getTotalTimeWorked(record.checkIn, record.checkOut)}
+                                                    <div className="flex flex-col items-center justify-center gap-1">
+                                                        <span>{record.status === 'absent' || !record.checkIn ? '-' : getTotalTimeWorked(record.checkIn, record.checkOut)}</span>
+                                                        {leaves.some(l => l.status === 'approved' && l.isHalfDay && record.date >= l.startDate && record.date <= l.endDate) && (
+                                                            <span className="bg-indigo-50 text-indigo-600 border border-indigo-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                                                                Half Day Leave
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3.5 text-center">
                                                     {workStatus ? (

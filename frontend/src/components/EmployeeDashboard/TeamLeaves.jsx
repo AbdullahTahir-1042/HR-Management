@@ -119,7 +119,7 @@ const TeamLeaves = () => {
                                                         <span className="text-slate-400 text-xs">•</span>
                                                         <span className="text-slate-500 text-xs flex items-center gap-1">
                                                             <Clock size={12} />
-                                                            {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                                                            {leave.isHalfDay ? `Half Day (${leave.halfDayPeriod}) - ${new Date(leave.startDate).toLocaleDateString()}` : `${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}`}
                                                         </span>
                                                     </div>
                                                     <p className="text-xs text-slate-500 italic max-w-md truncate">"{leave.reason}"</p>

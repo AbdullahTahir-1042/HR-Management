@@ -302,7 +302,10 @@ router.post('/chat', auth, async (req, res) => {
                 const pendingLeaves = await LeaveRequest.find({ status: 'pending_hr' }).populate('employee', 'name email department photo').populate('leaveType', 'name');
                 responseText = pendingLeaves.length > 0 ? pendingLeaves.map(l => `- ${l.employee?.name || 'Unknown'} requested ${l.leaveType?.name || 'Leave'} from ${new Date(l.startDate).toLocaleDateString()}`).join('\n') : 'No pending requests.';
                 responseObj = { data: responseText };
-                res.write(`data: ${JSON.stringify({ type: 'ui', component: 'LeaveRequests', data: pendingLeaves })}\n\n`);
+                if (pendingLeaves.length > 0) {
+                    res.write(`data: ${JSON.stringify({ type: 'ui', component: 'LeaveRequests', data: pendingLeaves })}\n\n`);
+                    responseObj.uiComponentDisplayed = true;
+                }
             } else if (call.name === 'get_pending_hr_requests') {
                 const pendingRequests = await HRRequest.find({ status: { $in: ['Pending', 'In Review'] } }).populate('employee', 'name');
                 responseText = pendingRequests.length > 0 ? pendingRequests.map(r => `- [${r.type}] from ${r.employee?.name || 'Unknown'}: "${r.description}"`).join('\n') : 'No open HR requests.';
@@ -314,7 +317,10 @@ router.post('/chat', auth, async (req, res) => {
                 responseObj = { data: responseText };
             }
 
-            const funcRespPart = { text: `[System Note: Function ${call.name} executed. Result: ${JSON.stringify(responseObj)}]` };
+            const systemNoteText = responseObj.uiComponentDisplayed 
+                ? `[System Note: Function ${call.name} executed. Result: ${JSON.stringify(responseObj)}. IMPORTANT: A rich UI component displaying this data was just shown to the user. Do NOT list or summarize the data in your response. Just provide a brief 1-sentence acknowledgment.]`
+                : `[System Note: Function ${call.name} executed. Result: ${JSON.stringify(responseObj)}]`;
+            const funcRespPart = { text: systemNoteText };
             chatSession.messages.push({ role: 'user', parts: [funcRespPart] });
             await chatSession.save();
 
