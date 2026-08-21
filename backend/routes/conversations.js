@@ -129,6 +129,16 @@ router.get('/', auth, async (req, res) => {
         const latestMsgMap = new Map(latestMessages.map(m => [String(m._id), m]));
         const unreadCountMap = new Map(unreadCounts.map(u => [String(u._id), u.count]));
 
+        // Background task: mark messages as delivered to this user since their client is polling
+        Message.updateMany(
+            {
+                conversation: { $in: convIds },
+                sender: { $ne: userIdObj },
+                deliveredTo: { $ne: userIdObj }
+            },
+            { $addToSet: { deliveredTo: userIdObj } }
+        ).catch(err => console.error('Error marking delivered:', err));
+
         const results = conversations.map(conv => {
             const lastMessage = latestMsgMap.get(String(conv._id));
             const unreadCount = unreadCountMap.get(String(conv._id)) || 0;

@@ -24,10 +24,10 @@ const StatusTicks = ({ message }) => {
     else if (message.totalRecipients > 0 && message.deliveredCount >= message.totalRecipients) status = 'delivered';
 
     const icons = {
-        sending: <Clock size={13} className="text-white/70" />,
-        sent: <Check size={13} className="text-white/70" />,
-        delivered: <CheckCheck size={13} className="text-white/70" />,
-        seen: <CheckCheck size={13} className="text-sky-300" />
+        sending: <Clock size={13} className="text-slate-400" />,
+        sent: <Check size={13} className="text-slate-400" />,
+        delivered: <CheckCheck size={13} className="text-slate-400" />,
+        seen: <CheckCheck size={13} className="text-blue-500 dark:text-blue-400" />
     };
 
     return (

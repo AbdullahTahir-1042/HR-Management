@@ -32,6 +32,10 @@ const AttendanceSchema = new mongoose.Schema({
     expectedCheckOut: {
         type: String, // e.g. "19:00"
         default: null
+    },
+    hasReceivedCheckoutReminder: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

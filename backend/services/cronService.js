@@ -5,9 +5,65 @@ const LeaveRequest = require('../models/LeaveRequest');
 const Notification = require('../models/Notification');
 const Holiday = require('../models/Holiday');
 const OfficeSchedule = require('../models/OfficeSchedule');
+const { messaging } = require('../config/firebaseAdmin');
 
 // Run every day at 11:55 PM
 const startCronJobs = () => {
+    console.log('✅ Checkout Reminder Cron Scheduled (Every 15 mins)');
+    cron.schedule('*/15 * * * *', async () => {
+        try {
+            const todayDateObj = new Date();
+            const year = todayDateObj.getFullYear();
+            const month = String(todayDateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(todayDateObj.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+            const attendances = await Attendance.find({
+                date: todayStr,
+                checkIn: { $ne: null },
+                checkOut: null,
+                hasReceivedCheckoutReminder: false
+            }).populate('employee', 'name fcmToken notificationPreferences');
+
+            const now = new Date();
+            const NINE_HOURS_MS = 9 * 60 * 60 * 1000;
+
+            for (const att of attendances) {
+                if (now - new Date(att.checkIn) >= NINE_HOURS_MS) {
+                    const employee = att.employee;
+                    if (!employee) continue;
+
+                    att.hasReceivedCheckoutReminder = true;
+                    await att.save();
+
+                    await Notification.create({
+                        recipient: employee._id,
+                        title: 'Time to Check Out!',
+                        message: `You have been working for over 9 hours today. Please remember to check out before leaving.`,
+                        type: 'system'
+                    });
+
+                    if (employee.fcmToken && employee.notificationPreferences?.attendance !== false && employee.notificationPreferences?.all !== false) {
+                        try {
+                            await messaging.sendEachForMulticast({
+                                tokens: [employee.fcmToken],
+                                notification: {
+                                    title: 'Time to Check Out! ⏱️',
+                                    body: "You've been checked in for over 9 hours. Don't forget to check out!"
+                                },
+                                data: { type: 'system' }
+                            });
+                        } catch (pushErr) {
+                            console.error(`Push error for ${employee.name}:`, pushErr);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error in checkout reminder cron job:', error);
+        }
+    });
+
     console.log('✅ Attendance Cron Scheduled (11:55 PM)');
     cron.schedule('55 23 * * *', async () => {
         try {
