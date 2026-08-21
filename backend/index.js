@@ -72,7 +72,26 @@ console.log('✓ Test Route Registered');
 const { startCronJobs } = require('./services/cronService');
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+
+const server = app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
     startCronJobs();
 });
+
+// Graceful shutdown — destroys all socket.io connections so nodemon
+// can release port 5000 cleanly before restarting.
+const shutdown = () => {
+    server.closeAllConnections?.(); // Node 18.2+
+    server.close(() => process.exit(0));
+};
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Is another server running?`);
+        process.exit(1);
+    } else {
+        throw err;
+    }
+});

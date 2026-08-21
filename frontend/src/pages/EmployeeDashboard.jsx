@@ -203,17 +203,20 @@ const EmployeeDashboard = () => {
     }, []);
 
     // ── Unread messages badge polling (from feature/chat) ─────────────────────
+    const fetchUnreadMessages = async () => {
+        try {
+            const res = await apiClient.get('/conversations');
+            setUnreadMessages(res.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+        } catch (err) {
+            console.error('Error fetching unread messages count:', err);
+        }
+    };
+
     useEffect(() => {
-        const fetchUnreadMessages = async () => {
-            try {
-                const res = await apiClient.get('/conversations');
-                setUnreadMessages(res.data.reduce((sum, c) => sum + (c.unreadCount || 0), 0));
-            } catch (err) {
-                console.error('Error fetching unread messages count:', err);
-            }
-        };
         fetchUnreadMessages();
-        const interval = setInterval(fetchUnreadMessages, 5000);
+        
+        // Poll for unread messages every 10 seconds as a fallback
+        const interval = setInterval(fetchUnreadMessages, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -284,21 +287,10 @@ const EmployeeDashboard = () => {
         return () => clearInterval(interval);
     }, [attendance, fullUser, authUser]);
 
-    // ── Firebase notifications + SSE + BroadcastChannel ──────────────────────
+
+    // ── Firebase foreground + SSE + BroadcastChannel notifications ───────────
     useEffect(() => {
-        // 1. Request FCM token and sync to backend
-        const setupNotifications = async () => {
-            try {
-                const token = await requestForToken();
-                if (token) {
-                    await apiClient.put('/auth/fcm-token', { token });
-                    console.log('FCM Token synced to server successfully.');
-                }
-            } catch (error) {
-                console.error('Error setting up notifications:', error);
-            }
-        };
-        setupNotifications();
+        // FCM token registration is handled centrally in SocketContext
 
         // Helper to trigger browser desktop notification
         const triggerDesktopNotification = (title, body) => {
@@ -321,9 +313,34 @@ const EmployeeDashboard = () => {
             console.log('Foreground message received:', payload);
             const title = payload?.notification?.title || payload?.data?.title || 'New Announcement';
             const body = payload?.notification?.body || payload?.data?.body || '';
+            
+            // Dispatch event for other components (like MessagesPage) to react instantly
+            window.dispatchEvent(new CustomEvent('fcm_message', { detail: payload }));
+            
+            // Immediately update the global unread badge
+            if (payload?.data?.type === 'chat') {
+                fetchUnreadMessages();
+            }
+            
+            // Prevent the sender from receiving a notification for their own message
+            // (Happens when testing multiple accounts on the same browser/FCM token)
+            const currentName = fullUser?.name || authUser?.name;
+            if (payload?.data?.type === 'chat' && currentName && title.includes(currentName)) {
+                return;
+            }
+            
+            // If the user is actively on the Messages page, let MessagesPage.jsx handle the notification
+            // so it can selectively suppress it if the chat is already open.
+            if (payload?.data?.type === 'chat' && window.location.pathname.includes('/messages')) {
+                return;
+            }
+
             showToast(title, body);
             triggerDesktopNotification(title, body);
-            fetchAllAnnouncements();
+            
+            if (payload?.data?.type !== 'chat') {
+                fetchAllAnnouncements();
+            }
         });
 
         // 3. BroadcastChannel — sub-second sync across tabs
@@ -390,6 +407,7 @@ const EmployeeDashboard = () => {
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         };
     }, [showToast]);
+
 
     // ── Individual fetch helpers ──────────────────────────────────────────────
     const fetchUserProfile = async () => {

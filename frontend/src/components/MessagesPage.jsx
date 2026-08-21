@@ -12,7 +12,7 @@ import { AuthContext } from '../context/AuthContext';
 import { formatDate } from '../utils/dateUtils';
 
 
-const POLL_INTERVAL_MS = 3000;
+
 const TYPING_PING_THROTTLE_MS = 2000;
 const ONLINE_THRESHOLD_MS = 20000;
 const PAGE_SIZE = 15;
@@ -63,6 +63,7 @@ const MessagesPage = () => {
     const clientKeyMap = useRef(new Map());
     const [searchTerm, setSearchTerm] = useState('');
     const [typingUsers, setTypingUsers] = useState([]);
+    const [typingConversations, setTypingConversations] = useState({}); // { conversationId: [{ _id, name }] }
     const [replyingTo, setReplyingTo] = useState(null);
 
     const [showNewChat, setShowNewChat] = useState(false);
@@ -83,7 +84,8 @@ const MessagesPage = () => {
     const messagesEndRef = useRef(null);
     const threadScrollRef = useRef(null);
     const lastTypingPingAtRef = useRef(0);
-    const prevConversationsRef = useRef([]);
+    const prevConversationsRef = useRef(null);
+    const fetchingConversationsRef = useRef(false);
     const pendingScrollAdjustRef = useRef(null);
     const [notifPermission, setNotifPermission] = useState(
         typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
@@ -108,9 +110,16 @@ const MessagesPage = () => {
     }, []);
 
     const fetchConversations = async () => {
+        if (fetchingConversationsRef.current) return;
+        fetchingConversationsRef.current = true;
         try {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/conversations`, authHeaders());
-            notifyOnNewMessages(prevConversationsRef.current, res.data);
+            
+            // Only notify if we already have a previous list (i.e. not the initial load)
+            if (prevConversationsRef.current !== null) {
+                notifyOnNewMessages(prevConversationsRef.current, res.data);
+            }
+            
             prevConversationsRef.current = res.data;
             setConversations(res.data);
 
@@ -123,6 +132,7 @@ const MessagesPage = () => {
         } catch (err) {
             console.error('Error fetching conversations:', err);
         } finally {
+            fetchingConversationsRef.current = false;
             setLoadingConversations(false);
         }
     };
@@ -135,6 +145,10 @@ const MessagesPage = () => {
             const prev = prevById.get(conv._id);
             const wasUnread = prev?.unreadCount || 0;
             if (conv.unreadCount > wasUnread && !conv.lastMessageFromMe) {
+                // If the tab is in the background, the Firebase Service Worker will automatically
+                // show a push notification. We suppress the Socket.io notification here to prevent duplicates.
+                if (document.hidden) continue;
+                
                 try {
                     new Notification(conv.name, { body: conv.lastMessage || 'New message', tag: conv._id });
                 } catch {
@@ -215,16 +229,41 @@ const MessagesPage = () => {
         fetchColleagues();
     }, []);
 
+    // --- HTTP Polling for Real-Time Features ---
     useEffect(() => {
-        const interval = setInterval(() => {
-            fetchConversations();
-            if (activeConversationRef.current && !sendingRef.current) {
-                fetchThread(activeConversationRef.current._id, { silent: true });
+        // Instant response to FCM foreground messages!
+        const handleFcmMessage = (e) => {
+            const payload = e.detail;
+            if (payload?.data?.type === 'chat') {
+                fetchConversations();
+                if (activeConversationRef.current && String(activeConversationRef.current._id) === String(payload.data.conversationId)) {
+                    fetchThread(activeConversationRef.current._id, { silent: true });
+                }
             }
-        }, POLL_INTERVAL_MS);
-        return () => clearInterval(interval);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [notifPermission]);
+        };
+        window.addEventListener('fcm_message', handleFcmMessage);
+
+        // Poll for sidebar conversations (updates unread counts, latest message)
+        const convInterval = setInterval(() => {
+            fetchConversations();
+        }, 5000); // Every 5 seconds
+
+        // Poll for active thread messages (simulates new_message, typing, messages_read)
+        const threadInterval = setInterval(() => {
+            if (activeConversationRef.current && !document.hidden) {
+                // Fetch the thread silently
+                fetchThread(activeConversationRef.current._id, { silent: true });
+                // Note: fetchThread automatically marks messages as read on the backend,
+                // so we don't need to manually call PUT /read here.
+            }
+        }, 1000); // Every 1 second for the active chat
+
+        return () => {
+            window.removeEventListener('fcm_message', handleFcmMessage);
+            clearInterval(convInterval);
+            clearInterval(threadInterval);
+        };
+    }, []);
 
     useEffect(() => {
         if (pendingScrollAdjustRef.current == null) {
@@ -242,6 +281,18 @@ const MessagesPage = () => {
         setConversations(prev => prev.map(c => (c._id === conv._id ? { ...c, unreadCount: 0 } : c)));
     };
 
+    // Auto-read when returning to the tab
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden && activeConversationRef.current) {
+                axios.put(`${import.meta.env.VITE_API_URL}/conversations/${activeConversationRef.current._id}/read`, {}, authHeaders())
+                     .catch(() => {});
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
+
     const pingTyping = () => {
         if (!activeConversation) return;
         const now = Date.now();
@@ -257,9 +308,12 @@ const MessagesPage = () => {
     };
 
     const handleSend = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+        if (sendingRef.current) return;
         const text = messageText.trim();
         if (!text || !activeConversation) return;
+        
+        sendingRef.current = true;
 
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage = {
@@ -642,8 +696,23 @@ const MessagesPage = () => {
                                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">{formatTime(conv.lastMessageAt)}</span>
                                             </div>
                                             <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'text-slate-500 dark:text-slate-400 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
-                                                {conv.lastMessageFromMe && conv.lastMessage ? 'You: ' : ''}
-                                                {conv.lastMessage || (conv.type === 'group' ? `${conv.memberCount} members` : 'No messages yet')}
+                                                {typingConversations[String(conv._id)]?.length > 0 ? (
+                                                    <span className="text-indigo-500 font-semibold flex items-center gap-1">
+                                                        <span className="flex gap-0.5">
+                                                            <span className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce [animation-delay:-0.3s]" />
+                                                            <span className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce [animation-delay:-0.15s]" />
+                                                            <span className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" />
+                                                        </span>
+                                                        {conv.type === 'group'
+                                                            ? `${typingConversations[String(conv._id)].map(u => u.name.split(' ')[0]).join(', ')} typing...`
+                                                            : 'typing...'}
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        {conv.lastMessageFromMe && conv.lastMessage ? 'You: ' : ''}
+                                                        {conv.lastMessage || (conv.type === 'group' ? `${conv.memberCount} members` : 'No messages yet')}
+                                                    </>
+                                                )}
                                             </p>
                                         </div>
                                         {conv.unreadCount > 0 && (
@@ -819,7 +888,7 @@ const MessagesPage = () => {
                                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:-0.15s]" />
                                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" />
                                             </span>
-                                            {typingUsers.map(t => t.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing
+                                            {typingUsers.map(t => t.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
                                         </div>
                                     </motion.div>
                                 )}

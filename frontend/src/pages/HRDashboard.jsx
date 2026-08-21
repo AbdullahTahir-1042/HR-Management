@@ -3,8 +3,6 @@ import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import apiClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
-
-// --- FIREBASE IMPORTS ---
 import { requestForToken, onMessageListener } from '../firebase';
 
 import HRSidebar from '../components/HRDashboard/HRSidebar';
@@ -199,38 +197,38 @@ const HRDashboard = () => {
     }, [refreshRequestsAndLoans]);
 
     // Lightweight poll just for the sidebar's unread-messages badge
+    const fetchUnreadMessages = async () => {
+        try {
+            const res = await apiClient.get('/conversations');
+            setUnreadMessages((res.data || []).reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+        } catch (err) {
+            console.error('Error fetching unread messages count:', err);
+        }
+    };
+
     useEffect(() => {
-        const fetchUnreadMessages = async () => {
-            try {
-                const res = await apiClient.get('/conversations');
-                setUnreadMessages((res.data || []).reduce((sum, c) => sum + (c.unreadCount || 0), 0));
-            } catch (err) {
-                console.error('Error fetching unread messages count:', err);
-            }
-        };
         fetchUnreadMessages();
-        const interval = setInterval(fetchUnreadMessages, 5000);
+        
+        // Poll for unread messages every 10 seconds as a fallback
+        const interval = setInterval(fetchUnreadMessages, 10000);
         return () => clearInterval(interval);
     }, []);
 
-    // --- FIREBASE NOTIFICATION SETUP ---
-    useEffect(() => {
-        const setupHRNotifications = async () => {
-            try {
-                const token = await requestForToken();
-                if (token) {
-                    await apiClient.put('/auth/fcm-token', { token });
-                    console.log('HR FCM Token synced successfully.');
-                }
-            } catch (error) {
-                console.error('Error setting up HR notifications:', error);
-            }
-        };
-        setupHRNotifications();
+    // FCM token registration is handled centrally in SocketContext
 
+    useEffect(() => {
         const unsubscribe = onMessageListener((payload) => {
             console.log("HR Foreground message received:", payload);
-            fetchAllAnnouncements();
+            
+            // Dispatch event for other components (like MessagesPage) to react instantly
+            window.dispatchEvent(new CustomEvent('fcm_message', { detail: payload }));
+            
+            // Immediately update the global unread badge
+            if (payload?.data?.type === 'chat') {
+                fetchUnreadMessages();
+            } else {
+                fetchAllAnnouncements();
+            }
         });
 
         return () => {

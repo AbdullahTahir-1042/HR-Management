@@ -44,40 +44,36 @@ router.post('/check-in', auth, async (req, res) => {
         }
 
         const { latitude, longitude } = req.body;
-        // 1. Check for WFH exemption first
+        
         const todayDateStart = new Date(today);
         todayDateStart.setHours(0, 0, 0, 0);
         const todayDateEnd = new Date(today);
         todayDateEnd.setHours(23, 59, 59, 999);
 
-        // 0.5 Prevent check-in on Holidays
-        const activeHoliday = await Holiday.findOne({
-            startDate: { $lte: todayDateEnd },
-            endDate: { $gte: todayDateStart }
-        });
+        // STAMPEDE OPTIMIZATION: Fetch ALL prerequisite data in true parallel
+        const [
+            activeHoliday, 
+            activeLeave, 
+            approvedWFH, 
+            existingAttendance, 
+            employeeUser, 
+            specificSchedule, 
+            defaultSchedule,
+            hrAdmins
+        ] = await Promise.all([
+            Holiday.findOne({ startDate: { $lte: todayDateEnd }, endDate: { $gte: todayDateStart } }),
+            LeaveRequest.findOne({ employee: req.user.id, status: 'approved', startDate: { $lte: todayDateEnd }, endDate: { $gte: todayDateStart } }),
+            HRRequest.findOne({ employee: req.user.id, type: 'Work From Home', status: 'Resolved', targetDate: { $gte: todayDateStart, $lte: todayDateEnd } }),
+            Attendance.findOne({ employee: req.user.id, date: today }),
+            User.findById(req.user.id).populate('departmentId'),
+            OfficeSchedule.findOne({ date: today, isDefault: false }),
+            OfficeSchedule.findOne({ isDefault: true }),
+            User.find({ role: { $in: ['hr', 'admin'] } })
+        ]);
 
-        if (activeHoliday) {
-            return res.status(403).json({ msg: `Check-in is disabled during holidays (${activeHoliday.name}).` });
-        }
-
-        // 0.7 Prevent check-in if user has an approved leave today
-        const activeLeave = await LeaveRequest.findOne({
-            employee: req.user.id,
-            status: 'approved',
-            startDate: { $lte: todayDateEnd },
-            endDate: { $gte: todayDateStart }
-        });
-
-        if (activeLeave) {
-            return res.status(403).json({ msg: `Check-in is disabled because you have an approved leave for today.` });
-        }
-
-        const approvedWFH = await HRRequest.findOne({
-            employee: req.user.id,
-            type: 'Work From Home',
-            status: 'Resolved',
-            targetDate: { $gte: todayDateStart, $lte: todayDateEnd }
-        });
+        if (existingAttendance) return res.status(400).json({ msg: 'Already checked in today' });
+        if (activeHoliday) return res.status(403).json({ msg: `Check-in is disabled during holidays (${activeHoliday.name}).` });
+        if (activeLeave) return res.status(403).json({ msg: `Check-in is disabled because you have an approved leave for today.` });
 
         // 2. Geofencing Check (Only if not WFH)
         if (!approvedWFH) {
@@ -104,11 +100,6 @@ router.post('/check-in', auth, async (req, res) => {
             console.log(`✅ User ${req.user.id} has approved WFH for today. Bypassing geofence.`);
         }
 
-        let attendance = await Attendance.findOne({ employee: req.user.id, date: today });
-        if (attendance) {
-            return res.status(400).json({ msg: 'Already checked in today' });
-        }
-
         // --- NEW LATENESS LOGIC ---
         let checkInStatus = 'present';
         let expectedStartStr = '09:00';
@@ -116,23 +107,17 @@ router.post('/check-in', auth, async (req, res) => {
         let appliedGracePeriod = 0;
 
         try {
-            // Check if user has custom shift details
-            const employeeUser = await User.findById(req.user.id).populate('departmentId');
+            // Determine shift from prefetched data
             if (employeeUser && employeeUser.shiftDetails && employeeUser.shiftDetails.startTime && employeeUser.shiftDetails.endTime) {
                 expectedStartStr = employeeUser.shiftDetails.startTime;
                 expectedEndStr = employeeUser.shiftDetails.endTime;
                 appliedGracePeriod = employeeUser.shiftDetails.gracePeriod || 0;
             } else if (employeeUser && employeeUser.departmentId && employeeUser.departmentId.shiftDetails && employeeUser.departmentId.shiftDetails.startTime && employeeUser.departmentId.shiftDetails.endTime) {
-                // Fallback to Department Shift
                 expectedStartStr = employeeUser.departmentId.shiftDetails.startTime;
                 expectedEndStr = employeeUser.departmentId.shiftDetails.endTime;
                 appliedGracePeriod = employeeUser.departmentId.shiftDetails.gracePeriod || 0;
             } else {
-                // Fallback to global Office Schedule
-                let schedule = await OfficeSchedule.findOne({ date: today, isDefault: false });
-                if (!schedule) {
-                    schedule = await OfficeSchedule.findOne({ isDefault: true });
-                }
+                let schedule = specificSchedule || defaultSchedule;
                 if (schedule) {
                     expectedStartStr = schedule.startTime || '09:00';
                     expectedEndStr = schedule.endTime || '19:00';
@@ -160,12 +145,19 @@ router.post('/check-in', auth, async (req, res) => {
             expectedCheckIn: expectedStartStr,
             expectedCheckOut: expectedEndStr
         });
-        await attendance.save();
+        try {
+            await attendance.save();
+        } catch (err) {
+            if (err.code === 11000) { // MongoDB duplicate key error perfectly handles race conditions
+                return res.status(400).json({ msg: 'Already checked in today' });
+            }
+            throw err;
+        }
+        
         console.log("✅ Attendance saved");
 
         // Notify HR Admins of check-in
-        const hrAdmins = await User.find({ role: { $in: ['hr', 'admin'] } });
-        const employeeName = req.user.name || (await User.findById(req.user.id))?.name || 'An employee';
+        const employeeName = employeeUser?.name || 'An employee';
         for (const hr of hrAdmins) {
             await Notification.create({
                 recipient: hr._id,
