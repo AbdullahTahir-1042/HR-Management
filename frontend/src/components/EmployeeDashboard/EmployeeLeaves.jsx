@@ -816,7 +816,7 @@ const EmployeeLeaves = ({ user, leaveForm, setLeaveForm, handleApplyLeave, leave
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-                                {['all', 'pending_hr', 'pending_team_lead', 'approved', 'hr_rejected', 'rejected'].map(status => (
+                                {['all', 'pending_hr', ...(user?.isTeamLead ? [] : ['pending_team_lead']), 'approved', 'hr_rejected', 'rejected'].map(status => (
                                     <button
                                         key={status}
                                         onClick={() => setStatusFilter(status)}
