@@ -105,29 +105,40 @@ router.get('/', auth, async (req, res) => {
         const convIds = conversations.map(c => c._id);
         const userIdObj = new mongoose.Types.ObjectId(req.user.id);
 
-        const [latestMessages, unreadCounts] = await Promise.all([
-            Message.aggregate([
-                { $match: { conversation: { $in: convIds } } },
-                { $sort: { createdAt: -1 } },
-                { $group: {
-                    _id: "$conversation",
-                    text: { $first: "$text" },
-                    createdAt: { $first: "$createdAt" },
-                    sender: { $first: "$sender" }
-                }}
-            ]),
-            Message.aggregate([
-                { $match: { 
-                    conversation: { $in: convIds },
-                    sender: { $ne: userIdObj },
-                    readBy: { $ne: userIdObj }
-                }},
-                { $group: { _id: "$conversation", count: { $sum: 1 } } }
-            ])
+        // Fetch latest message per conversation using optimized .findOne() index lookups
+        const latestMessagePromises = convIds.map(id => 
+            Message.findOne({ conversation: id })
+                .sort({ createdAt: -1 })
+                .select('text createdAt sender')
+                .lean()
+        );
+
+        // Fetch unread counts using highly optimized bounded index lookups
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const unreadCountPromises = convIds.map(id => 
+            Message.countDocuments({
+                conversation: id,
+                createdAt: { $gte: thirtyDaysAgo },
+                sender: { $ne: userIdObj },
+                readBy: { $ne: userIdObj }
+            })
+        );
+
+        const [latestMessagesRaw, unreadCountsRaw] = await Promise.all([
+            Promise.all(latestMessagePromises),
+            Promise.all(unreadCountPromises)
         ]);
 
-        const latestMsgMap = new Map(latestMessages.map(m => [String(m._id), m]));
-        const unreadCountMap = new Map(unreadCounts.map(u => [String(u._id), u.count]));
+        const latestMsgMap = new Map();
+        const unreadCountMap = new Map();
+        
+        convIds.forEach((id, idx) => {
+            const idStr = String(id);
+            if (latestMessagesRaw[idx]) {
+                latestMsgMap.set(idStr, latestMessagesRaw[idx]);
+            }
+            unreadCountMap.set(idStr, unreadCountsRaw[idx] || 0);
+        });
 
         // Background task: mark messages as delivered to this user since their client is polling
         Message.updateMany(
