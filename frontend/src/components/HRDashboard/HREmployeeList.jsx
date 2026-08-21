@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Calendar, UserPlus, Briefcase,
     Building2, UserCheck, Trash2, Crown, Phone, Pencil,
-    LayoutGrid, List, Filter, TrendingUp, UserX
+    LayoutGrid, List, Filter, TrendingUp, UserX, AlertTriangle
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -378,7 +378,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                                         </div>
                                                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                                                             <span className="flex items-center gap-0.5" title="Mistakes">
-                                                                <Trash2 size={9} className={stats.mistakes > 0 ? 'text-rose-500' : ''} /> {stats.mistakes}
+                                                                <AlertTriangle size={9} className={stats.mistakes > 0 ? 'text-rose-500' : ''} /> {stats.mistakes}
                                                             </span>
                                                             <span className="flex items-center gap-0.5" title="Awards">
                                                                 <Crown size={9} className={stats.awards > 0 ? 'text-violet-500' : ''} /> {stats.awards}
@@ -503,7 +503,7 @@ const HREmployeeList = ({ employees = [], performanceReviews = [], mistakeReport
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-amber-500 text-[10px]">★ {stats.rating}</span>
                                                     <span className="flex items-center gap-0.5 text-[10px] text-slate-500" title="Mistakes">
-                                                        <Trash2 size={10} className={stats.mistakes > 0 ? 'text-rose-500' : ''} /> {stats.mistakes}
+                                                        <AlertTriangle size={10} className={stats.mistakes > 0 ? 'text-rose-500' : ''} /> {stats.mistakes}
                                                     </span>
                                                     <span className="flex items-center gap-0.5 text-[10px] text-slate-500" title="Awards">
                                                         <Crown size={10} className={stats.awards > 0 ? 'text-violet-500' : ''} /> {stats.awards}
