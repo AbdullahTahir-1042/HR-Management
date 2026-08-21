@@ -1,6 +1,7 @@
 import React, { useContext, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+import { FCMProvider } from './context/FCMContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { ConfirmProvider } from './context/ConfirmContext';
@@ -67,6 +68,7 @@ function App() {
     return (
         <ThemeProvider>
         <AuthProvider>
+            <FCMProvider>
             <ConfirmProvider>
                 <Toaster
                     position="bottom-right"
@@ -79,47 +81,48 @@ function App() {
                                 primary: '#10b981',
                                 secondary: '#ffffff',
                             },
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: '#f43f5e',
-                            secondary: '#ffffff',
                         },
-                    },
-                }}
-            />
-            <Router>
-                <ScrollToTop />
-                <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/employee/:employeeId/*" element={
-                            <ProtectedRoute role="employee">
-                                <EmployeeDashboard />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/hr/*" element={
-                            <ProtectedRoute role="hr">
-                                <HRDashboard />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/onboarding" element={
-                            <ProtectedRoute>
-                                <PracticeOnboarding />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/practice-onboarding" element={
-                            <ProtectedRoute>
-                                <PracticeOnboardingWizard />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/" element={<Navigate to="/login" />} />
-                        <Route path="*" element={<Navigate to="/login" />} />
-                    </Routes>
-                </Suspense>
-            </Router>
-        </ConfirmProvider>
-    </AuthProvider>
+                        error: {
+                            iconTheme: {
+                                primary: '#f43f5e',
+                                secondary: '#ffffff',
+                            },
+                        },
+                    }}
+                />
+                <Router>
+                    <ScrollToTop />
+                    <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/employee/:employeeId/*" element={
+                                <ProtectedRoute role="employee">
+                                    <EmployeeDashboard />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/hr/*" element={
+                                <ProtectedRoute role="hr">
+                                    <HRDashboard />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/onboarding" element={
+                                <ProtectedRoute>
+                                    <PracticeOnboarding />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/practice-onboarding" element={
+                                <ProtectedRoute>
+                                    <PracticeOnboardingWizard />
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/" element={<Navigate to="/login" />} />
+                            <Route path="*" element={<Navigate to="/login" />} />
+                        </Routes>
+                    </Suspense>
+                </Router>
+            </ConfirmProvider>
+            </FCMProvider>
+        </AuthProvider>
         </ThemeProvider >
     );
 }

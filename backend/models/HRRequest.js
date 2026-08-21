@@ -37,4 +37,6 @@ const HRRequestSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+HRRequestSchema.index({ employee: 1, type: 1, status: 1, targetDate: 1 });
+
 module.exports = mongoose.model('HRRequest', HRRequestSchema);

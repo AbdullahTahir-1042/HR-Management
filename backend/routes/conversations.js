@@ -410,10 +410,39 @@ router.post('/:id/typing', auth, async (req, res) => {
             { upsert: true }
         );
 
+        // Emit Socket Event
+        const user = await User.findById(req.user.id).select('name');
+        const participantIds = conversation.participants.map(p => String(p)).filter(id => id !== String(req.user.id));
+
+
         res.json({ msg: 'ok' });
     } catch (err) {
         console.error('Error updating typing status:', err.message);
         res.status(500).json({ msg: 'Server error updating typing status' });
+    }
+});
+
+// @route   PUT api/conversations/:id/read
+// @desc    Mark all messages in a conversation as read by the current user
+// @access  Private (must be a participant)
+router.put('/:id/read', auth, async (req, res) => {
+    try {
+        const conversation = await Conversation.findById(req.params.id);
+        if (!conversation) return res.status(404).json({ msg: 'Conversation not found' });
+        if (!isParticipant(conversation, req.user.id)) return res.status(403).json({ msg: 'Access denied' });
+
+        const readResult = await Message.updateMany(
+            { conversation: conversation._id, sender: { $ne: req.user.id }, readBy: { $ne: req.user.id } },
+            { $addToSet: { readBy: req.user.id, deliveredTo: req.user.id } }
+        );
+
+        if (readResult.modifiedCount > 0) {
+            const participantIds = conversation.participants.map(p => String(p._id || p));
+        }
+        res.json({ msg: 'ok', modifiedCount: readResult.modifiedCount });
+    } catch (err) {
+        console.error('Error marking as read:', err.message);
+        res.status(500).json({ msg: 'Server error marking as read' });
     }
 });
 
@@ -461,10 +490,15 @@ router.get('/:id/messages', auth, async (req, res) => {
             );
 
             // Opening the thread means catching up — mark everything seen in this page.
-            await Message.updateMany(
+            const readResult = await Message.updateMany(
                 { _id: { $in: messageIds }, sender: { $ne: req.user.id }, readBy: { $ne: req.user.id } },
                 { $addToSet: { readBy: req.user.id } }
             );
+
+            // If we actually marked some messages as newly read, broadcast to participants
+            if (readResult.modifiedCount > 0) {
+                const participantIds = conversation.participants.map(p => String(p._id || p));
+            }
         }
 
         const typingRows = await TypingStatus.find({
@@ -523,6 +557,19 @@ router.post('/:id/messages', auth, async (req, res) => {
         conversation.lastMessageAt = message.createdAt;
         await conversation.save();
 
+        // Populate message for socket emission
+        const populatedMessage = await Message.findById(message._id)
+            .populate('sender', 'name email photo role department')
+            .populate({
+                path: 'replyTo',
+                select: 'text sender',
+                populate: { path: 'sender', select: 'name' }
+            });
+
+        // Emit Socket Event
+        const participantIds = conversation.participants.map(p => String(p._id));
+
+
         // The sender is, by definition, no longer "typing" once they've sent.
         TypingStatus.deleteOne({ conversation: conversation._id, user: req.user.id }).catch(() => {});
 
@@ -541,7 +588,7 @@ router.post('/:id/messages', auth, async (req, res) => {
                 }));
             
             if (notificationsToCreate.length > 0) {
-                await Notification.insertMany(notificationsToCreate);
+                const inserted = await Notification.insertMany(notificationsToCreate);
             }
         } catch (dbNotifErr) {
             console.error('Error creating chat DB notifications:', dbNotifErr);
@@ -562,7 +609,7 @@ router.post('/:id/messages', auth, async (req, res) => {
                             title: conversation.type === 'group' ? `${senderName} in ${conversation.name}` : senderName,
                             body: text.trim().slice(0, 120)
                         },
-                        data: { conversationId: String(conversation._id) }
+                        data: { conversationId: String(conversation._id), type: 'chat' }
                     });
                 }
             } catch (pushErr) {

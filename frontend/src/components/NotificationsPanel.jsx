@@ -35,8 +35,11 @@ const NotificationsPanel = ({ onNavigate }) => {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every 3 seconds for real-time feel
-        const interval = setInterval(fetchNotifications, 3000);
+    }, []);
+
+    useEffect(() => {
+        // Poll for new notifications every 10 seconds
+        const interval = setInterval(fetchNotifications, 10000);
         return () => clearInterval(interval);
     }, []);
 
